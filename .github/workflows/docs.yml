@@ -2,8 +2,9 @@ name: Documentation
 
 # Builds the documentation with every tutorial executed (also 7, 8, 13 and 14, which need the MNE
 # sample dataset) and publishes it to GitHub Pages. Runs on pushes to main that touch the package,
-# the tutorials or the docs, and by hand. A pull request only checks that the pages build
-# (tests/test_docs_build.py in CI); executing every tutorial takes too long for each push to a PR.
+# the tutorials or the docs, and by hand. A pull request normally only checks that the pages build
+# (tests/test_docs_build.py in CI), because executing every tutorial takes too long for each push;
+# a pull request that changes this workflow builds everything but does not publish.
 
 on:
   push:
@@ -13,6 +14,9 @@ on:
       - "examples/**"
       - "docs/**"
       - "pyproject.toml"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
       - ".github/workflows/docs.yml"
   workflow_dispatch:
     inputs:
@@ -25,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: docs
+  group: docs-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -77,6 +81,7 @@ jobs:
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pages: write
