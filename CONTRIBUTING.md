@@ -213,6 +213,20 @@ runner live in `dirconn.validation`; the metrics are in `dirconn.evaluation`. Ad
   and says so in every sidecar.
 - Results are NetCDF (`Connectivity.to_netcdf`), networks and scenarios are YAML.
 
+## Releasing (maintainers)
+
+1. On a branch: set `version` in `pyproject.toml` (for example `0.1.0`), move the entries under
+   `[Unreleased]` in `CHANGELOG.md` to a section with that version and the date, and open a pull
+   request. Merge it when CI is green.
+2. Publish a GitHub release from `main` with the tag `v<version>` (for example `v0.1.0`). The
+   `Release` workflow builds the sdist and the wheel once, checks that the tag and the version
+   agree, uploads to TestPyPI and then to PyPI (Trusted Publishing, no token). Zenodo archives the
+   release and gives it a DOI.
+3. After the release, set the version to the next `.dev0` (for example `0.2.0.dev0`).
+
+To try the upload without releasing, run the `Release` workflow by hand: it builds the current
+commit and uploads it to TestPyPI only.
+
 ## Licence
 
 `dirconn` is released under the BSD 3-Clause licence (see [LICENSE](LICENSE)). By contributing you
