@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use dirconn, please cite the version you used."
+title: "dirconn: directed functional connectivity for neurophysiology signals"
+type: software
+authors:
+  - family-names: Liu
+    given-names: Hanwei
+    email: Liu_H@ukw.de
+    affiliation: University Hospital of Wuerzburg
+repository-code: "https://github.com/HanweiLiu-Viola/dirconn"
+url: "https://hanweiliu-viola.github.io/dirconn/"
+license: BSD-3-Clause
+keywords:
+  - neuroscience
+  - EEG
+  - MEG
+  - LFP
+  - directed connectivity
+  - Granger causality
+abstract: >-
+  dirconn estimates predictive directed functional connectivity (Granger causality, DTF, PDC and
+  renormalised PDC, controls for zero-delay mixing, multitaper Granger causality, PCMCI, transfer
+  entropy, time-varying measures) from EEG, MEG, iEEG and LFP at sensor and region level. Every
+  result carries its provenance and an assumption checklist, and every method is validated on
+  simulated networks with a known truth, including simulations through realistic head models.

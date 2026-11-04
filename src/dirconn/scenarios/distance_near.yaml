@@ -1,0 +1,17 @@
+version: 1
+name: distance_near
+description: >-
+  A -> B with coupling 0.4 and a delay of 10 ms between two regions of the same hemisphere
+  whose centres are 34 mm apart: the near tercile of the distances between regions of that
+  hemisphere with visibility 0.9 to 1.5 (scripts/pick_regions.py distance). Only the distance
+  differs between the three distance scenarios; the leakage between A and B falls with it.
+network:
+  nodes:
+    - name: parsorbitalis-rh
+    - name: temporalpole-rh
+  edges:
+    - {source: parsorbitalis-rh, target: temporalpole-rh, strength: 0.4, delay_ms: 10.0}
+dynamics:
+  nodes:
+    parsorbitalis-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    temporalpole-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}

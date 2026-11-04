@@ -1,0 +1,21 @@
+version: 1
+name: size
+description: >-
+  A network of ten regions: the random sparse graph random_10 (15 edges, two feedback edges, delays
+  of 1 to 3 samples), against the five-region graph of the full protocol. EEG, partly coherent
+  sources, the grid of full in SNR and length, the five estimators at BIC order (the order setting
+  is compared in full and order), ten seeds. The graph of twenty regions is not run: a task costs
+  several times as much.
+scenarios: [random_10]
+estimators:
+  - gc/bic
+  - gc_pairwise/bic
+  - dtf/bic
+  - pdc/bic
+  - gpdc/bic
+n_seeds: 10
+snr_db: [0, -5, -10]
+duration_s: [30, 60]
+source_model: [partial]
+modality: [eeg]
+budget_hours: 0.18

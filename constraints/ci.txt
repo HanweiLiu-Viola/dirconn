@@ -1,0 +1,6 @@
+# Intentionally empty: CI pins nothing.
+#
+# The CI matrix covers Python 3.10 to 3.13 and whatever numpy, scipy and mne each of them installs,
+# on purpose: it is there to find the problems that depend on a version (for example a type stub
+# that differs between numpy releases). An exact pin would hide them. The numbers that are
+# published are another matter: they use constraints/benchmark.txt.

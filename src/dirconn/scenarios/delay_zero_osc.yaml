@@ -1,0 +1,17 @@
+version: 1
+name: delay_zero_osc
+description: >-
+  A -> B with coupling 0.4 and a delay of no delay at all, between two oscillators; C is unconnected and gives the
+  null edges. Influence through the sources' own autocorrelation can still be found at zero delay; the memoryless version of this limit is in the validation scenarios of dirconn.validation.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.4, delay_ms: 0.0}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}

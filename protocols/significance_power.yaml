@@ -1,0 +1,25 @@
+version: 1
+name: significance_power
+description: >-
+  The significance study with more power (an add-on run after the published ten protocols). Eight
+  worlds of the chain, 40 datasets each, 30 s: the coupling 0 (no edge), 0.1, 0.2 and 0.4, each with
+  observation noise at 10 dB and nearly without (40 dB). Every dataset gets the analytic F test of
+  Granger causality and a surrogate test with 99 phase-randomised surrogates, so that the smallest
+  p-value is 0.01 and two true edges among six cells can pass the Benjamini-Hochberg correction (with
+  39 surrogates they could not: docs/benchmark_conclusions.md, item 16). The statistic is conditional
+  Granger causality at the fixed order of 0.2 s, as in `significance`. A BIC arm that would have varied
+  the order setting alone was dropped to stay near the budget of an add-on: the gate estimated 1.3 h
+  for 50 datasets with both settings and 0.22 h for this grid (an earlier gate estimate for the first
+  study was 0.06 h against 0.01 h measured). The p-value matrices are kept, so levels and corrections
+  are applied afterwards (dirconn.significance_study).
+kind: significance
+scenarios: [chain]
+coupling: [0, 0.1, 0.2, 0.4]
+snr_db: [10, 40]
+duration_s: [30]
+estimators: [gc/fixed]
+tests: [analytic, "surrogate:phase_randomize"]
+n_seeds: 40
+settings:
+  n_surrogates: 99
+budget_hours: 0.1

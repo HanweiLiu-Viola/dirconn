@@ -1,0 +1,30 @@
+version: 1
+name: full
+description: >-
+  The main sweep of the benchmark: how each estimator's recovery changes with SNR and data length
+  over five topologies (a chain, a collider, a common driver, a weak feedback loop and a random
+  network of 5 regions), EEG, partly coherent sources, ten seeds per grid point. The grid runs from
+  an easy anchor (0 dB, 60 s) to a hard end (-10 dB, 30 s) on purpose: on the chain it must reach a
+  point where even the best estimator is imperfect, or the saturation guard fails the run. It has
+  one hour of the two-hour budget of all protocols together (docs/benchmark.md); gradiometers, focal
+  sources, the 10- and 20-region networks, the coupling axis, the order and inverse comparisons and
+  the leakage and significance studies are in the quick tier and in separate protocols.
+scenarios: [chain, collider, common_driver, feedback_loop, random_5]
+estimators:
+  - gc/bic
+  - gc/fixed
+  - gc_pairwise/bic
+  - gc_pairwise/fixed
+  - dtf/bic
+  - dtf/fixed
+  - pdc/bic
+  - pdc/fixed
+  - gpdc/bic
+  - gpdc/fixed
+n_seeds: 10
+snr_db: [0, -5, -10]
+duration_s: [30, 60]
+source_model: [partial]
+modality: [eeg]
+saturation_guard: true
+budget_hours: 0.42

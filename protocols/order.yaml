@@ -1,0 +1,20 @@
+version: 1
+name: order
+description: >-
+  The order slice: is a long fixed order (0.2 s) better than BIC, and for which topologies? Narrow
+  band coupling and long delays are where a short order can reverse the direction,
+  so those scenarios are in. Conditional Granger, DTF and gPDC at both order settings.
+scenarios: [chain, delay_5, band_alpha, band_beta, feedback_loop]
+estimators:
+  - gc/bic
+  - gc/fixed
+  - dtf/bic
+  - dtf/fixed
+  - gpdc/bic
+  - gpdc/fixed
+n_seeds: 10
+snr_db: [10, 0]
+duration_s: [60, 240]
+source_model: [partial]
+modality: [eeg]
+budget_hours: 0.34

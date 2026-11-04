@@ -1,0 +1,21 @@
+version: 1
+name: noise
+description: >-
+  Real noise against simulated noise on the chain, MEG only (the sample dataset has an empty-room
+  recording for MEG and none for EEG). Three arms per seed with the same sources: the simulated
+  noise (1/f background sources plus white noise), white noise only without a background, and the
+  empty-room recording without a background, all at -10 dB, the point where the chain stops being
+  perfect. The white arm separates the effect of a real noise from that of having no
+  brain background. Magnetometers (noise shared between the sensors, slow) and gradiometers
+  (nearly independent) are both in. The empty-room windows are the three consecutive 30 s blocks of
+  the 110 s recording, used by seed index modulo 3: nine seeds are three source realisations per
+  window, so the noise has three independent samples, not nine.
+scenarios: [chain]
+noise: [simulated, white, empty_room]
+estimators: [gc/bic, gpdc/bic]
+n_seeds: 9
+snr_db: [-10]
+duration_s: [30]
+source_model: [partial]
+modality: [mag, grad]
+budget_hours: 0.05

@@ -1,0 +1,18 @@
+version: 1
+name: band_theta
+description: >-
+  A -> B acting only in the theta band [4.0, 8.0] Hz (the limits are those of dirconn.bands.BANDS), coupling 0.4, delay
+  20 ms; both oscillate at 6 Hz, in the middle of the band. C is unconnected and
+  gives the null edges. The truth is 1 only inside the band.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.4, delay_ms: 20.0, band: [4.0, 8.0]}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 6.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 6.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}

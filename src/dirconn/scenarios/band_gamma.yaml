@@ -1,0 +1,18 @@
+version: 1
+name: band_gamma
+description: >-
+  A -> B acting only in the gamma band [30.0, 45.0] Hz (the upper limit is 45 Hz because the named gamma band ends at 80 Hz, above the Nyquist frequency of 100 Hz), coupling 0.4, delay
+  20 ms; both oscillate at 38 Hz, in the middle of the band. C is unconnected and
+  gives the null edges. The truth is 1 only inside the band.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.4, delay_ms: 20.0, band: [30.0, 45.0]}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 38.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 38.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}

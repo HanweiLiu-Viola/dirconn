@@ -1,0 +1,28 @@
+version: 1
+name: stimulation_artifact
+description: >-
+  The chain A -> B -> C of the baseline, plus a stimulation artifact at sensor level: every
+  0.5 s the same 30 Hz damped sine (40 ms decay) is added to the 6 sensors where B is strongest,
+  with B's sensor pattern, at the power of the signal there (amplitude 1). It looks like a
+  shared input to the sensors that see B and is the same in every trial. It does not exist at
+  region level, so only the sensor and source stages are affected.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.4, delay_ms: 10.0}
+    - {source: cuneus-rh, target: transversetemporal-lh, strength: 0.4, delay_ms: 10.0}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}
+artifact:
+  rate_hz: 2.0
+  freq_hz: 30.0
+  decay_ms: 40.0
+  amplitude: 1.0
+  anchor: cuneus-rh
+  n_sensors: 6

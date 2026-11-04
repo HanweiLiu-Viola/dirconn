@@ -1,0 +1,26 @@
+version: 1
+name: asymptotic_calibration
+description: >-
+  Calibration of the asymptotic tests of PDC and rPDC. Eight
+  worlds of the chain, 25 datasets each: no edge (coupling 0) and the chain (coupling 0.4), with
+  observation noise at 10 dB and nearly without (40 dB), 30 s and 120 s. Estimators PDC and rPDC at
+  three orders: the fixed 0.2 s of the significance study (20 samples, the order that is judged), two
+  samples (too low: the order of the chain without observation noise; a limitation, not judged) and
+  BIC (does the mild misfit of a selected order under observation noise make the tests liberal?).
+  Every dataset gets the asymptotic test of the estimator next to 39
+  phase-randomised surrogates. The p-values are kept per pair and frequency, on a grid of 1 Hz from
+  0 to 50 Hz, so levels, bands and corrections are applied afterwards
+  (dirconn.significance_study.frequency_report).
+kind: significance
+scenarios: [chain]
+coupling: [0, 0.4]
+snr_db: [10, 40]
+duration_s: [30, 120]
+estimators: [pdc/fixed, pdc/low, pdc/bic, rpdc/fixed, rpdc/low, rpdc/bic]
+tests: [analytic, "surrogate:phase_randomize"]
+n_seeds: 25
+settings:
+  n_surrogates: 39
+  n_freqs: 51
+  low_order: 2
+budget_hours: 1.5

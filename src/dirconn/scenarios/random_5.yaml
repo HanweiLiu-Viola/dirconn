@@ -1,0 +1,101 @@
+version: 1
+name: random_5
+description: A random sparse network of 5 regions with 8 edges (2 against the hidden
+  order, and the graph has a cycle), strengths 0.2 to 0.4, delays 1 to 3 samples,
+  oscillators of 8 to 30 Hz. Drawn with seed 1005; 0 rejected (spectral radius 0.95
+  or more) and 3 redrawn (no cycle) before this one, whose spectral radius is 0.899.
+network:
+  nodes:
+  - name: lingual-rh
+    kind: cortical
+    region: lingual
+    hemisphere: rh
+    atlas: DK
+  - name: superiortemporal-rh
+    kind: cortical
+    region: superiortemporal
+    hemisphere: rh
+    atlas: DK
+  - name: transversetemporal-lh
+    kind: cortical
+    region: transversetemporal
+    hemisphere: lh
+    atlas: DK
+  - name: parahippocampal-lh
+    kind: cortical
+    region: parahippocampal
+    hemisphere: lh
+    atlas: DK
+  - name: caudalmiddlefrontal-lh
+    kind: cortical
+    region: caudalmiddlefrontal
+    hemisphere: lh
+    atlas: DK
+  edges:
+  - source: superiortemporal-rh
+    target: caudalmiddlefrontal-lh
+    strength: 0.341
+    delay_ms: 30.0
+  - source: caudalmiddlefrontal-lh
+    target: transversetemporal-lh
+    strength: 0.293
+    delay_ms: 30.0
+  - source: lingual-rh
+    target: caudalmiddlefrontal-lh
+    strength: 0.266
+    delay_ms: 10.0
+  - source: superiortemporal-rh
+    target: transversetemporal-lh
+    strength: 0.232
+    delay_ms: 20.0
+  - source: parahippocampal-lh
+    target: lingual-rh
+    strength: 0.331
+    delay_ms: 10.0
+  - source: superiortemporal-rh
+    target: parahippocampal-lh
+    strength: 0.378
+    delay_ms: 20.0
+  - source: lingual-rh
+    target: superiortemporal-rh
+    strength: 0.384
+    delay_ms: 20.0
+  - source: lingual-rh
+    target: transversetemporal-lh
+    strength: 0.211
+    delay_ms: 30.0
+dynamics:
+  nodes:
+    lingual-rh:
+      kind: oscillator
+      freq_hz: 13.7
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    superiortemporal-rh:
+      kind: oscillator
+      freq_hz: 23.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    transversetemporal-lh:
+      kind: oscillator
+      freq_hz: 11.0
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parahippocampal-lh:
+      kind: oscillator
+      freq_hz: 28.4
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    caudalmiddlefrontal-lh:
+      kind: oscillator
+      freq_hz: 9.4
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+defaults:
+  sfreq: 100.0
+  snr_db: 10.0
+  duration_s: 120.0
+background:
+  n_sources: 10
+  fraction: 0.5
+hidden: []

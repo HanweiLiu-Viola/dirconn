@@ -1,0 +1,339 @@
+version: 1
+name: random_20
+description: A random sparse network of 20 regions with 30 edges (2 against the hidden
+  order, and the graph has a cycle), strengths 0.2 to 0.4, delays 1 to 3 samples,
+  oscillators of 8 to 30 Hz. Drawn with seed 1020; 0 rejected (spectral radius 0.95
+  or more) and 0 redrawn (no cycle) before this one, whose spectral radius is 0.920.
+network:
+  nodes:
+  - name: fusiform-lh
+    kind: cortical
+    region: fusiform
+    hemisphere: lh
+    atlas: DK
+  - name: postcentral-rh
+    kind: cortical
+    region: postcentral
+    hemisphere: rh
+    atlas: DK
+  - name: pericalcarine-rh
+    kind: cortical
+    region: pericalcarine
+    hemisphere: rh
+    atlas: DK
+  - name: parahippocampal-rh
+    kind: cortical
+    region: parahippocampal
+    hemisphere: rh
+    atlas: DK
+  - name: medialorbitofrontal-rh
+    kind: cortical
+    region: medialorbitofrontal
+    hemisphere: rh
+    atlas: DK
+  - name: lingual-lh
+    kind: cortical
+    region: lingual
+    hemisphere: lh
+    atlas: DK
+  - name: parahippocampal-lh
+    kind: cortical
+    region: parahippocampal
+    hemisphere: lh
+    atlas: DK
+  - name: caudalanteriorcingulate-lh
+    kind: cortical
+    region: caudalanteriorcingulate
+    hemisphere: lh
+    atlas: DK
+  - name: lingual-rh
+    kind: cortical
+    region: lingual
+    hemisphere: rh
+    atlas: DK
+  - name: caudalanteriorcingulate-rh
+    kind: cortical
+    region: caudalanteriorcingulate
+    hemisphere: rh
+    atlas: DK
+  - name: posteriorcingulate-lh
+    kind: cortical
+    region: posteriorcingulate
+    hemisphere: lh
+    atlas: DK
+  - name: precuneus-lh
+    kind: cortical
+    region: precuneus
+    hemisphere: lh
+    atlas: DK
+  - name: superiorfrontal-lh
+    kind: cortical
+    region: superiorfrontal
+    hemisphere: lh
+    atlas: DK
+  - name: inferiortemporal-lh
+    kind: cortical
+    region: inferiortemporal
+    hemisphere: lh
+    atlas: DK
+  - name: parsorbitalis-lh
+    kind: cortical
+    region: parsorbitalis
+    hemisphere: lh
+    atlas: DK
+  - name: rostralanteriorcingulate-rh
+    kind: cortical
+    region: rostralanteriorcingulate
+    hemisphere: rh
+    atlas: DK
+  - name: middletemporal-lh
+    kind: cortical
+    region: middletemporal
+    hemisphere: lh
+    atlas: DK
+  - name: parstriangularis-lh
+    kind: cortical
+    region: parstriangularis
+    hemisphere: lh
+    atlas: DK
+  - name: supramarginal-rh
+    kind: cortical
+    region: supramarginal
+    hemisphere: rh
+    atlas: DK
+  - name: lateralorbitofrontal-lh
+    kind: cortical
+    region: lateralorbitofrontal
+    hemisphere: lh
+    atlas: DK
+  edges:
+  - source: posteriorcingulate-lh
+    target: precuneus-lh
+    strength: 0.359
+    delay_ms: 10.0
+  - source: pericalcarine-rh
+    target: supramarginal-rh
+    strength: 0.373
+    delay_ms: 30.0
+  - source: precuneus-lh
+    target: superiorfrontal-lh
+    strength: 0.37
+    delay_ms: 30.0
+  - source: superiorfrontal-lh
+    target: rostralanteriorcingulate-rh
+    strength: 0.373
+    delay_ms: 10.0
+  - source: caudalanteriorcingulate-rh
+    target: supramarginal-rh
+    strength: 0.328
+    delay_ms: 10.0
+  - source: caudalanteriorcingulate-rh
+    target: precuneus-lh
+    strength: 0.217
+    delay_ms: 10.0
+  - source: pericalcarine-rh
+    target: caudalanteriorcingulate-lh
+    strength: 0.328
+    delay_ms: 10.0
+  - source: posteriorcingulate-lh
+    target: parstriangularis-lh
+    strength: 0.3
+    delay_ms: 30.0
+  - source: parahippocampal-lh
+    target: lingual-rh
+    strength: 0.266
+    delay_ms: 20.0
+  - source: lingual-rh
+    target: caudalanteriorcingulate-rh
+    strength: 0.218
+    delay_ms: 30.0
+  - source: postcentral-rh
+    target: superiorfrontal-lh
+    strength: 0.217
+    delay_ms: 30.0
+  - source: supramarginal-rh
+    target: lateralorbitofrontal-lh
+    strength: 0.245
+    delay_ms: 10.0
+  - source: fusiform-lh
+    target: posteriorcingulate-lh
+    strength: 0.383
+    delay_ms: 10.0
+  - source: parahippocampal-rh
+    target: middletemporal-lh
+    strength: 0.249
+    delay_ms: 10.0
+  - source: fusiform-lh
+    target: rostralanteriorcingulate-rh
+    strength: 0.278
+    delay_ms: 10.0
+  - source: caudalanteriorcingulate-rh
+    target: lateralorbitofrontal-lh
+    strength: 0.323
+    delay_ms: 10.0
+  - source: parahippocampal-rh
+    target: caudalanteriorcingulate-lh
+    strength: 0.394
+    delay_ms: 10.0
+  - source: precuneus-lh
+    target: lateralorbitofrontal-lh
+    strength: 0.391
+    delay_ms: 20.0
+  - source: pericalcarine-rh
+    target: rostralanteriorcingulate-rh
+    strength: 0.322
+    delay_ms: 10.0
+  - source: medialorbitofrontal-rh
+    target: middletemporal-lh
+    strength: 0.261
+    delay_ms: 10.0
+  - source: lingual-rh
+    target: supramarginal-rh
+    strength: 0.328
+    delay_ms: 30.0
+  - source: caudalanteriorcingulate-lh
+    target: lateralorbitofrontal-lh
+    strength: 0.225
+    delay_ms: 30.0
+  - source: precuneus-lh
+    target: parahippocampal-lh
+    strength: 0.301
+    delay_ms: 10.0
+  - source: fusiform-lh
+    target: lingual-lh
+    strength: 0.252
+    delay_ms: 20.0
+  - source: lingual-lh
+    target: caudalanteriorcingulate-lh
+    strength: 0.269
+    delay_ms: 10.0
+  - source: middletemporal-lh
+    target: parstriangularis-lh
+    strength: 0.318
+    delay_ms: 30.0
+  - source: parahippocampal-rh
+    target: superiorfrontal-lh
+    strength: 0.322
+    delay_ms: 10.0
+  - source: lingual-lh
+    target: parahippocampal-rh
+    strength: 0.301
+    delay_ms: 30.0
+  - source: parahippocampal-lh
+    target: middletemporal-lh
+    strength: 0.26
+    delay_ms: 10.0
+  - source: parahippocampal-rh
+    target: posteriorcingulate-lh
+    strength: 0.341
+    delay_ms: 30.0
+dynamics:
+  nodes:
+    fusiform-lh:
+      kind: oscillator
+      freq_hz: 29.1
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    postcentral-rh:
+      kind: oscillator
+      freq_hz: 15.5
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    pericalcarine-rh:
+      kind: oscillator
+      freq_hz: 13.7
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parahippocampal-rh:
+      kind: oscillator
+      freq_hz: 18.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    medialorbitofrontal-rh:
+      kind: oscillator
+      freq_hz: 18.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    lingual-lh:
+      kind: oscillator
+      freq_hz: 29.8
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parahippocampal-lh:
+      kind: oscillator
+      freq_hz: 13.6
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    caudalanteriorcingulate-lh:
+      kind: oscillator
+      freq_hz: 22.0
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    lingual-rh:
+      kind: oscillator
+      freq_hz: 20.1
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    caudalanteriorcingulate-rh:
+      kind: oscillator
+      freq_hz: 14.9
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    posteriorcingulate-lh:
+      kind: oscillator
+      freq_hz: 11.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    precuneus-lh:
+      kind: oscillator
+      freq_hz: 27.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    superiorfrontal-lh:
+      kind: oscillator
+      freq_hz: 23.7
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    inferiortemporal-lh:
+      kind: oscillator
+      freq_hz: 10.1
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parsorbitalis-lh:
+      kind: oscillator
+      freq_hz: 25.6
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    rostralanteriorcingulate-rh:
+      kind: oscillator
+      freq_hz: 11.7
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    middletemporal-lh:
+      kind: oscillator
+      freq_hz: 21.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parstriangularis-lh:
+      kind: oscillator
+      freq_hz: 12.6
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    supramarginal-rh:
+      kind: oscillator
+      freq_hz: 20.9
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    lateralorbitofrontal-lh:
+      kind: oscillator
+      freq_hz: 16.4
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+defaults:
+  sfreq: 100.0
+  snr_db: 10.0
+  duration_s: 120.0
+background:
+  n_sources: 10
+  fraction: 0.5
+hidden: []

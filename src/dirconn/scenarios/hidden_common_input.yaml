@@ -1,0 +1,24 @@
+version: 1
+name: hidden_common_input
+description: >-
+  An unobserved region H drives A (10 ms) and B (20 ms) with coupling 0.5, and A -> C has
+  coupling 0.4; the methods see only A, B, C. Limit: causal sufficiency is violated, so an
+  edge between A and B appears although there is none. H is the fourth region of the pool,
+  A, B, C the first three.
+network:
+  nodes:
+    - name: rostralanteriorcingulate-lh
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+  edges:
+    - {source: rostralanteriorcingulate-lh, target: transversetemporal-rh, strength: 0.5, delay_ms: 10.0}
+    - {source: rostralanteriorcingulate-lh, target: cuneus-rh, strength: 0.5, delay_ms: 20.0}
+    - {source: transversetemporal-rh, target: transversetemporal-lh, strength: 0.4, delay_ms: 10.0}
+dynamics:
+  nodes:
+    rostralanteriorcingulate-lh: {kind: oscillator, freq_hz: 12.0, bandwidth_hz: 4.0}
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}
+hidden: [rostralanteriorcingulate-lh]

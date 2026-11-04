@@ -1,0 +1,179 @@
+version: 1
+name: random_10
+description: A random sparse network of 10 regions with 15 edges (2 against the hidden
+  order, and the graph has a cycle), strengths 0.2 to 0.4, delays 1 to 3 samples,
+  oscillators of 8 to 30 Hz. Drawn with seed 1010; 4 rejected (spectral radius 0.95
+  or more) and 3 redrawn (no cycle) before this one, whose spectral radius is 0.892.
+network:
+  nodes:
+  - name: caudalmiddlefrontal-lh
+    kind: cortical
+    region: caudalmiddlefrontal
+    hemisphere: lh
+    atlas: DK
+  - name: paracentral-lh
+    kind: cortical
+    region: paracentral
+    hemisphere: lh
+    atlas: DK
+  - name: parsorbitalis-rh
+    kind: cortical
+    region: parsorbitalis
+    hemisphere: rh
+    atlas: DK
+  - name: transversetemporal-rh
+    kind: cortical
+    region: transversetemporal
+    hemisphere: rh
+    atlas: DK
+  - name: superiorfrontal-rh
+    kind: cortical
+    region: superiorfrontal
+    hemisphere: rh
+    atlas: DK
+  - name: rostralanteriorcingulate-rh
+    kind: cortical
+    region: rostralanteriorcingulate
+    hemisphere: rh
+    atlas: DK
+  - name: parstriangularis-lh
+    kind: cortical
+    region: parstriangularis
+    hemisphere: lh
+    atlas: DK
+  - name: temporalpole-rh
+    kind: cortical
+    region: temporalpole
+    hemisphere: rh
+    atlas: DK
+  - name: cuneus-lh
+    kind: cortical
+    region: cuneus
+    hemisphere: lh
+    atlas: DK
+  - name: bankssts-rh
+    kind: cortical
+    region: bankssts
+    hemisphere: rh
+    atlas: DK
+  edges:
+  - source: parstriangularis-lh
+    target: cuneus-lh
+    strength: 0.211
+    delay_ms: 30.0
+  - source: temporalpole-rh
+    target: bankssts-rh
+    strength: 0.306
+    delay_ms: 10.0
+  - source: paracentral-lh
+    target: rostralanteriorcingulate-rh
+    strength: 0.338
+    delay_ms: 10.0
+  - source: superiorfrontal-rh
+    target: transversetemporal-rh
+    strength: 0.205
+    delay_ms: 30.0
+  - source: rostralanteriorcingulate-rh
+    target: cuneus-lh
+    strength: 0.395
+    delay_ms: 20.0
+  - source: transversetemporal-rh
+    target: parstriangularis-lh
+    strength: 0.361
+    delay_ms: 30.0
+  - source: paracentral-lh
+    target: bankssts-rh
+    strength: 0.396
+    delay_ms: 30.0
+  - source: paracentral-lh
+    target: parstriangularis-lh
+    strength: 0.287
+    delay_ms: 30.0
+  - source: paracentral-lh
+    target: transversetemporal-rh
+    strength: 0.25
+    delay_ms: 30.0
+  - source: superiorfrontal-rh
+    target: bankssts-rh
+    strength: 0.212
+    delay_ms: 30.0
+  - source: rostralanteriorcingulate-rh
+    target: caudalmiddlefrontal-lh
+    strength: 0.229
+    delay_ms: 20.0
+  - source: transversetemporal-rh
+    target: rostralanteriorcingulate-rh
+    strength: 0.385
+    delay_ms: 30.0
+  - source: caudalmiddlefrontal-lh
+    target: transversetemporal-rh
+    strength: 0.226
+    delay_ms: 10.0
+  - source: transversetemporal-rh
+    target: bankssts-rh
+    strength: 0.365
+    delay_ms: 10.0
+  - source: superiorfrontal-rh
+    target: temporalpole-rh
+    strength: 0.273
+    delay_ms: 20.0
+dynamics:
+  nodes:
+    caudalmiddlefrontal-lh:
+      kind: oscillator
+      freq_hz: 18.8
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    paracentral-lh:
+      kind: oscillator
+      freq_hz: 9.6
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parsorbitalis-rh:
+      kind: oscillator
+      freq_hz: 23.1
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    transversetemporal-rh:
+      kind: oscillator
+      freq_hz: 26.7
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    superiorfrontal-rh:
+      kind: oscillator
+      freq_hz: 10.4
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    rostralanteriorcingulate-rh:
+      kind: oscillator
+      freq_hz: 10.4
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    parstriangularis-lh:
+      kind: oscillator
+      freq_hz: 18.1
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    temporalpole-rh:
+      kind: oscillator
+      freq_hz: 29.5
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    cuneus-lh:
+      kind: oscillator
+      freq_hz: 11.3
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+    bankssts-rh:
+      kind: oscillator
+      freq_hz: 17.2
+      bandwidth_hz: 4.0
+      noise_std: 1.0
+defaults:
+  sfreq: 100.0
+  snr_db: 10.0
+  duration_s: 120.0
+background:
+  n_sources: 10
+  fraction: 0.5
+hidden: []

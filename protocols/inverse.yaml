@@ -1,0 +1,15 @@
+version: 1
+name: inverse
+description: >-
+  The inverse-method slice: minimum norm (the default), LCMV, dSPM and eLORETA at stage 3, on the
+  chain and a random network of 5 regions. eLORETA is slow, so few seeds and one estimator pair.
+  Stages 1 and 2 do not depend on the inverse method and are repeated for every method.
+scenarios: [chain, random_5]
+estimators: [gc/bic, gpdc/bic]
+inverse: [mne, lcmv, dspm, eloreta]
+n_seeds: 4
+snr_db: [10, 0]
+duration_s: [120]
+source_model: [partial]
+modality: [eeg, grad]
+budget_hours: 0.22

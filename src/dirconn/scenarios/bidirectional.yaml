@@ -1,0 +1,22 @@
+version: 1
+name: bidirectional
+description: >-
+  A <-> B with different delays (10 and 20 ms) and a weak coupling of 0.05, plus C -> D with
+  0.4 and 10 ms. A feedback loop of resonant regions becomes unstable at much lower coupling
+  than a one-way edge, so the loop is weak. C -> D is the control.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+    - name: rostralanteriorcingulate-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.05, delay_ms: 10.0}
+    - {source: cuneus-rh, target: transversetemporal-rh, strength: 0.05, delay_ms: 20.0}
+    - {source: transversetemporal-lh, target: rostralanteriorcingulate-lh, strength: 0.4, delay_ms: 10.0}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}
+    rostralanteriorcingulate-lh: {kind: oscillator, freq_hz: 12.0, bandwidth_hz: 4.0}

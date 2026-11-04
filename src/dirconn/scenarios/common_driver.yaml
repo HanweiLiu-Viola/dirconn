@@ -1,0 +1,20 @@
+version: 1
+name: common_driver
+description: >-
+  A -> B (10 ms) and A -> C (20 ms), coupling 0.4; D is unconnected. Pairwise methods may
+  report B <-> C, which only share a driver. A, B, C, D are the four regions of the pool.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+    - name: rostralanteriorcingulate-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.4, delay_ms: 10.0}
+    - {source: transversetemporal-rh, target: transversetemporal-lh, strength: 0.4, delay_ms: 20.0}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}
+    rostralanteriorcingulate-lh: {kind: oscillator, freq_hz: 12.0, bandwidth_hz: 4.0}

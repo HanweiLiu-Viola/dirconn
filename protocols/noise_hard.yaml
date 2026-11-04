@@ -1,0 +1,19 @@
+version: 1
+name: noise_hard
+description: >-
+  The noise study at harder SNR (an add-on run after the published ten protocols). Same design as
+  `noise`: the chain, MEG only, three arms per seed with the same sources (the simulated noise, white
+  noise only, and the empty-room recording of the sample dataset), magnetometers and gradiometers, nine
+  seeds that are three source realisations on each of three noise windows. Only the SNR differs: -15 and
+  -20 dB instead of -10 dB, where most cells of `noise` were at 1.000 in every arm. It
+  shows whether the empty-room noise matters beyond the magnetometer sensor level once the chain is no
+  longer recovered perfectly; it does not separate the causes of a difference.
+scenarios: [chain]
+noise: [simulated, white, empty_room]
+estimators: [gc/bic, gpdc/bic]
+n_seeds: 9
+snr_db: [-15, -20]
+duration_s: [30]
+source_model: [partial]
+modality: [mag, grad]
+budget_hours: 0.1

@@ -1,0 +1,20 @@
+version: 1
+name: extent
+description: >-
+  How the recovery changes with the extent of the sources: a focal source (one vertex per node)
+  and a patch (every vertex of the region carries the node), against the partly coherent default of
+  the full protocol. A chain and a collider, EEG, the grid of full in SNR and length, the five
+  estimators at BIC order (the order setting is compared in full and order), ten seeds.
+scenarios: [chain, collider]
+estimators:
+  - gc/bic
+  - gc_pairwise/bic
+  - dtf/bic
+  - pdc/bic
+  - gpdc/bic
+n_seeds: 10
+snr_db: [0, -5, -10]
+duration_s: [30, 60]
+source_model: [focal, patch]
+modality: [eeg]
+budget_hours: 0.25

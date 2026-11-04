@@ -1,0 +1,24 @@
+version: 1
+name: leakage_adjacent
+description: >-
+  The neighbour: Z -> X is the only edge and Y is the neighbour into whose series X leaks most
+  (cuneus-lh and pericalcarine-lh, 10 mm apart). Every edge into Y found at source level is
+  leakage; at region level there is none. One estimator of each kind at BIC order, EEG and
+  gradiometers, SNR 10 dB, ten seeds; the score matrices are kept so that the false edges can be
+  read as scores relative to the true edge (dirconn.leakage.adjacent_report). Cut to fit its share
+  of the budget: the gate estimated 0.15 h for all ten estimator labels and SNR 10 and 0 dB.
+scenarios: [leakage_adjacent]
+estimators:
+  - gc/bic
+  - gc_pairwise/bic
+  - dtf/bic
+  - pdc/bic
+  - gpdc/bic
+n_seeds: 10
+snr_db: [10]
+duration_s: [60]
+source_model: [partial]
+modality: [eeg, grad]
+settings:
+  store_scores: true
+budget_hours: 0.04

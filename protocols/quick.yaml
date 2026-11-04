@@ -1,0 +1,24 @@
+version: 1
+name: quick
+description: >-
+  The daily regression: three simple topologies, two SNRs, one data length, EEG and gradiometers,
+  all five estimators at both order settings, two seeds. Minutes, not hours; local only (CI has no
+  sample data).
+scenarios: [chain, collider, common_driver]
+estimators:
+  - gc/bic
+  - gc/fixed
+  - gc_pairwise/bic
+  - gc_pairwise/fixed
+  - dtf/bic
+  - dtf/fixed
+  - pdc/bic
+  - pdc/fixed
+  - gpdc/bic
+  - gpdc/fixed
+n_seeds: 2
+snr_db: [10, 0]
+duration_s: [60]
+source_model: [partial]
+modality: [eeg, grad]
+budget_hours: 0.2

@@ -1,0 +1,20 @@
+version: 1
+name: leakage_adjacent
+description: >-
+  Z -> X is the only edge (0.4, 10 ms). Y is the neighbour of X into whose series X leaks most:
+  cuneus-lh (X) and pericalcarine-lh (Y) are 10 mm apart and the pair is in the leakiest tenth of
+  all region pairs on EEG and on gradiometers (scripts/pick_regions.py leakage). Z is far from
+  both and leaks little into them. Nothing drives Y, so every edge into Y that an estimator
+  finds at source level (Z -> Y, X -> Y) is leakage; at region level there is none.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-lh
+    - name: pericalcarine-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-lh, strength: 0.4, delay_ms: 10.0}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-lh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    pericalcarine-lh: {kind: oscillator, freq_hz: 12.0, bandwidth_hz: 4.0}

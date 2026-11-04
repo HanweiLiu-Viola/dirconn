@@ -1,0 +1,22 @@
+version: 1
+name: feedback_loop
+description: >-
+  A -> B -> C -> A with a weak coupling of 0.05 and a delay of 10 ms (stronger loops of
+  resonant regions are unstable, findings A7); D is unconnected. Pairwise methods see an
+  edge between every pair of the loop.
+network:
+  nodes:
+    - name: transversetemporal-rh
+    - name: cuneus-rh
+    - name: transversetemporal-lh
+    - name: rostralanteriorcingulate-lh
+  edges:
+    - {source: transversetemporal-rh, target: cuneus-rh, strength: 0.05, delay_ms: 10.0}
+    - {source: cuneus-rh, target: transversetemporal-lh, strength: 0.05, delay_ms: 10.0}
+    - {source: transversetemporal-lh, target: transversetemporal-rh, strength: 0.05, delay_ms: 10.0}
+dynamics:
+  nodes:
+    transversetemporal-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    cuneus-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    transversetemporal-lh: {kind: oscillator, freq_hz: 15.0, bandwidth_hz: 4.0}
+    rostralanteriorcingulate-lh: {kind: oscillator, freq_hz: 12.0, bandwidth_hz: 4.0}

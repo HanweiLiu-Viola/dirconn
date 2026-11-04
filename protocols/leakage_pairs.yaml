@@ -1,0 +1,81 @@
+version: 1
+name: leakage_pairs
+description: 'What leaks between regions: 45 random pairs of regions without any edge, each a two-node
+  network, EEG and gradiometers. Whatever an estimator finds between the series of a pair at source level
+  is leakage (the region level is the control); the score of the false edge x -> y is correlated with
+  the leak of x into the series of y (crosstalk matrix in the results header). Conditional Granger causality
+  and gPDC, BIC order, one seed per pair; 45 pairs because the gate estimated 0.23 h for 150. The regions
+  are those with a visibility of at least 0.5 on all three modalities (scripts/make_leakage_pairs_protocol.py).'
+kind: region_pairs
+pairs:
+  n: 45
+  seed: 14
+  regions:
+  - bankssts-lh
+  - bankssts-rh
+  - caudalanteriorcingulate-lh
+  - caudalanteriorcingulate-rh
+  - caudalmiddlefrontal-lh
+  - cuneus-lh
+  - cuneus-rh
+  - entorhinal-lh
+  - entorhinal-rh
+  - frontalpole-rh
+  - fusiform-lh
+  - fusiform-rh
+  - inferiorparietal-rh
+  - inferiortemporal-lh
+  - isthmuscingulate-lh
+  - isthmuscingulate-rh
+  - lateraloccipital-lh
+  - lateralorbitofrontal-lh
+  - lateralorbitofrontal-rh
+  - lingual-lh
+  - lingual-rh
+  - medialorbitofrontal-lh
+  - medialorbitofrontal-rh
+  - middletemporal-lh
+  - paracentral-lh
+  - paracentral-rh
+  - parahippocampal-lh
+  - parahippocampal-rh
+  - parsorbitalis-lh
+  - parsorbitalis-rh
+  - parstriangularis-lh
+  - parstriangularis-rh
+  - pericalcarine-lh
+  - pericalcarine-rh
+  - postcentral-rh
+  - posteriorcingulate-lh
+  - posteriorcingulate-rh
+  - precentral-lh
+  - precentral-rh
+  - precuneus-lh
+  - precuneus-rh
+  - rostralanteriorcingulate-lh
+  - rostralanteriorcingulate-rh
+  - superiorfrontal-lh
+  - superiorfrontal-rh
+  - superiorparietal-rh
+  - superiortemporal-lh
+  - superiortemporal-rh
+  - supramarginal-rh
+  - temporalpole-rh
+  - transversetemporal-lh
+  - transversetemporal-rh
+estimators:
+- gc/bic
+- gpdc/bic
+n_seeds: 1
+snr_db:
+- 10
+duration_s:
+- 60
+source_model:
+- partial
+modality:
+- eeg
+- grad
+settings:
+  store_scores: true
+budget_hours: 0.06

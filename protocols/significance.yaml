@@ -1,0 +1,21 @@
+version: 1
+name: significance
+description: >-
+  How the tests of dirconn.significance_test behave at region level. Four worlds of the chain, 25
+  datasets each, 30 s: no edge (coupling 0) and the chain (coupling 0.4), each with observation
+  noise at 10 dB and nearly without (40 dB, a control for what the noise does to the tests). Every
+  dataset gets the analytic F test of Granger causality and a surrogate test with 39 phase-randomised
+  surrogates (the smallest p-value is 0.025); the statistic is conditional Granger causality at a
+  fixed order of 0.2 s. The p-value matrices are kept, so levels and corrections are applied
+  afterwards (dirconn.significance_study).
+kind: significance
+scenarios: [chain]
+coupling: [0, 0.4]
+snr_db: [10, 40]
+duration_s: [30]
+estimators: [gc/fixed]
+tests: [analytic, "surrogate:phase_randomize"]
+n_seeds: 25
+settings:
+  n_surrogates: 39
+budget_hours: 0.06

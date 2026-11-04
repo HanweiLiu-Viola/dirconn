@@ -1,0 +1,20 @@
+version: 1
+name: m5_methods
+description: >-
+  The methods beyond the VAR measures on the benchmark's head models (an add-on run after the published ten protocols).
+  Three simple topologies (chain, collider, common driver), one SNR, one data length, EEG and
+  gradiometers, scored at the region, sensor and source stage as every protocol is. Conditional
+  Granger causality with the BIC order is the reference; the others are time-reversed Granger
+  causality, imaginary coherence, the phase slope index, multitaper Granger causality, PCMCI and
+  transfer entropy. Its question is what the controls for zero-delay mixing (TRGC, imcoh, PSI) do
+  where there is mixing, at the sensor and the source stage, which the region-level validation cannot
+  show. The gate measured 50 to 86 s per task on one process and an efficiency of 0.45 on six; with
+  three seeds it estimated 0.14 h; five seeds and a budget of 0.3 h were chosen (2026-10-06).
+scenarios: [chain, collider, common_driver]
+estimators: [gc/bic, trgc/bic, imcoh/mt, psi/mt, mtgc/mt, pcmci/bic, te/bic]
+n_seeds: 5
+snr_db: [0]
+duration_s: [60]
+source_model: [partial]
+modality: [eeg, grad]
+budget_hours: 0.3

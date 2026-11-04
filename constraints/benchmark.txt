@@ -1,0 +1,19 @@
+# Exact versions of the environment the published benchmark results were made in
+# (Python 3.11.16, Windows 11). The numbers of docs/benchmark_results.md depend on them: chaotic
+# simulations, the least-squares solvers and the random generators change between releases.
+#
+#   pip install -e ".[dev,stats,parallel]" -c constraints/benchmark.txt
+#
+# The header of every results file records the versions it was made with; a resume is refused when
+# they differ. Tools that do not touch a number (ruff, mypy, pytest) are not pinned.
+joblib==1.6.0
+mne==1.13.2
+mne-bids==0.20.0
+netcdf4==1.7.4
+numpy==2.4.6
+pandas==3.0.6
+pybv==0.8.1
+pyyaml==6.0.3
+scipy==1.17.1
+statsmodels==0.15.0
+xarray==2026.9.0
