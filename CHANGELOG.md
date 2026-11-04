@@ -21,3 +21,5 @@ All notable changes to dirconn are listed here. The format follows
   models of the MNE `sample` dataset; the benchmark protocols, their saved results and the generated
   report.
 - Sixteen tutorials, the documentation site, and a Docker image of the analysis environment.
+- A workflow that builds the documentation with every tutorial executed and publishes it to
+  GitHub Pages.
