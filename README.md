@@ -33,7 +33,7 @@ Documentation, tutorials and API reference: <https://hanweiliu-viola.github.io/d
 ## Install
 
 ```bash
-pip install dirconn                 # once 0.1.0 is on PyPI
+pip install dirconn
 pip install "dirconn[plot,stats]"   # with plotting and the statsmodels-based tests
 ```
 
