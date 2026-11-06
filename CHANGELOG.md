@@ -6,6 +6,8 @@ All notable changes to dirconn are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-06
+
 ### Added
 
 - First public version. Data structures: `TimeSeries`, `Network`, `Connectivity` with provenance and
@@ -22,4 +24,8 @@ All notable changes to dirconn are listed here. The format follows
   report.
 - Sixteen tutorials, the documentation site, and a Docker image of the analysis environment.
 - A workflow that builds the documentation with every tutorial executed and publishes it to
-  GitHub Pages.
+  GitHub Pages, and a release workflow that publishes to TestPyPI and PyPI with Trusted
+  Publishing.
+
+[Unreleased]: https://github.com/HanweiLiu-Viola/dirconn/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/HanweiLiu-Viola/dirconn/releases/tag/v0.1.0
