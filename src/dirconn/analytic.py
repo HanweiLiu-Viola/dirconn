@@ -108,8 +108,9 @@ def analytic_gc_test(estimator: GC, data: TimeSeries, *, alpha: float = 0.05) ->
     Parameters
     ----------
     estimator : GC
-        Must have ``ridge=0``: with a penalty the models are not ordinary least squares and the
-        F distribution does not apply.
+        Must have ``ridge=0`` and ``method="refit"``: with a penalty the models are not ordinary
+        least squares, and the reduced models of ``method="state_space"`` are not least-squares
+        fits, so the F distribution does not apply.
     data : TimeSeries
         Input data.
     alpha : float
@@ -124,7 +125,8 @@ def analytic_gc_test(estimator: GC, data: TimeSeries, *, alpha: float = 0.05) ->
     TypeError
         If ``estimator`` is not a :class:`~dirconn.GC`.
     ValueError
-        With a ridge penalty, or when the data leave no residual degrees of freedom.
+        With a ridge penalty, ``method="state_space"``, or when the data leave no residual
+        degrees of freedom.
     """
     if not isinstance(estimator, GC):
         raise TypeError(
@@ -135,6 +137,11 @@ def analytic_gc_test(estimator: GC, data: TimeSeries, *, alpha: float = 0.05) ->
         )
     if estimator.ridge != 0.0:
         raise ValueError("The F test needs ordinary least squares: use ridge=0.")
+    if estimator.method != "refit":
+        raise ValueError(
+            "The F test needs the nested least-squares models of method='refit'; for "
+            "method='state_space' use surrogate_test or bootstrap."
+        )
     alpha = check_alpha(alpha)
 
     observed = estimator.fit(data)

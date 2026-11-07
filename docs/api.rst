@@ -49,6 +49,7 @@ Estimators
    PDC
    GPDC
    RPDC
+   SSGC
    ADTF
    TPDC
    WDTF
@@ -75,6 +76,8 @@ Every estimator class has a lower-case shorthand that builds the estimator and f
 
 .. autofunction:: dirconn.rpdc
 
+.. autofunction:: dirconn.ssgc
+
 .. autofunction:: dirconn.adtf
 
 .. autofunction:: dirconn.tpdc
@@ -92,6 +95,19 @@ Every estimator class has a lower-case shorthand that builds the estimator and f
 .. autofunction:: dirconn.pcmci
 
 .. autofunction:: dirconn.te
+
+The state-space form behind ``GC(method="state_space")`` and :class:`~dirconn.SSGC`, for VAR
+coefficients known in advance (for example the truth of a simulation):
+
+.. autosummary::
+   :toctree: generated
+   :nosignatures:
+
+   statespace.var_to_state_space
+   statespace.reduced_model
+   statespace.state_space_gc
+   statespace.spectral_state_space_gc
+   statespace.InnovationsForm
 
 A heuristic that compares any estimator with itself on time-reversed data (not an estimator, not a
 test):

@@ -40,7 +40,7 @@ from dirconn.provenance import AssumptionCheck, AssumptionChecklist, Provenance
 from dirconn.result import Connectivity
 from dirconn.significance import significance_test
 from dirconn.simulation import NodeDynamics, SimulatedData, coupled_nonlinear, simulate
-from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC, dtf, gpdc, pdc, rpdc
+from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC, SSGC, dtf, gpdc, pdc, rpdc, ssgc
 from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
 from dirconn.time_reversal import TRGC, TimeReversalAsymmetry, time_reversal_asymmetry, trgc
 from dirconn.timeseries import TimeSeries
@@ -61,6 +61,7 @@ __all__ = [
     "PDC",
     "PSI",
     "RPDC",
+    "SSGC",
     "TPDC",
     "TRGC",
     "WDTF",
@@ -118,6 +119,7 @@ __all__ = [
     "select_order",
     "significance_test",
     "simulate",
+    "ssgc",
     "surrogate_test",
     "te",
     "time_reversal_asymmetry",
