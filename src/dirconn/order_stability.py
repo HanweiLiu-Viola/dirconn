@@ -98,6 +98,15 @@ def order_stability_check(
     orders = candidate_orders(
         order, n_channels=data.n_channels, n_times=data.n_times, n_trials=data.n_trials
     )
+    if data.has_mask:
+        # the masks select fewer rows than the full grid that candidate_orders assumes
+        from dirconn.mvar import row_mask
+
+        def n_rows(k: int) -> int:
+            rows = row_mask(data.valid, data.predict, k, data.n_times)
+            return int(rows.sum()) if rows is not None else data.n_trials * (data.n_times - k)
+
+        orders = [k for k in orders if k * data.n_channels <= SAMPLING_RATIO_WARN * n_rows(k)]
     if not orders:
         return AssumptionCheck(
             "order_stability",

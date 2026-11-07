@@ -4,7 +4,8 @@ Epoched data are resampled by trial, continuous data by non-overlapping blocks. 
 passed through the estimator's whole procedure, and the bands are plain percentile intervals of
 the resampled magnitudes. A percentile band describes the sampling variability of the estimate
 around *its own* value; it is not corrected for bias, so for a positively biased measure such as
-Granger causality in short data it can sit entirely above the true value. Percentile bands
+Granger causality in short data it can sit entirely above the true value. The ``valid`` and
+``predict`` masks of the data travel with the trials or blocks. Percentile bands
 are also slightly too narrow in small samples: a nominal 90% band over 30 trials covered the
 true value 86% of the time in the calibration test (tests/test_bootstrap.py).
 """
@@ -162,7 +163,7 @@ def bootstrap(
         raise ValueError(f"ci must lie strictly between 0 and 1, got {ci}.") from None
     reducer = make_reducer(reduce)
 
-    units, resampling = _units(data, block_size)
+    units, valid, predict, resampling = _units(data, block_size)
     n_units = units.shape[0]
     units_check = _units_check(resampling)
 
@@ -176,7 +177,15 @@ def bootstrap(
     light = without_data_checks(estimator)  # the model checks belong to the fit on the data
     for i in range(n_boot):
         index = controller.child(i).integers(0, n_units, size=n_units)
-        resample = TimeSeries(units[index], data.sfreq, data.channels, "epoched", data.tmin)
+        resample = TimeSeries(
+            units[index],
+            data.sfreq,
+            data.channels,
+            "epoched",
+            data.tmin,
+            valid=None if valid is None else valid[index],
+            predict=None if predict is None else predict[index],
+        )
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             result = reducer(light.fit(resample))
@@ -226,8 +235,10 @@ def bootstrap(
     )
 
 
-def _units(data: TimeSeries, block_size: int | None) -> tuple[np.ndarray, dict[str, Any]]:
-    """Return the resampling units as an array ``(n_units, n_channels, n_times)``."""
+def _units(
+    data: TimeSeries, block_size: int | None
+) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None, dict[str, Any]]:
+    """Return the resampling units ``(n_units, n_channels, n_times)`` and their masks."""
     if data.segmentation == "epoched":
         if block_size is not None:
             raise ValueError(
@@ -235,7 +246,7 @@ def _units(data: TimeSeries, block_size: int | None) -> tuple[np.ndarray, dict[s
             )
         if data.n_trials < 2:
             raise ValueError("Bootstrapping by trial needs at least 2 trials.")
-        return data.data, {"unit": "trial", "n_units": data.n_trials}
+        return data.data, data.valid, data.predict, {"unit": "trial", "n_units": data.n_trials}
     if block_size is None:
         raise ValueError(
             "Continuous data need block_size (in samples): the record is resampled in blocks."
@@ -249,12 +260,21 @@ def _units(data: TimeSeries, block_size: int | None) -> tuple[np.ndarray, dict[s
         )
     used = n_blocks * size
     blocks = data.data[0, :, :used].reshape(data.n_channels, n_blocks, size).transpose(1, 0, 2)
-    return blocks, {
-        "unit": "block",
-        "n_units": n_blocks,
-        "block_size": size,
-        "dropped_samples": data.n_times - used,
-    }
+
+    def cut(mask: np.ndarray | None) -> np.ndarray | None:
+        return None if mask is None else mask[0, :used].reshape(n_blocks, size)
+
+    return (
+        blocks,
+        cut(data.valid),
+        cut(data.predict),
+        {
+            "unit": "block",
+            "n_units": n_blocks,
+            "block_size": size,
+            "dropped_samples": data.n_times - used,
+        },
+    )
 
 
 def _units_check(resampling: dict[str, Any]) -> AssumptionCheck:
