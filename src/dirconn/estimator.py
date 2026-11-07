@@ -547,6 +547,7 @@ class Estimator(ABC):
         return checks
 
     def _scale_check(self, data: TimeSeries) -> AssumptionCheck:
+        flat: np.ndarray
         if data.valid is None:
             flat = np.moveaxis(data.data, 1, 0).reshape(data.n_channels, -1)
         else:
