@@ -3,7 +3,15 @@ message: "If you use dirconn, please cite the version you used."
 title: "dirconn: directed functional connectivity for neurophysiology signals"
 type: software
 version: 0.1.0
-date-released: "2026-11-06"
+date-released: "2026-11-07"
+doi: 10.5281/zenodo.24036991
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24036991
+    description: All versions (resolves to the latest)
+  - type: doi
+    value: 10.5281/zenodo.24036992
+    description: Version 0.1.0
 authors:
   - family-names: Liu
     given-names: Hanwei

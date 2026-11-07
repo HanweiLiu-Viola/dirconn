@@ -1,5 +1,8 @@
 # dirconn
 
+[![PyPI](https://img.shields.io/pypi/v/dirconn)](https://pypi.org/project/dirconn/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24036991.svg)](https://doi.org/10.5281/zenodo.24036991)
+
 Directed functional connectivity for neurophysiology signals (EEG, MEG, iEEG, LFP) at sensor and
 region level.
 
@@ -121,7 +124,10 @@ it at run time. The image is checked against the published validation numbers wi
 ## Citing
 
 If you use dirconn, please cite the version you used; the metadata are in
-[CITATION.cff](CITATION.cff), and every release gets a DOI on Zenodo.
+[CITATION.cff](CITATION.cff), and every release gets a DOI on Zenodo. The DOI
+[10.5281/zenodo.24036991](https://doi.org/10.5281/zenodo.24036991) always resolves to the latest
+version; the Zenodo page lists the DOI of each version (0.1.0:
+[10.5281/zenodo.24036992](https://doi.org/10.5281/zenodo.24036992)).
 
 ## Author and licence
 

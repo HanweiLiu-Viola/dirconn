@@ -6,7 +6,7 @@ All notable changes to dirconn are listed here. The format follows
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-11-06
+## [0.1.0] - 2026-11-07
 
 ### Added
 
