@@ -25,8 +25,8 @@ selects its last `k` samples in the continuous record.
 import numpy as np
 from dirconn import GC, TimeSeries
 
-x = np.load("record.npy")                 # (n_channels, n_times), NaN in the gaps
-burst = np.load("burst_mask.npy")         # (n_times,) True inside bursts
+x = np.load("record.npy")  # (n_channels, n_times), NaN in the gaps
+burst = np.load("burst_mask.npy")  # (n_times,) True inside bursts
 data = TimeSeries.from_array(x, 1000.0, nan="mask", predict=burst)
 in_bursts = GC(order=20).fit(data)
 outside = GC(order=20).fit(TimeSeries.from_array(x, 1000.0, nan="mask", predict=~burst))
