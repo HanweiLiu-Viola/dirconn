@@ -21,6 +21,8 @@ Where to start
   and does not show.
 * :doc:`statistics` and :doc:`surrogates`: which test answers which question, and what each
   surrogate keeps.
+* :doc:`masks`: records with gaps, models fitted on selected samples (such as bursts), and event
+  locks with matched controls.
 * :doc:`api`: every public class and function.
 
 Install
@@ -67,6 +69,7 @@ in front of its tables, which are generated from the saved results. :doc:`timeva
 
    statistics
    surrogates
+   masks
    timevarying
    method_validation
    nonstationary_validation

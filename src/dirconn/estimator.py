@@ -187,7 +187,12 @@ def check_switches(estimator: Any, *names: str) -> None:
 
 
 def residual_whiteness_check(
-    residuals: Any, n_trials: int, order: int, *, stacklevel: int = 3
+    residuals: Any,
+    n_trials: int,
+    order: int,
+    *,
+    rows: Any = None,
+    stacklevel: int = 3,
 ) -> AssumptionCheck:
     """Check that the residuals of a VAR fit are white, with a multivariate portmanteau test.
 
@@ -211,6 +216,11 @@ def residual_whiteness_check(
         Number of trials the rows belong to.
     order : int
         Order of the fitted model.
+    rows : ndarray of bool, shape (n_trials, rows_per_trial), optional
+        For a fit on masked data: which rows of the full grid the residuals belong to (see
+        :func:`dirconn.mvar.row_mask`). The autocovariance at lag ``s`` then uses the pairs of
+        residuals that are ``s`` samples apart in the same trial, and ``N - n_trials s`` becomes
+        the number of such pairs. The check is ``"not_checked"`` when some lag has no pair.
     stacklevel : int
         Stack level passed to :func:`warnings.warn`.
 
@@ -222,17 +232,42 @@ def residual_whiteness_check(
     """
     u = np.asarray(residuals, dtype=float)
     n_obs, n_channels = u.shape
-    if n_trials < 1 or n_obs % n_trials:
-        raise ValueError(f"{n_obs} residual rows cannot be split into {n_trials} equal trials.")
-    rows = n_obs // n_trials
     lags = order + WHITENESS_EXTRA_LAGS
-    if rows <= lags:
-        return AssumptionCheck(
-            "residual_whiteness",
-            "not_checked",
-            detail=f"trials of {rows} residuals are too short for the {lags} lags of the test.",
-        )
-    blocks = (u - u.mean(axis=0)).reshape(n_trials, rows, n_channels)
+    if rows is None:
+        if n_trials < 1 or n_obs % n_trials:
+            raise ValueError(f"{n_obs} residual rows cannot be split into {n_trials} equal trials.")
+        per_trial = n_obs // n_trials
+        if per_trial <= lags:
+            return AssumptionCheck(
+                "residual_whiteness",
+                "not_checked",
+                detail=(
+                    f"trials of {per_trial} residuals are too short for the {lags} lags of the "
+                    "test."
+                ),
+            )
+        blocks = (u - u.mean(axis=0)).reshape(n_trials, per_trial, n_channels)
+        pairs = [n_obs - n_trials * lag for lag in range(lags + 1)]
+    else:
+        used = np.asarray(rows, dtype=bool)
+        if used.ndim != 2 or used.shape[0] != n_trials or int(used.sum()) != n_obs:
+            raise ValueError(
+                f"rows must be a (n_trials, rows_per_trial) mask with {n_obs} true entries."
+            )
+        pairs = [int(used.sum())] + [
+            int(np.count_nonzero(used[:, lag:] & used[:, :-lag])) for lag in range(1, lags + 1)
+        ]
+        if used.shape[1] <= lags or min(pairs) == 0:
+            return AssumptionCheck(
+                "residual_whiteness",
+                "not_checked",
+                detail=(
+                    f"the stretches of consecutive residuals are too short for the {lags} lags "
+                    "of the test."
+                ),
+            )
+        blocks = np.zeros((n_trials, used.shape[1], n_channels))
+        blocks[used] = u - u.mean(axis=0)
     cov0 = np.einsum("tra,trb->ab", blocks, blocks) / n_obs
     try:
         cov0_inv = np.linalg.inv(cov0)
@@ -245,8 +280,10 @@ def residual_whiteness_check(
     largest = 0.0
     for lag in range(1, lags + 1):
         cov = np.einsum("tra,trb->ab", blocks[:, lag:], blocks[:, :-lag]) / n_obs
-        statistic += float(np.trace(cov.T @ cov0_inv @ cov @ cov0_inv)) / (n_obs - n_trials * lag)
-        largest = max(largest, float(np.max(np.abs(cov / np.outer(scale, scale)))))
+        statistic += float(np.trace(cov.T @ cov0_inv @ cov @ cov0_inv)) / pairs[lag]
+        # with gaps fewer pairs than rows enter cov; the correlation is per pair
+        per_pair = 1.0 if rows is None else n_obs / pairs[lag]
+        largest = max(largest, per_pair * float(np.max(np.abs(cov / np.outer(scale, scale)))))
     statistic *= n_obs**2
     df = n_channels**2 * (lags - order)
     pvalue = float(stats.chi2.sf(statistic, df))
@@ -300,6 +337,10 @@ class MethodInfo:
         Whether the result has a real frequency or time axis.
     assumptions : tuple of str
         Standard assumptions the method relies on (names from ``STANDARD_ASSUMPTIONS``).
+    supports_mask : bool
+        Whether the method uses the per-sample ``valid`` and ``predict`` masks of a
+        :class:`~dirconn.TimeSeries`. :meth:`Estimator.fit` refuses masked data for a method that
+        does not, instead of silently ignoring the masks.
     """
 
     name: str
@@ -315,6 +356,7 @@ class MethodInfo:
     frequency_resolved: bool = False
     time_resolved: bool = False
     assumptions: tuple[str, ...] = ()
+    supports_mask: bool = False
 
     def __post_init__(self) -> None:
         """Validate and normalise the fields."""
@@ -459,20 +501,30 @@ class Estimator(ABC):
         ``details`` holds method-specific derived facts (order-selection curves, number of
         observations) and ``checks`` are diagnostics found while estimating; both end up in the
         result's provenance.
+
+        For masked data the input hash covers the masks too, and ``details["masks"]`` holds the
+        sample counts of :meth:`TimeSeries.mask_summary`. The ``history`` of the data (for
+        example an event lock) is stored as ``preprocessing["data_history"]``.
         """
         assumptions = AssumptionChecklist.unchecked()
         for check in checks:
             assumptions = assumptions.with_check(check)
+        preprocessing = dict(preprocessing or {})
+        details = dict(details or {})
+        if data.history:
+            preprocessing["data_history"] = [dict(step) for step in data.history]
+        if data.has_mask:
+            details["masks"] = data.mask_summary()
         return Provenance(
             method=self.info.name,
             parameters=self.get_params(),
             model_order=model_order,
             seed=seed,
             backend=self.info.backend,
-            input_hash=array_hash(data.data),
-            preprocessing=preprocessing or {},
+            input_hash=input_hash(data),
+            preprocessing=preprocessing,
             assumptions=assumptions,
-            details=details or {},
+            details=details,
         )
 
     def _guard(self, data: TimeSeries) -> list[AssumptionCheck]:
@@ -482,6 +534,12 @@ class Estimator(ABC):
             raise ValueError(f"{info.name} needs at least {info.min_nodes} channels, got {n}.")
         if info.max_nodes is not None and n > info.max_nodes:
             raise ValueError(f"{info.name} accepts at most {info.max_nodes} channels, got {n}.")
+        if data.has_mask and not info.supports_mask:
+            raise ValueError(
+                f"{info.name} does not support data with valid or predict masks; it would use "
+                "every sample. Masks are supported by the static VAR estimators (GC, DTF, PDC, "
+                "GPDC, RPDC). Cut the data into trials of valid samples instead."
+            )
         checks: list[AssumptionCheck] = []
         if self._depends_on_scale():
             checks.append(self._scale_check(data))
@@ -489,7 +547,11 @@ class Estimator(ABC):
         return checks
 
     def _scale_check(self, data: TimeSeries) -> AssumptionCheck:
-        flat = np.moveaxis(data.data, 1, 0).reshape(data.n_channels, -1)
+        flat: np.ndarray
+        if data.valid is None:
+            flat = np.moveaxis(data.data, 1, 0).reshape(data.n_channels, -1)
+        else:
+            flat = np.moveaxis(data.data, 1, 0)[:, data.valid]
         std = flat.std(axis=1)
         smin, smax = float(np.min(std)), float(np.max(std))
         if smin == 0.0:
@@ -515,6 +577,23 @@ class Estimator(ABC):
             detail=f"channel standard deviations differ by a factor of {ratio:.3g}.",
             value=ratio,
         )
+
+
+def input_hash(data: TimeSeries) -> str:
+    """Return the input hash recorded in a provenance: the data, and the masks if there are any.
+
+    Without masks it is :func:`dirconn.provenance.array_hash` of the samples, as before masks
+    existed, so data that carry no masks keep their hash.
+    """
+    if not data.has_mask:
+        return array_hash(data.data)
+    full = np.ones((data.n_trials, data.n_times), dtype=bool)
+    parts = [
+        array_hash(data.data),
+        array_hash(full if data.valid is None else data.valid),
+        array_hash(full if data.predict is None else data.predict),
+    ]
+    return array_hash(np.frombuffer("".join(parts).encode(), dtype=np.uint8))
 
 
 def method_info(name: str) -> MethodInfo | None:

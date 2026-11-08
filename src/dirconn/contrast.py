@@ -226,6 +226,17 @@ def contrast_test(
 
     pool = np.concatenate([data_a.data, data_b.data], axis=0)
     n_a = data_a.n_trials
+    # the masks travel with the trials; a missing mask is all true
+    masked = data_a.has_mask or data_b.has_mask
+
+    def mask(data: TimeSeries, name: str) -> np.ndarray:
+        value = getattr(data, name)
+        return np.ones((data.n_trials, data.n_times), dtype=bool) if value is None else value
+
+    valid_a, valid_b = mask(data_a, "valid"), mask(data_b, "valid")
+    predict_a, predict_b = mask(data_a, "predict"), mask(data_b, "predict")
+    valid_pool = np.concatenate([valid_a, valid_b], axis=0)
+    predict_pool = np.concatenate([predict_a, predict_b], axis=0)
     exceed = np.zeros(difference.shape)
     mean = np.zeros(difference.shape)
     m2 = np.zeros(difference.shape)
@@ -233,16 +244,41 @@ def contrast_test(
     other: dict[tuple[type[Warning], str], warnings.WarningMessage] = {}
 
     light = without_data_checks(estimator)  # the model checks belong to the fits on the data
+    first_masks: tuple[np.ndarray | None, np.ndarray | None]
+    second_masks: tuple[np.ndarray | None, np.ndarray | None]
     for i in range(n_permutations):
         if paired:
             swap = controller.child(i).integers(0, 2, n_a).astype(bool)[:, None, None]
             first_data = np.where(swap, data_b.data, data_a.data)
             second_data = np.where(swap, data_a.data, data_b.data)
+            pick = swap[:, 0]
+            first_masks = (np.where(pick, valid_b, valid_a), np.where(pick, predict_b, predict_a))
+            second_masks = (np.where(pick, valid_a, valid_b), np.where(pick, predict_a, predict_b))
         else:
             order = controller.child(i).permutation(pool.shape[0])
             first_data, second_data = pool[order[:n_a]], pool[order[n_a:]]
-        first = TimeSeries(first_data, data_a.sfreq, data_a.channels, "epoched", data_a.tmin)
-        second = TimeSeries(second_data, data_a.sfreq, data_a.channels, "epoched", data_a.tmin)
+            first_masks = (valid_pool[order[:n_a]], predict_pool[order[:n_a]])
+            second_masks = (valid_pool[order[n_a:]], predict_pool[order[n_a:]])
+        if not masked:
+            first_masks = second_masks = (None, None)
+        first = TimeSeries(
+            first_data,
+            data_a.sfreq,
+            data_a.channels,
+            "epoched",
+            data_a.tmin,
+            valid=first_masks[0],
+            predict=first_masks[1],
+        )
+        second = TimeSeries(
+            second_data,
+            data_a.sfreq,
+            data_a.channels,
+            "epoched",
+            data_a.tmin,
+            valid=second_masks[0],
+            predict=second_masks[1],
+        )
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             fit_first = reducer(light.fit(first))
