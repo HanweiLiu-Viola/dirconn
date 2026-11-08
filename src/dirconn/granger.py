@@ -18,6 +18,7 @@ from dirconn.estimator import (
     stability_check,
 )
 from dirconn.mvar import (
+    Masks,
     _check_rows,
     _prepare,
     _solve,
@@ -25,6 +26,8 @@ from dirconn.mvar import (
     choose_order,
     fit_var,
     lagged_design,
+    masks_of,
+    row_mask,
 )
 from dirconn.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
 from dirconn.result import Connectivity
@@ -72,6 +75,9 @@ class GC(Estimator):
     consistent at the true order. In the pairwise mode the "full" model of a pair is its bivariate
     subprocess of that same fit. :class:`SSGC` gives the matching frequency-resolved values.
 
+    Data with ``valid`` or ``predict`` masks use only the rows those select (see
+    :func:`dirconn.mvar.row_mask`), for the order selection and for every model.
+
     Parameters
     ----------
     order : int or {"aic", "bic", "hqc", "cv"}
@@ -115,6 +121,7 @@ class GC(Estimator):
         value_range=(0.0, math.inf),
         scale_dependent=False,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     order: int | str = "bic"
@@ -147,17 +154,18 @@ class GC(Estimator):
 
         x, _ = _prepare(data, self.demean)
         names = list(data.names)
+        masks = masks_of(data)
         residuals: np.ndarray | None
         stability: AssumptionCheck | None = None
         if self.method == "state_space":
             values, n_obs, n_coefficients, residuals, stability = self._state_space(
-                data, x, order, names
+                data, x, order, names, masks
             )
         elif self.conditional:
-            values, n_obs, n_coefficients, residuals = self._conditional(x, order, names)
+            values, n_obs, n_coefficients, residuals = self._conditional(x, order, names, masks)
         else:
-            values, n_obs, n_coefficients = self._pairwise(x, order, names)
-            residuals = self._full_residuals(x, order) if self.check_whiteness else None
+            values, n_obs, n_coefficients = self._pairwise(x, order, names, masks)
+            residuals = self._full_residuals(x, order, masks) if self.check_whiteness else None
 
         checks = [sampling_check(n_coefficients, n_obs, stacklevel=4)]
         if stability is not None:
@@ -171,7 +179,10 @@ class GC(Estimator):
                 )
             )
         elif self.check_whiteness:
-            checks.append(residual_whiteness_check(residuals, data.n_trials, order, stacklevel=4))
+            rows = row_mask(data.valid, data.predict, order, data.n_times)
+            checks.append(
+                residual_whiteness_check(residuals, data.n_trials, order, rows=rows, stacklevel=4)
+            )
         if selection is not None:
             checks.append(order_boundary_check(selection, stacklevel=4))
         if self.check_order_stability:
@@ -200,12 +211,11 @@ class GC(Estimator):
         return Connectivity.from_array(values, source=names, provenance=provenance)
 
     def _state_space(
-        self, data: TimeSeries, x: np.ndarray, order: int, names: list[str]
+        self, data: TimeSeries, x: np.ndarray, order: int, names: list[str], masks: Masks
     ) -> tuple[np.ndarray, int, int, np.ndarray, AssumptionCheck]:
         """Fit the model of all channels once and derive every reduced model from it."""
         fit = fit_var(data, order, ridge=self.ridge, demean=self.demean)
-        n_channels = fit.n_channels
-        observed = np.moveaxis(x[:, :, order:], 1, 2).reshape(-1, n_channels)
+        observed, _ = lagged_design(x, order, **masks)
         _check_not_perfect(np.sum(fit.residuals**2, axis=0), observed, names, "The full model")
         stability = stability_check(fit.coefs, stacklevel=5)
         if stability.status == "fail":
@@ -215,15 +225,15 @@ class GC(Estimator):
                 "the order."
             )
         values = state_space_gc(fit.coefs, fit.noise_cov, conditional=self.conditional)
-        return values, fit.n_obs, n_channels * order, np.asarray(fit.residuals), stability
+        return values, fit.n_obs, fit.n_channels * order, np.asarray(fit.residuals), stability
 
-    def _full_residuals(self, x: np.ndarray, order: int) -> np.ndarray | None:
+    def _full_residuals(self, x: np.ndarray, order: int, masks: Masks) -> np.ndarray | None:
         """Residuals of the model of all channels, for the whiteness check of the pairwise mode.
 
         ``None`` when that model cannot be fitted (too few rows or a rank-deficient design); the
         pairwise values do not need it.
         """
-        y, design = lagged_design(x, order)
+        y, design = lagged_design(x, order, **masks)
         if y.shape[0] <= design.shape[1]:
             return None
         try:
@@ -233,10 +243,10 @@ class GC(Estimator):
         return residuals
 
     def _conditional(
-        self, x: np.ndarray, order: int, names: list[str]
+        self, x: np.ndarray, order: int, names: list[str], masks: Masks
     ) -> tuple[np.ndarray, int, int, np.ndarray]:
         n_channels = x.shape[1]
-        y, design = lagged_design(x, order)
+        y, design = lagged_design(x, order, **masks)
         _check_rows(y.shape[0], n_channels * order)
         try:
             _, full_residuals = _solve(y, design, self.ridge)
@@ -263,14 +273,16 @@ class GC(Estimator):
                     values[source, target] = math.log(reduced_sse[target] / full_sse[target])
         return values, int(y.shape[0]), n_channels * order, full_residuals
 
-    def _pairwise(self, x: np.ndarray, order: int, names: list[str]) -> tuple[np.ndarray, int, int]:
+    def _pairwise(
+        self, x: np.ndarray, order: int, names: list[str], masks: Masks
+    ) -> tuple[np.ndarray, int, int]:
         n_channels = x.shape[1]
         values = np.full((n_channels, n_channels), np.nan)
         n_obs = 0
         for first in range(n_channels):
             for second in range(first + 1, n_channels):
                 label = f"Pair {names[first]!r} and {names[second]!r}"
-                y, design = lagged_design(x[:, [first, second], :], order)
+                y, design = lagged_design(x[:, [first, second], :], order, **masks)
                 n_obs = int(y.shape[0])
                 _check_rows(n_obs, 2 * order)
                 try:

@@ -9,13 +9,17 @@ The coefficient matrices use the layout ``coefs[k - 1, target, source]``: ``coef
 the effect of channel ``j`` at lag ``k`` on channel ``i``. With several trials the regressions of
 all trials are stacked into one least-squares problem and no regressor ever reaches across a trial
 boundary.
+
+Data with per-sample masks (``TimeSeries.valid`` and ``TimeSeries.predict``) use only the rows
+whose sample is to be predicted and whose whole window ``t - order .. t`` is valid; see
+:func:`lagged_design`. Without masks, or with masks that are all true, nothing changes.
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypedDict
 
 import numpy as np
 
@@ -44,8 +48,62 @@ def _readonly(array: np.ndarray) -> np.ndarray:
     return view
 
 
+def row_mask(
+    valid: np.ndarray | None,
+    predict: np.ndarray | None,
+    order: int,
+    n_times: int,
+    start: int | None = None,
+) -> np.ndarray | None:
+    """Return which regression rows of a VAR problem are used, or ``None`` when all are.
+
+    The row that predicts sample ``t`` (``start <= t < n_times``) of a trial is used when
+    ``predict[t]`` is true and ``valid[t - order .. t]`` are all true: the predicted value and every
+    regressor are valid samples.
+
+    Parameters
+    ----------
+    valid, predict : ndarray of bool, shape (n_trials, n_times), or None
+        The masks of a :class:`~dirconn.TimeSeries`; ``None`` means all true.
+    order : int
+        Number of lags.
+    n_times : int
+        Samples per trial.
+    start : int, optional
+        First predicted sample, as in :func:`lagged_design`; defaults to ``order``.
+
+    Returns
+    -------
+    ndarray of bool, shape (n_trials, n_times - start), or None
+        Rows in the layout of :func:`lagged_design` (trial after trial); ``None`` without masks.
+    """
+    if valid is None and predict is None:
+        return None
+    order = _check_order(order)
+    start = order if start is None else int(start)
+    n_trials = (valid if valid is not None else predict).shape[0]  # type: ignore[union-attr]
+    for name, mask in (("valid", valid), ("predict", predict)):
+        if mask is not None and mask.shape != (n_trials, n_times):
+            raise ValueError(
+                f"{name} must have shape (n_trials, n_times) = {(n_trials, n_times)}, "
+                f"got {mask.shape}."
+            )
+    rows = np.ones((n_trials, n_times - start), dtype=bool)
+    if predict is not None:
+        rows &= predict[:, start:]
+    if valid is not None:
+        for k in range(order + 1):
+            rows &= valid[:, start - k : n_times - k]
+    return rows
+
+
 def lagged_design(
-    x: np.ndarray, order: int, start: int | None = None
+    x: np.ndarray,
+    order: int,
+    start: int | None = None,
+    *,
+    valid: np.ndarray | None = None,
+    predict: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Build the regression problem of a VAR model from trials.
 
@@ -58,12 +116,16 @@ def lagged_design(
     start : int, optional
         Index of the first predicted sample in every trial; defaults to ``order``. A larger value
         gives all models of different orders one common set of observations.
+    valid, predict : ndarray of bool, shape (n_trials, n_times), optional
+        Per-sample masks (see :class:`~dirconn.TimeSeries`). Only the rows selected by
+        :func:`row_mask` are returned, in the same order; without masks every row is.
 
     Returns
     -------
-    y : ndarray, shape (n_trials * (n_times - start), n_channels)
-        The predicted samples, trial after trial.
-    design : ndarray, shape (n_trials * (n_times - start), n_channels * order)
+    y : ndarray, shape (n_rows, n_channels)
+        The predicted samples, trial after trial; ``n_rows = n_trials * (n_times - start)``
+        without masks.
+    design : ndarray, shape (n_rows, n_channels * order)
         Column block ``k - 1`` (``n_channels`` columns) holds the samples ``k`` steps earlier, so
         the first ``n_channels * m`` columns are the design of a model of order ``m``. A row only
         contains samples of the trial it predicts.
@@ -85,6 +147,16 @@ def lagged_design(
 
     y = block(start, n_times)
     design = np.hstack([block(start - k, n_times - k) for k in range(1, order + 1)])
+    for name, mask in (("valid", valid), ("predict", predict)):
+        if mask is not None and np.shape(mask) != (x.shape[0], n_times):
+            raise ValueError(
+                f"{name} must have the shape (n_trials, n_times) of the data, "
+                f"{(x.shape[0], n_times)}, got {np.shape(mask)}."
+            )
+    rows = row_mask(valid, predict, order, n_times, start)
+    if rows is not None:
+        used = rows.ravel()
+        y, design = y[used], design[used]
     return y, design
 
 
@@ -123,13 +195,33 @@ def _check_rows(n_rows: int, n_params: int) -> None:
 
 
 def _prepare(data: TimeSeries, demean: bool) -> tuple[np.ndarray, np.ndarray]:
+    """Return the samples (demeaned if asked) and the mean that was removed.
+
+    With a ``valid`` mask the mean is taken over the valid samples only.
+    """
     if not isinstance(data, TimeSeries):
         raise TypeError(f"Expected a TimeSeries, got {type(data).__name__}.")
     x = np.asarray(data.data)
     if demean:
-        mean = x.mean(axis=(0, 2))
+        if data.valid is None:
+            mean = x.mean(axis=(0, 2))
+        else:
+            weight = data.valid[:, None, :]
+            mean = np.sum(np.where(weight, x, 0.0), axis=(0, 2)) / np.count_nonzero(data.valid)
         return x - mean[None, :, None], mean
     return x, np.zeros(x.shape[1])
+
+
+class Masks(TypedDict):
+    """The per-sample masks of a :class:`~dirconn.TimeSeries`, as keyword arguments."""
+
+    valid: np.ndarray | None
+    predict: np.ndarray | None
+
+
+def masks_of(data: TimeSeries) -> Masks:
+    """Return the masks of ``data`` as keyword arguments for :func:`lagged_design`."""
+    return {"valid": data.valid, "predict": data.predict}
 
 
 @dataclass(frozen=True, eq=False)
@@ -143,7 +235,8 @@ class VarFit:
     noise_cov : ndarray, shape (n_channels, n_channels)
         Residual covariance with the degrees-of-freedom correction ``n_obs - n_channels * order``.
     residuals : ndarray, shape (n_obs, n_channels)
-        Residuals of the pooled regression, trial after trial.
+        Residuals of the pooled regression, trial after trial (only the rows that were used, for
+        masked data).
     regressor_cov : ndarray, shape (order * n_channels, order * n_channels)
         Covariance of the lagged regressors, ``X^T X / n_obs`` of the design of
         :func:`lagged_design` (after demeaning, without the ridge penalty): row and column
@@ -153,7 +246,8 @@ class VarFit:
     order : int
         Number of lags.
     n_obs : int
-        Number of regression rows (the samples that were predicted, over all trials).
+        Number of regression rows (the samples that were predicted, over all trials; for masked
+        data the rows selected by :func:`row_mask`).
     ridge : float
         Relative ridge penalty used (0 for plain least squares).
     demeaned : bool
@@ -199,7 +293,8 @@ def fit_var(data: TimeSeries, order: int, *, ridge: float = 0.0, demean: bool = 
     Parameters
     ----------
     data : TimeSeries
-        The data; every trial is treated as an independent realisation.
+        The data; every trial is treated as an independent realisation. With masks only the rows
+        selected by :func:`row_mask` are fitted, and the mean is that of the valid samples.
     order : int
         Number of lags, at least 1.
     ridge : float
@@ -222,7 +317,7 @@ def fit_var(data: TimeSeries, order: int, *, ridge: float = 0.0, demean: bool = 
     order = _check_order(order)
     ridge = _check_ridge(ridge)
     x, mean = _prepare(data, demean)
-    y, design = lagged_design(x, order)
+    y, design = lagged_design(x, order, **masks_of(data))
     _check_rows(y.shape[0], design.shape[1])
     beta, residuals = _solve(y, design, ridge)
     n_channels = x.shape[1]
@@ -339,29 +434,52 @@ def cv_splits(
     splits : list of (train, test)
         Row index arrays, one pair per fold.
     """
+    return split_rows(np.ones((n_trials, rows_per_trial), dtype=bool), n_folds, gap)
+
+
+def split_rows(
+    rows: np.ndarray, n_folds: int, gap: int
+) -> tuple[str, list[tuple[np.ndarray, np.ndarray]]]:
+    """Cross-validation folds of the used rows of a VAR problem, as in :func:`cv_splits`.
+
+    Parameters
+    ----------
+    rows : ndarray of bool, shape (n_trials, rows_per_trial)
+        Which rows are used (see :func:`row_mask`); the used rows are numbered trial after trial.
+    n_folds, gap : int
+        As in :func:`cv_splits`. With at least four trials that have rows, whole trials are held
+        out; otherwise contiguous blocks of the time points that have rows, and ``gap`` is
+        measured in samples.
+
+    Returns
+    -------
+    scheme : {"trials", "blocks"}
+    splits : list of (train, test)
+        Index arrays into the used rows.
+    """
     n_folds = _check_folds(n_folds)
     if gap < 0:
         raise ValueError(f"gap must be non-negative, got {gap}.")
-    rows = np.arange(n_trials * rows_per_trial).reshape(n_trials, rows_per_trial)
-    everything = rows.ravel()
-    if n_trials >= 4:
-        n_splits = min(n_folds, n_trials)
-        splits = []
-        for fold in range(n_splits):
-            test = rows[fold::n_splits].ravel()
-            splits.append((np.setdiff1d(everything, test), test))
-        return "trials", splits
-    if rows_per_trial < n_folds:
-        raise ValueError(
-            f"Cannot split {rows_per_trial} rows per trial into {n_folds} contiguous blocks."
-        )
-    blocks = np.array_split(np.arange(rows_per_trial), n_folds)
+    trial, time = np.nonzero(rows)
+    index = np.arange(trial.size)
+    present = np.unique(trial)
     splits = []
-    for block in blocks:
+    if present.size >= 4:
+        n_splits = min(n_folds, int(present.size))
+        for fold in range(n_splits):
+            held = np.isin(trial, present[fold::n_splits])
+            splits.append((index[~held], index[held]))
+        return "trials", splits
+    positions = np.unique(time)
+    if positions.size < n_folds:
+        raise ValueError(
+            f"Cannot split {positions.size} rows per trial into {n_folds} contiguous blocks."
+        )
+    for block in np.array_split(positions, n_folds):
         first, last = int(block[0]), int(block[-1]) + 1
-        test = rows[:, first:last].ravel()
-        dropped = rows[:, max(first - gap, 0) : min(last + gap, rows_per_trial)].ravel()
-        splits.append((np.setdiff1d(everything, dropped), test))
+        test = index[(time >= first) & (time < last)]
+        dropped = (time >= first - gap) & (time < last + gap)
+        splits.append((index[~dropped], test))
     return "blocks", splits
 
 
@@ -415,7 +533,8 @@ def select_order(
     """Choose the VAR order with an information criterion or by cross-validation.
 
     Every candidate order is fitted on one common set of observations (the samples from
-    ``max_order`` onwards in each trial), so the criteria compare models on the same data. With
+    ``max_order`` onwards in each trial; for masked data the rows that :func:`row_mask` selects
+    at ``max_order``), so the criteria compare models on the same data. With
     ``K`` channels, ``n`` observations, residual covariance ``S`` (maximum likelihood) and
     ``m K^2`` free coefficients::
 
@@ -459,7 +578,7 @@ def select_order(
     n_folds = _check_folds(n_folds)
     x, _ = _prepare(data, demean)
     n_channels = x.shape[1]
-    y, design = lagged_design(x, max_order)
+    y, design = lagged_design(x, max_order, **masks_of(data))
     n_obs = int(y.shape[0])
     _check_rows(n_obs, n_channels * max_order)
 
@@ -480,7 +599,10 @@ def select_order(
     arrays = {name: np.asarray(values) for name, values in curves.items()}
     cv_curve = scheme = folds = None
     if criterion == "cv":
-        scheme, splits = cv_splits(x.shape[0], x.shape[2] - max_order, n_folds, gap=max_order)
+        rows = row_mask(data.valid, data.predict, max_order, x.shape[2])
+        if rows is None:
+            rows = np.ones((x.shape[0], x.shape[2] - max_order), dtype=bool)
+        scheme, splits = split_rows(rows, n_folds, gap=max_order)
         folds = len(splits)
         cv_curve = _cv_curve(y, design, n_channels, max_order, ridge, splits)
         arrays["cv"] = cv_curve

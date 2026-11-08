@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from abc import abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, ClassVar
 
 import numpy as np
@@ -18,7 +18,7 @@ from dirconn.estimator import (
     sampling_check,
     stability_check,
 )
-from dirconn.mvar import VarFit, check_order_spec, choose_order, fit_var
+from dirconn.mvar import VarFit, check_order_spec, choose_order, fit_var, row_mask
 from dirconn.provenance import STANDARD_ASSUMPTIONS
 from dirconn.result import Connectivity
 from dirconn.spectral import (
@@ -36,23 +36,21 @@ def _standardise(data: TimeSeries) -> tuple[TimeSeries, dict[str, Any]]:
     """Divide every channel by its standard deviation over all trials and samples.
 
     The mean is not subtracted here: centring is the job of ``demean`` in the VAR fit, so with the
-    default settings the result is the z-score.
+    default settings the result is the z-score. With a ``valid`` mask the standard deviation is
+    that of the valid samples; the masks are kept.
     """
     x = np.asarray(data.data)
-    scale = (x - x.mean(axis=(0, 2), keepdims=True)).std(axis=(0, 2))
+    if data.valid is None:
+        scale = (x - x.mean(axis=(0, 2), keepdims=True)).std(axis=(0, 2))
+    else:
+        scale = np.moveaxis(x, 1, 0)[:, data.valid].std(axis=1)
     flat = np.flatnonzero(scale == 0)
     if flat.size:
         raise ValueError(
             f"Channels {[data.names[i] for i in flat]} have zero variance and cannot be "
             "standardised."
         )
-    series = TimeSeries(
-        data=x / scale[None, :, None],
-        sfreq=data.sfreq,
-        channels=data.channels,
-        segmentation=data.segmentation,
-        tmin=data.tmin,
-    )
+    series = replace(data, data=x / scale[None, :, None])
     return series, {"standardized": True, "scale": scale.tolist()}
 
 
@@ -61,7 +59,8 @@ class _SpectralVAR(Estimator):
     """Shared machinery: fit one pooled VAR model, then evaluate a spectral measure on it.
 
     The order is chosen once, on the model of all channels. The frequency axis runs from 0 to the
-    Nyquist frequency by default; see :func:`dirconn.spectral.frequency_grid`.
+    Nyquist frequency by default; see :func:`dirconn.spectral.frequency_grid`. Data with ``valid``
+    or ``predict`` masks use only the rows those select (see :func:`dirconn.mvar.row_mask`).
     """
 
     _needs_stable_model: ClassVar[bool] = False
@@ -136,7 +135,13 @@ class _SpectralVAR(Estimator):
         checks = [sampling, stability]
         if self.check_whiteness:
             checks.append(
-                residual_whiteness_check(fit.residuals, series.n_trials, order, stacklevel=4)
+                residual_whiteness_check(
+                    fit.residuals,
+                    series.n_trials,
+                    order,
+                    rows=row_mask(series.valid, series.predict, order, series.n_times),
+                    stacklevel=4,
+                )
             )
         if selection is not None:
             checks.append(order_boundary_check(selection, stacklevel=4))
@@ -209,6 +214,7 @@ class DTF(_SpectralVAR):
         scale_dependent=True,
         frequency_resolved=True,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     standardize: bool = True
@@ -259,6 +265,7 @@ class PDC(_PartialDirectedCoherence):
         scale_dependent=True,
         frequency_resolved=True,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     standardize: bool = True
@@ -294,6 +301,7 @@ class GPDC(_PartialDirectedCoherence):
         scale_dependent=False,
         frequency_resolved=True,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     def _measure(self, fit: VarFit, freqs: np.ndarray) -> np.ndarray:
@@ -345,6 +353,7 @@ class RPDC(_SpectralVAR):
         scale_dependent=False,
         frequency_resolved=True,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     ridge: float = field(default=0.0, init=False, repr=False)
@@ -399,6 +408,7 @@ class SSGC(_SpectralVAR):
         scale_dependent=False,
         frequency_resolved=True,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     _needs_stable_model: ClassVar[bool] = True

@@ -346,3 +346,42 @@ class TestReadValidation:
     def test_unknown_datatype_is_rejected(self, tmp_path):
         with pytest.raises(ValueError, match="datatype"):
             read_bids(tmp_path, subject="01", task="rest", datatype="fmri")
+
+
+class TestGaps:
+    def masked(self, n_trials=1):
+        series = roi_series(n_trials=n_trials, n_times=120)
+        valid = np.ones((n_trials, 120), dtype=bool)
+        valid[:, 30:40] = False
+        return TimeSeries(
+            series.data, series.sfreq, series.channels, series.segmentation, valid=valid
+        )
+
+    @pytest.mark.parametrize("n_trials", [1, 3])
+    def test_invalid_samples_round_trip_as_nan(self, tmp_path, n_trials):
+        series = self.masked(n_trials)
+        write_roi_bids(series, tmp_path, subject="01", task="rest", description="dk")
+        with pytest.raises(ValueError, match="nan='mask'"):
+            read_bids(tmp_path, subject="01", task="rest", level="roi", description="dk")
+        back = read_bids(
+            tmp_path, subject="01", task="rest", level="roi", description="dk", nan="mask"
+        )
+        np.testing.assert_array_equal(back.valid, series.valid)
+        np.testing.assert_array_equal(
+            back.data[:, :, series.valid[0]], series.data[:, :, series.valid[0]]
+        )
+        assert (back.data[:, :, ~series.valid[0]] == 0).all()
+
+    def test_a_predict_mask_is_not_written(self, tmp_path):
+        series = roi_series()
+        predict = np.zeros(120, dtype=bool)
+        predict[60:] = True
+        series = TimeSeries.from_array(
+            series.data[0], series.sfreq, channels=series.channels, predict=predict
+        )
+        with pytest.raises(ValueError, match="predict"):
+            write_roi_bids(series, tmp_path, subject="01", task="rest", description="dk")
+
+    def test_an_unknown_nan_policy_is_rejected(self, tmp_path):
+        with pytest.raises(ValueError, match="nan"):
+            read_bids(tmp_path, subject="01", task="rest", nan="zero")

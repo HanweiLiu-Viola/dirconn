@@ -101,7 +101,9 @@ def write_roi_bids(
     The data are stored as a double-precision FIF file. Epoched data are concatenated along
     time and described by an ``events.tsv`` file plus the ``Segmentation``, ``NTrials``,
     ``EpochLength`` and ``Tmin`` entries of the sidecar, so they can be restored exactly. Channel
-    positions are not stored.
+    positions are not stored. Invalid samples (``ts.valid``) are written as NaN; read them back
+    with ``read_bids(..., nan="mask")``. A ``predict`` mask is an analysis choice, not part of the
+    recording, and is not written: such series are refused.
 
     Parameters
     ----------
@@ -132,6 +134,11 @@ def write_roi_bids(
     from mne_bids import BIDSPath, make_dataset_description
 
     _check_datatype(datatype)
+    if ts.predict is not None:
+        raise ValueError(
+            "write_roi_bids does not store a predict mask; write the series without it "
+            "(dataclasses.replace(ts, predict=None)) and keep the mask with the analysis."
+        )
     if not isinstance(description, str) or not description.strip():
         raise ValueError("description must be a non-empty string (the BIDS desc entity).")
     root = Path(root)
@@ -166,7 +173,10 @@ def write_roi_bids(
         )
 
     info = mne.create_info(list(ts.names), ts.sfreq, "misc")
-    raw = mne.io.RawArray(np.concatenate(list(ts.data), axis=1), info, verbose="error")
+    samples = np.asarray(ts.data)
+    if ts.valid is not None:
+        samples = np.where(ts.valid[:, None, :], samples, np.nan)
+    raw = mne.io.RawArray(np.concatenate(list(samples), axis=1), info, verbose="error")
     raw.save(path.fpath, overwrite=True, fmt="double", verbose="error")
 
     meta: dict[str, Any] = {
@@ -242,6 +252,7 @@ def read_bids(
     datatype: str | None = None,
     level: str = "sensor",
     description: str | None = None,
+    nan: str = "raise",
 ) -> TimeSeries:
     """Read one recording from a BIDS dataset as a :class:`TimeSeries`.
 
@@ -260,6 +271,9 @@ def read_bids(
         dataset written with :func:`write_roi_bids` and requires the ``Dirconn`` convention entry.
     description : str, optional
         The ``desc`` entity; required for ``level="roi"``.
+    nan : {"raise", "mask"}
+        What to do with NaN samples, as in :meth:`TimeSeries.from_array`: ``"mask"`` replaces
+        them by 0 and marks them invalid in ``TimeSeries.valid`` (gaps in the recording).
 
     Returns
     -------
@@ -267,6 +281,8 @@ def read_bids(
     """
     if level not in LEVELS:
         raise ValueError(f"level must be one of {LEVELS}, got {level!r}.")
+    if nan not in ("raise", "mask"):
+        raise ValueError(f"nan must be 'raise' or 'mask', got {nan!r}.")
     if datatype is not None:
         _check_datatype(datatype)
     if level == "roi" and not description:
@@ -275,12 +291,12 @@ def read_bids(
     datatype = datatype or _infer_datatype(root, subject, session)
     if level == "roi":
         assert description is not None
-        return _read_roi(root, subject, task, session, run, datatype, description)
-    return _read_sensor(root, subject, task, session, run, datatype)
+        return _read_roi(root, subject, task, session, run, datatype, description, nan)
+    return _read_sensor(root, subject, task, session, run, datatype, nan)
 
 
 def _read_sensor(
-    root: Path, subject: str, task: str, session: str | None, run: Any, datatype: str
+    root: Path, subject: str, task: str, session: str | None, run: Any, datatype: str, nan: str
 ) -> TimeSeries:
     from mne_bids import BIDSPath, read_raw_bids
 
@@ -296,7 +312,7 @@ def _read_sensor(
     if not path.directory.is_dir():
         raise FileNotFoundError(f"{path.directory} does not exist.")
     raw = read_raw_bids(path, verbose="error")
-    series = TimeSeries.from_mne(raw)
+    series = TimeSeries.from_mne(raw, nan=nan)
 
     # Epoched recordings are stored as concatenated trials; the sidecar says how to split them.
     sidecar_path = path.copy().update(extension=".json").fpath
@@ -304,13 +320,18 @@ def _read_sensor(
         with open(sidecar_path, encoding="utf-8") as handle:
             meta = json.load(handle).get("Dirconn")
         if isinstance(meta, dict) and meta.get("Segmentation") == "epoched":
-            data = _split_epochs(series.data[0], int(meta["NTrials"]), int(meta["EpochLength"]))
+            n_trials, length = int(meta["NTrials"]), int(meta["EpochLength"])
+            data = _split_epochs(series.data[0], n_trials, length)
+            valid = None
+            if series.valid is not None:
+                valid = series.valid[0].reshape(n_trials, length)
             return TimeSeries.from_array(
                 data,
                 series.sfreq,
                 channels=series.channels,
                 segmentation="epoched",
                 tmin=float(meta.get("Tmin", 0.0)),
+                valid=valid,
             )
     return series
 
@@ -333,6 +354,7 @@ def _read_roi(
     run: Any,
     datatype: str,
     description: str,
+    nan: str = "raise",
 ) -> TimeSeries:
     import mne
     from mne_bids import BIDSPath
@@ -400,6 +422,7 @@ def _read_roi(
         channels=channels,
         segmentation=segmentation,
         tmin=float(meta.get("Tmin", 0.0)),
+        nan=nan,
     )
 
 

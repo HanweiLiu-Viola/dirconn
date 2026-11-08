@@ -5,6 +5,11 @@ autocorrelation, trial content) and removes what is being tested, the coupling b
 The test that results from comparing the data with its surrogates answers a narrower question
 than "is there connectivity": it rejects the null named in ``generator.null`` and nothing more.
 ``generator.limitations`` lists how that null can be rejected for reasons other than coupling.
+
+Data with ``valid`` or ``predict`` masks (see :class:`~dirconn.TimeSeries`) can only be shuffled by
+whole trials: :class:`TrialShuffle` carries the masks with the trials. The generators that move
+samples within a trial (phase randomisation, AAFT, IAAFT, circular shifts, block shuffling) would
+mix invalid samples into valid ones and refuse masked data.
 """
 
 from __future__ import annotations
@@ -38,6 +43,16 @@ class SurrogateGenerator(ABC):
     name: str
     null: str
     limitations: tuple[str, ...]
+    supports_mask: bool = False
+
+    def _check_masks(self, data: TimeSeries) -> None:
+        """Raise ``ValueError`` for masked data unless the generator carries the masks."""
+        if data.has_mask and not self.supports_mask:
+            raise ValueError(
+                f"The {self.name} surrogate does not support data with valid or predict masks: "
+                "it moves samples within a trial, so gaps and predicted samples would no longer "
+                "line up. Use TrialShuffle, which keeps whole trials with their masks."
+            )
 
     def prepare(self, data: TimeSeries) -> TimeSeries:
         """Return the data the test is computed on; surrogates are generated from this.
@@ -161,6 +176,7 @@ class PhaseRandomize(SurrogateGenerator):
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one phase-randomized copy of ``data``."""
+        self._check_masks(data)
         return _with_data(data, _randomize_phases(data.data, rng))
 
 
@@ -183,6 +199,7 @@ class AAFT(SurrogateGenerator):
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one AAFT copy of ``data``."""
+        self._check_masks(data)
         return _with_data(data, _aaft(data.data, rng))
 
 
@@ -219,6 +236,7 @@ class IAAFT(SurrogateGenerator):
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one IAAFT copy of ``data``."""
+        self._check_masks(data)
         x = data.data
         sorted_x = np.sort(x, axis=-1)
         target_amplitude = np.abs(np.fft.rfft(x, axis=-1))
@@ -248,9 +266,16 @@ class TrialShuffle(SurrogateGenerator):
     Each channel keeps whole trials but the trial that goes with trial ``k`` of another channel
     is drawn at random, so any trial-by-trial relation between channels is destroyed while
     everything inside a trial is kept. Needs at least two trials.
+
+    Masks travel with the trials. A surrogate trial combines samples of different trials, one per
+    channel, so a time point is valid only where it is valid in every trial that a channel
+    contributes, and likewise for ``predict``. With masks that differ between trials the
+    surrogates therefore have fewer regression rows than the data; with the same mask in every
+    trial they have the same.
     """
 
     name = "trial_shuffle"
+    supports_mask = True
     null = "there is no stable trial-to-trial coupling"
     limitations = (
         "Coupling that comes from a shared evoked response is kept in every surrogate, so the "
@@ -269,7 +294,19 @@ class TrialShuffle(SurrogateGenerator):
                 "TrialShuffle needs at least 2 trials to shuffle, got "
                 f"{data.n_trials} (continuous data have a single trial)."
             )
-        return _with_data(data, _shuffle_units(data.data, rng))
+        if not data.has_mask:
+            return _with_data(data, _shuffle_units(data.data, rng))
+        values = np.empty_like(data.data)
+        valid = np.ones((data.n_trials, data.n_times), dtype=bool)
+        predict = np.ones((data.n_trials, data.n_times), dtype=bool)
+        for ch in range(data.n_channels):
+            order = rng.permutation(data.n_trials)  # the same draws as _shuffle_units
+            values[:, ch] = data.data[order, ch]
+            if data.valid is not None:
+                valid &= data.valid[order]
+            if data.predict is not None:
+                predict &= data.predict[order]
+        return replace(data, data=values, valid=valid, predict=predict)
 
 
 class CircularShift(SurrogateGenerator):
@@ -306,6 +343,7 @@ class CircularShift(SurrogateGenerator):
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one circularly shifted copy of ``data``."""
+        self._check_masks(data)
         n_times = data.n_times
         if n_times < 2 * self.min_shift:
             raise ValueError(
@@ -367,6 +405,7 @@ class BlockShuffle(SurrogateGenerator):
 
     def prepare(self, data: TimeSeries) -> TimeSeries:
         """Return the blocks of ``data`` as the trials of an epoched series."""
+        self._check_masks(data)
         size = self.block_size
         per_trial = data.n_times // size
         if per_trial * data.n_trials < 2:
@@ -386,6 +425,7 @@ class BlockShuffle(SurrogateGenerator):
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one surrogate of data that went through :meth:`prepare`."""
+        self._check_masks(data)
         if data.segmentation != "epoched" or data.n_times != self.block_size:
             raise ValueError(
                 f"BlockShuffle expects blocks of {self.block_size} samples as trials; pass the "

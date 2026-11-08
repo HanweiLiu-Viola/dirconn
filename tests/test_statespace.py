@@ -332,3 +332,45 @@ class TestSSGC:
     def test_conditional_must_be_a_bool(self):
         with pytest.raises(TypeError, match="conditional"):
             SSGC(conditional=1)
+
+
+class TestMasks:
+    def masked_chain(self):
+        ts = simulate_chain(6000, seed=9)
+        valid = np.ones((1, ts.n_times), dtype=bool)
+        valid[0, 1000:1100] = False
+        predict = np.zeros((1, ts.n_times), dtype=bool)
+        predict[0, ::2] = True
+        return TimeSeries.from_array(
+            ts.data,
+            SFREQ,
+            names=list(ts.names),
+            segmentation="continuous",
+            valid=valid,
+            predict=predict,
+        )
+
+    @pytest.mark.parametrize("conditional", [True, False])
+    def test_state_space_gc_uses_the_selected_rows(self, conditional):
+        ts = self.masked_chain()
+        result = GC(order=3, method="state_space", conditional=conditional, **QUIET).fit(ts)
+        fit = fit_var(ts, 3)
+        assert fit.n_obs < ts.n_times // 2
+        assert result.provenance.details["n_obs"] == fit.n_obs
+        np.testing.assert_allclose(
+            result.values[:, :, 0, 0],
+            state_space_gc(fit.coefs, fit.noise_cov, conditional=conditional),
+            rtol=1e-12,
+            equal_nan=True,
+        )
+
+    def test_ssgc_uses_the_selected_rows(self):
+        ts = self.masked_chain()
+        result = SSGC(order=3, n_freqs=33, **QUIET).fit(ts)
+        fit = fit_var(ts, 3)
+        np.testing.assert_allclose(
+            result.values[:, :, :, 0],
+            spectral_state_space_gc(fit.coefs, fit.noise_cov, result.freqs, SFREQ),
+            rtol=1e-12,
+            equal_nan=True,
+        )

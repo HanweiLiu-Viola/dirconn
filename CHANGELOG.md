@@ -21,6 +21,22 @@ All notable changes to dirconn are listed here. The format follows
   on the other channels and works on short data; its mean over frequency is the time-domain value.
 - `dirconn.statespace`: `var_to_state_space`, `reduced_model`, `state_space_gc` and
   `spectral_state_space_gc` for VAR coefficients known in advance.
+- Per-sample masks on `TimeSeries`: `valid` (gaps and bad segments) and `predict` (the samples that
+  contribute a regression row, for example bursts). A VAR row at time `t` is used only when
+  `predict[t]` and `valid[t - p .. t]` are all true; order selection, cross-validation, the
+  residual whiteness check, the sampling check and the provenance (`n_obs`, `details["masks"]`,
+  an input hash that covers the masks) follow the selected rows. `GC`, `DTF`, `PDC`, `GPDC` and
+  `RPDC` support masks (`MethodInfo.supports_mask`); every other estimator raises on masked data.
+- `TimeSeries.from_array(..., nan="mask")`, `TimeSeries.from_mne(..., nan="mask")` and
+  `read_bids(..., nan="mask")` read NaN gaps as invalid samples; `write_roi_bids` writes invalid
+  samples as NaN.
+- `TrialShuffle`, `bootstrap` and `contrast_test` carry the masks with the trials or blocks; the
+  surrogates that move samples within a trial raise on masked data.
+- `TimeSeries.lock(events, tmin, tmax)` cuts epochs around events and drops locks that cross the
+  record's edges or contain invalid samples; `TimeSeries.control_locks(eligible, n, tmin, tmax,
+  seed=...)` draws matched control locks. Both are recorded in `TimeSeries.history`, which every
+  estimator copies into the provenance (`preprocessing["data_history"]`).
+- Documentation page "Gaps, selected samples and event locks".
 
 ## [0.1.0] - 2026-11-07
 
