@@ -12,7 +12,8 @@ and noise covariance that a model would have had, then applies Geweke's spectral
 frequency resolution.
 
 This tutorial compares it with the known truth of a simulated system, shows what the segment
-length changes, and shows the limit it shares with pairwise Granger causality.
+length changes, and shows the limit it shares with pairwise Granger causality, and the
+model-based conditional spectrum (:class:`~dirconn.SSGC`) that does not have it.
 """
 
 # %%
@@ -27,7 +28,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import dirconn
-from dirconn import GC, MTGC, TimeSeries
+from dirconn import GC, MTGC, SSGC, TimeSeries
 from dirconn.multitaper_granger import geweke_spectral_gc
 from dirconn.spectral import transfer_function
 
@@ -126,6 +127,24 @@ print(f"A -> C (indirect only): MTGC {pairwise[0, 2]:.3f}, conditional GC {condi
 print(f"A -> B (direct):        MTGC {pairwise[0, 1]:.3f}, conditional GC {conditional[0, 1]:.3f}")
 
 # %%
+# A conditional spectrum from the model
+# -------------------------------------
+# When a VAR model is acceptable, :class:`~dirconn.SSGC` gives the *conditional* spectral Granger
+# causality from one fit. The model of all signals is written in state-space form, and each
+# reduced model (here B and C without A) follows from it exactly (Barnett and Seth 2015), so no
+# second model is refitted and no spectrum is factorised. Its mean over frequency is the
+# time-domain value of ``GC(method="state_space")``. In the chain it puts nothing on A -> C:
+spectral = SSGC(order="bic", check_order_stability=False).fit(three)
+fig, ax = plt.subplots(layout="constrained")
+for (source, target), label in (((0, 1), "A → B"), ((1, 2), "B → C"), ((0, 2), "A → C | B")):
+    ax.plot(spectral.freqs, spectral.values[source, target, :, 0], label=label)
+ax.set_xlabel("frequency (Hz)")
+ax.set_ylabel("spectral GC (nats)")
+ax.legend()
+ax.set_title("conditional spectral Granger causality from the state-space form")
+print(f"A -> C | B, largest value over frequency: {np.nanmax(spectral.values[0, 2]):.4f}")
+
+# %%
 # What this does and does not show
 # --------------------------------
 # * On a simulated linear system the multitaper estimate followed the true spectral Granger
@@ -134,7 +153,8 @@ print(f"A -> B (direct):        MTGC {pairwise[0, 1]:.3f}, conditional GC {condi
 #   validation report (``docs/method_validation.md``) runs it on the reference scenarios.
 # * The segment length is a choice with a cost either way; nothing here picks it for you.
 # * The method is pairwise: an influence through a third recorded signal is reported as if it
-#   were direct, and so is a shared driver. A conditional multitaper version is not implemented.
+#   were direct, and so is a shared driver. A conditional multitaper version is not implemented;
+#   :class:`~dirconn.SSGC` is conditional but needs a well-specified, stationary VAR model.
 # * It is still Granger causality: predictive, not causal, and it assumes stationarity and that no
 #   unrecorded signal drives the pair. Each result lists its assumptions; ``not_checked`` means the
 #   library did not test one, not that it holds:

@@ -1,11 +1,11 @@
-"""DTF, PDC, gPDC and rPDC: spectral measures of directed influence from a pooled VAR model."""
+"""DTF, PDC, gPDC, rPDC and SSGC: spectral directed-influence measures from a pooled VAR model."""
 
 from __future__ import annotations
 
 import math
 from abc import abstractmethod
 from dataclasses import dataclass, field, replace
-from typing import Any
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -28,6 +28,7 @@ from dirconn.spectral import (
     rank_one_freqs,
     rpdc_from_coefs,
 )
+from dirconn.statespace import spectral_state_space_gc
 from dirconn.timeseries import TimeSeries
 
 
@@ -61,6 +62,9 @@ class _SpectralVAR(Estimator):
     Nyquist frequency by default; see :func:`dirconn.spectral.frequency_grid`. Data with ``valid``
     or ``predict`` masks use only the rows those select (see :func:`dirconn.mvar.row_mask`).
     """
+
+    _needs_stable_model: ClassVar[bool] = False
+    """Raise instead of only warning when the stationarity check fails."""
 
     order: int | str = "bic"
     max_order: int = 10
@@ -103,6 +107,10 @@ class _SpectralVAR(Estimator):
         """Return method-specific entries for the provenance details; default: none."""
         return {}
 
+    def _conditional_order_stability(self) -> bool:
+        """Whether the order-stability check compares with conditional GC; default: yes."""
+        return True
+
     def _fit(self, data: TimeSeries) -> Connectivity:
         freqs = frequency_grid(data.sfreq, n_freqs=self.n_freqs, fmax=self.fmax, freqs=self.freqs)
         series, preprocessing = self._preprocess(data)
@@ -115,10 +123,15 @@ class _SpectralVAR(Estimator):
             n_folds=self.n_folds,
         )
         fit = fit_var(series, order, ridge=self.ridge, demean=self.demean)
-        values = self._measure(fit, freqs)
-
         sampling = sampling_check(fit.n_channels * order, fit.n_obs, stacklevel=4)
         stability = stability_check(fit.coefs, stacklevel=4)
+        if self._needs_stable_model and stability.status == "fail":
+            raise ValueError(
+                f"{self.info.name} needs a stable VAR model, but {stability.detail} Check the "
+                "data for trends or non-stationarity, or lower the order."
+            )
+        values = self._measure(fit, freqs)
+
         checks = [sampling, stability]
         if self.check_whiteness:
             checks.append(
@@ -135,7 +148,15 @@ class _SpectralVAR(Estimator):
         if self.check_order_stability:
             from dirconn.order_stability import order_stability_check
 
-            checks.append(order_stability_check(series, order, demean=self.demean, stacklevel=4))
+            checks.append(
+                order_stability_check(
+                    series,
+                    order,
+                    demean=self.demean,
+                    conditional=self._conditional_order_stability(),
+                    stacklevel=4,
+                )
+            )
         provenance = self._provenance(
             data,
             model_order=order,
@@ -346,6 +367,71 @@ class RPDC(_SpectralVAR):
         return {"rank_one_freqs": [float(f) for f in np.asarray(freqs)[single]]}
 
 
+@dataclass(frozen=True)
+class SSGC(_SpectralVAR):
+    """Spectral Granger causality from the state-space form of the VAR (Barnett and Seth 2015).
+
+    ``values[i, j, f]`` is the Geweke spectral Granger causality from channel ``i`` to channel
+    ``j`` at frequency ``f``, in nats. One VAR model of all channels is fitted; written in
+    innovations form, it gives every reduced model exactly by one discrete algebraic Riccati
+    equation per conditioning set (see :mod:`dirconn.statespace`), so no reduced model is refitted
+    and no non-parametric spectral factorisation is needed. With ``conditional=True`` (default)
+    the influence of ``i`` on ``j`` is conditioned on all other channels,
+    ``f_{i->j|rest}(f)``; with ``conditional=False`` each pair is judged from its bivariate
+    subprocess of the same fit, which for two channels is Geweke's (1982) formula.
+
+    The mean over the whole unit circle (the trapezoid mean over the default grid from 0 to the
+    Nyquist frequency) is the time-domain value of ``GC(method="state_space")``. The values do not
+    depend on the scale of the channels. Unlike :class:`MTGC` the measure is parametric and
+    conditional, so it suits short segments and more than two channels; like every MVAR measure
+    it needs a stationary, well-specified model, and an unstable fit raises ``ValueError``.
+
+    Parameters
+    ----------
+    order, max_order, n_freqs, fmax, freqs, ridge, demean, n_folds
+        As for :class:`DTF`. With ``ridge > 0`` the penalised fit and its residual covariance
+        define the model.
+    conditional : bool
+        Condition on all other channels (default) or judge channel pairs separately. Costs one
+        Riccati equation per channel, or one per pair and per channel.
+    check_order_stability, check_whiteness : bool
+        As for :class:`DTF`; the order-stability check compares with least-squares GC refits in
+        the same mode (conditional or pairwise).
+    """
+
+    info = MethodInfo(
+        name="ssgc",
+        backend="own numpy pooled OLS VAR, innovations-form state space, scipy DARE",
+        directed=True,
+        min_nodes=2,
+        value_range=(0.0, math.inf),
+        scale_dependent=False,
+        frequency_resolved=True,
+        assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
+    )
+
+    _needs_stable_model: ClassVar[bool] = True
+
+    conditional: bool = True
+
+    def __post_init__(self) -> None:
+        """Validate the parameters."""
+        super().__post_init__()
+        check_switches(self, "conditional")
+
+    def _conditional_order_stability(self) -> bool:
+        return self.conditional
+
+    def _measure(self, fit: VarFit, freqs: np.ndarray) -> np.ndarray:
+        return spectral_state_space_gc(
+            fit.coefs, fit.noise_cov, freqs, fit.sfreq, conditional=self.conditional
+        )
+
+    def _measure_details(self, fit: VarFit, freqs: np.ndarray) -> dict[str, Any]:
+        return {"conditional": self.conditional}
+
+
 def dtf(data: TimeSeries, **params: Any) -> Connectivity:
     """Directed transfer function of ``data``; shorthand for ``DTF(**params).fit(data)``."""
     return DTF(**params).fit(data)
@@ -364,3 +450,8 @@ def gpdc(data: TimeSeries, **params: Any) -> Connectivity:
 def rpdc(data: TimeSeries, **params: Any) -> Connectivity:
     """Renormalised PDC of ``data``; shorthand for ``RPDC(**params).fit(data)``."""
     return RPDC(**params).fit(data)
+
+
+def ssgc(data: TimeSeries, **params: Any) -> Connectivity:
+    """State-space spectral GC of ``data``; shorthand for ``SSGC(**params).fit(data)``."""
+    return SSGC(**params).fit(data)

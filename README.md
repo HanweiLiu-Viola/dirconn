@@ -20,8 +20,9 @@ Documentation, tutorials and API reference: <https://hanweiliu-viola.github.io/d
   (Desikan-Killiany names) and directly recorded nodes such as a subthalamic LFP; a `Connectivity`
   result that carries its provenance (method, model order, assumptions, checks) and is saved as
   NetCDF; region time series in a BIDS-like layout.
-- **Methods**: conditional and pairwise Granger causality, DTF, PDC, generalised and renormalised
-  PDC (rPDC); controls for zero-delay mixing (time-reversed Granger causality, imaginary coherence,
+- **Methods**: conditional and pairwise Granger causality (refitted reduced models or the
+  state-space form of the VAR), conditional spectral Granger causality from the state-space form,
+  DTF, PDC, generalised and renormalised PDC (rPDC); controls for zero-delay mixing (time-reversed Granger causality, imaginary coherence,
   phase slope index); Granger causality from multitaper spectra without a fitted model; PCMCI; transfer
   entropy with the KSG estimator (multivariate by default, optionally on a GPU); time-varying
   measures (ADTF, TPDC, windowed DTF).
