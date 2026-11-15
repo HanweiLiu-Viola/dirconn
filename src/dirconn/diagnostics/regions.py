@@ -2,8 +2,8 @@
 
 The scenario files carry region names, not rules. These functions are the rules, written on plain
 arrays so they can be tested without a head model; ``scripts/pick_regions.py`` applies them to the
-sample head model and ``tests/test_scenario_library.py`` checks that the shipped files are what
-they give. Leakage matrices are the ones of :func:`dirconn.simulation.inverse.crosstalk`:
+sample head model and ``tests/simulation/test_scenario_library.py`` checks that the shipped files
+are what they give. Leakage matrices are the ones of :func:`dirconn.simulation.inverse.crosstalk`:
 ``matrix[i, j]`` is
 the response of the series of region ``i`` to region ``j``, so the leak of region ``x`` *into the
 series of* ``y`` is ``matrix[y, x]``.

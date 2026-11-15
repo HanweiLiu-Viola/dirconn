@@ -2,8 +2,8 @@
 
 The spectra are an own multitaper transform on non-overlapping segments of ``segment_length``
 seconds, with the tapers, weights and scaling of :func:`mne.time_frequency.csd_array_multitaper`
-(``tests/test_csd.py`` checks equality on every frequency MNE returns). MNE is not called at run
-time because it never returns 0 Hz, which the spectral factorisation of the multitaper Granger
+(``tests/methods/test_csd.py`` checks equality on every frequency MNE returns). MNE is not called at
+run time because it never returns 0 Hz, which the spectral factorisation of the multitaper Granger
 causality needs (:func:`two_sided_spectra`). Continuous data must give ``segment_length``;
 epoched data may (every trial is then cut on its own) or use every trial as one segment. No
 segment crosses a trial boundary, and the tail that does not fill a segment is dropped and
@@ -13,7 +13,7 @@ recorded. The mean of every channel is removed within every segment, as MNE alwa
 
 Convention: ``values[i, j, f] = <X_i(f) conj(X_j(f))>``, averaged over tapers and segments. When
 channel ``j`` is channel ``i`` delayed by ``d`` samples, the phase of ``values[i, j, f]`` is
-``+2 pi f d / sfreq`` (measured in ``tests/test_csd.py``).
+``+2 pi f d / sfreq`` (measured in ``tests/methods/test_csd.py``).
 """
 
 from __future__ import annotations
@@ -168,8 +168,8 @@ def cross_spectra(
     """Multitaper cross-spectra of all channel pairs, averaged over segments.
 
     One-sided densities with the conventions of :func:`mne.time_frequency.csd_array_multitaper`
-    (equal to it on every frequency it returns, which ``tests/test_csd.py`` checks): 0 Hz is left
-    out and the Nyquist bin of an even segment is not doubled.
+    (equal to it on every frequency it returns, which ``tests/methods/test_csd.py`` checks): 0 Hz is
+    left out and the Nyquist bin of an even segment is not doubled.
 
     Parameters
     ----------

@@ -7,7 +7,7 @@ around *its own* value; it is not corrected for bias, so for a positively biased
 Granger causality in short data it can sit entirely above the true value. The ``valid`` and
 ``predict`` masks of the data travel with the trials or blocks. Percentile bands
 are also slightly too narrow in small samples: a nominal 90% band over 30 trials covered the
-true value 86% of the time in the calibration test (tests/test_bootstrap.py).
+true value 86% of the time in the calibration test (tests/stats/test_bootstrap.py).
 """
 
 from __future__ import annotations
