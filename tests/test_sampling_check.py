@@ -3,7 +3,7 @@ import warnings
 import pytest
 
 from dirconn import DirconnWarning
-from dirconn.estimator import SAMPLING_RATIO_WARN, sampling_check
+from dirconn.methods.base import SAMPLING_RATIO_WARN, sampling_check
 
 
 def test_the_limit_is_one_coefficient_per_ten_observations():

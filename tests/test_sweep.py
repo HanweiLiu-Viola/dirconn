@@ -522,7 +522,7 @@ class TestSignificanceRunner:
 
 def test_the_surrogate_names_of_the_protocol_are_those_of_significance_test():
     from dirconn.protocol import SURROGATE_NAMES
-    from dirconn.significance import _NAMED_SURROGATES
+    from dirconn.stats.significance import _NAMED_SURROGATES
 
     assert sorted(SURROGATE_NAMES) == sorted(_NAMED_SURROGATES)
 

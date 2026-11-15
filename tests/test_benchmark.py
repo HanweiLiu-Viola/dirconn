@@ -271,7 +271,7 @@ from dataclasses import dataclass  # noqa: E402
 
 from dirconn import Connectivity  # noqa: E402
 from dirconn.benchmark import add_artifact  # noqa: E402
-from dirconn.estimator import Estimator, MethodInfo  # noqa: E402
+from dirconn.methods.base import Estimator, MethodInfo  # noqa: E402
 from dirconn.scenario import ArtifactSpec, stimulation_artifact  # noqa: E402
 from helpers import Spy  # noqa: E402
 

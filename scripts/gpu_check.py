@@ -38,8 +38,8 @@ def main() -> None:
     import torch
 
     from dirconn import DirconnWarning, TimeSeries
-    from dirconn._ksg import ksg_cmi
-    from dirconn.transfer_entropy import TE
+    from dirconn.methods._ksg import ksg_cmi
+    from dirconn.methods.transfer_entropy import TE
 
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--device", default="cuda")

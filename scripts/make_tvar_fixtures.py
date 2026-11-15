@@ -1,6 +1,7 @@
 """Write ``tests/data/tvar_neurrow.npz``: inputs and outputs of the old time-varying MVAR kernel.
 
-The fixtures let the tests of :mod:`dirconn.tvmvar` compare against the numerical reference of the
+The fixtures let the tests of :mod:`dirconn.methods.timevarying.tvmvar` compare against the
+numerical reference of the
 old package (``neurrow``, never modified) without importing it, so CI does not need it. Every case
 starts from **zero coefficients** (``init="zeros"``): the old kernel seeds from a statsmodels fit
 and the new one from its own OLS core, so a common explicit start is the only way to compare the

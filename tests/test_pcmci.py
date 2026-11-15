@@ -13,7 +13,7 @@ from tigramite import data_processing  # noqa: E402
 from tigramite.independence_tests.parcorr import ParCorr  # noqa: E402
 from tigramite.pcmci import PCMCI as TigramitePCMCI  # noqa: E402
 
-from dirconn.pcmci import LIMITATIONS, NULL, PCMCI, PCMCITestResult, pcmci, pcmci_test  # noqa: E402
+from dirconn.methods.pcmci import LIMITATIONS, NULL, PCMCI, PCMCITestResult, pcmci, pcmci_test  # noqa: E402
 
 SFREQ = 100.0
 

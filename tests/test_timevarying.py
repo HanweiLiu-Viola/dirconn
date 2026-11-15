@@ -17,8 +17,8 @@ from dirconn import (
     adtf,
     tpdc,
 )
-from dirconn.spectral import dtf_from_coefs_series, frequency_grid, pdc_from_coefs_series
-from dirconn.tvmvar import fit_tvar
+from dirconn.methods.spectral import dtf_from_coefs_series, frequency_grid, pdc_from_coefs_series
+from dirconn.methods.timevarying.tvmvar import fit_tvar
 
 SFREQ = 100.0
 
@@ -312,7 +312,7 @@ def test_a_segment_reduction_of_adtf_has_the_shape_and_axes_of_wdtf_with_segment
 
 @pytest.mark.parametrize("estimator_class", [ADTF, TPDC])
 def test_a_result_from_a_grid_fit_equals_the_estimator_fit(estimator_class):
-    from dirconn.tvmvar import fit_tvar_grid
+    from dirconn.methods.timevarying.tvmvar import fit_tvar_grid
 
     ts = chain(2000, seed=16)
     factors = [0.98, 0.9999]
@@ -331,7 +331,7 @@ def test_a_result_from_a_grid_fit_equals_the_estimator_fit(estimator_class):
 
 
 def test_from_fit_refuses_a_fit_of_other_settings():
-    from dirconn.tvmvar import fit_tvar_grid
+    from dirconn.methods.timevarying.tvmvar import fit_tvar_grid
 
     ts = chain(1500, seed=17)
     estimator = ADTF(order=1, n_freqs=5, forgetting=0.99)

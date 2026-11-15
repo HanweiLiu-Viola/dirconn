@@ -27,7 +27,7 @@ from dirconn.data.network import Network
 from dirconn.data.result import Connectivity
 
 if TYPE_CHECKING:
-    from dirconn.estimator import MethodInfo
+    from dirconn.methods.base import MethodInfo
 
 
 def _as_matrix(values: Any, what: str) -> np.ndarray:

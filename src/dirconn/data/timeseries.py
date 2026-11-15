@@ -45,7 +45,8 @@ class TimeSeries:
         samples inside beta bursts. ``None`` (default) means every sample.
 
         A VAR model of order ``p`` uses the row at time ``t`` only when ``predict[t]`` and
-        ``valid[t - p .. t]`` are all ``True`` (see :func:`dirconn.mvar.lagged_design`). Masks
+        ``valid[t - p .. t]`` are all ``True`` (see :func:`dirconn.methods.mvar.lagged_design`).
+        Masks
         that are all ``True`` are stored as ``None``. Estimators that cannot use the masks refuse
         masked data (``MethodInfo.supports_mask``).
     history : tuple of dict

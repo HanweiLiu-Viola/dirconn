@@ -25,7 +25,7 @@ from typing import Any
 import numpy as np
 
 from dirconn.data.timeseries import TimeSeries
-from dirconn.tvmvar import seconds_to_samples
+from dirconn.methods.timevarying.tvmvar import seconds_to_samples
 
 DEFAULT_TIME_HALFBANDWIDTH = 4.0
 """Default time-half-bandwidth product ``NW`` (MNE's default as well); about ``2 NW - 1`` tapers."""

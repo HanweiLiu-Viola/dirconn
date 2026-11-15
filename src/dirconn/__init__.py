@@ -5,28 +5,10 @@ imported lazily by the modules that need it; tigramite, statsmodels, mne-connect
 plotting libraries are optional extras.
 """
 
+import sys
 from importlib import metadata
 
-from dirconn import datasets, viz
-from dirconn.analytic import (
-    AnalyticTestResult,
-    AsymptoticTestResult,
-    analytic_gc_test,
-    analytic_pdc_test,
-    analytic_rpdc_test,
-)
-from dirconn.baseline import baseline_normalise
-from dirconn.bids import (
-    SimulationRecord,
-    read_bids,
-    read_simulation_bids,
-    write_roi_bids,
-    write_simulation_bids,
-)
-from dirconn.bootstrap import BootstrapResult, bootstrap
-from dirconn.coherency import PSI, ImCoh, imcoh, psi
-from dirconn.contrast import ContrastResult, contrast_test
-from dirconn.correction import adjust_pvalues
+from dirconn import viz
 from dirconn.data.bands import BANDS
 from dirconn.data.channels import ChannelMeta
 from dirconn.data.exceptions import DirconnWarning
@@ -34,19 +16,54 @@ from dirconn.data.network import Edge, Network, direct_node, dk_node
 from dirconn.data.provenance import AssumptionCheck, AssumptionChecklist, Provenance
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
-from dirconn.estimator import Estimator, MethodInfo
-from dirconn.granger import GC, gc
-from dirconn.multitaper_granger import MTGC, mtgc
-from dirconn.mvar import OrderSelection, VarFit, fit_var, select_order
-from dirconn.pcmci import PCMCI, PCMCITestResult, pcmci, pcmci_test
-from dirconn.significance import significance_test
+from dirconn.io import datasets
+from dirconn.io.bids import (
+    SimulationRecord,
+    read_bids,
+    read_simulation_bids,
+    write_roi_bids,
+    write_simulation_bids,
+)
+from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.methods.coherency import PSI, ImCoh, imcoh, psi
+from dirconn.methods.granger import GC, gc
+from dirconn.methods.multitaper_granger import MTGC, mtgc
+from dirconn.methods.mvar import OrderSelection, VarFit, fit_var, select_order
+from dirconn.methods.pcmci import PCMCI, PCMCITestResult, pcmci, pcmci_test
+from dirconn.methods.spectral_estimators import (
+    DTF,
+    GPDC,
+    PDC,
+    RPDC,
+    SSGC,
+    dtf,
+    gpdc,
+    pdc,
+    rpdc,
+    ssgc,
+)
+from dirconn.methods.time_reversal import TRGC, TimeReversalAsymmetry, time_reversal_asymmetry, trgc
+from dirconn.methods.timevarying.timevarying import ADTF, TPDC, adtf, tpdc
+from dirconn.methods.timevarying.windowed import WDTF, wdtf
+from dirconn.methods.transfer_entropy import TE, te
 from dirconn.simulation import NodeDynamics, SimulatedData, coupled_nonlinear, simulate
-from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC, SSGC, dtf, gpdc, pdc, rpdc, ssgc
-from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
-from dirconn.time_reversal import TRGC, TimeReversalAsymmetry, time_reversal_asymmetry, trgc
-from dirconn.timevarying import ADTF, TPDC, adtf, tpdc
-from dirconn.transfer_entropy import TE, te
-from dirconn.windowed import WDTF, wdtf
+from dirconn.stats.analytic import (
+    AnalyticTestResult,
+    AsymptoticTestResult,
+    analytic_gc_test,
+    analytic_pdc_test,
+    analytic_rpdc_test,
+)
+from dirconn.stats.baseline import baseline_normalise
+from dirconn.stats.bootstrap import BootstrapResult, bootstrap
+from dirconn.stats.contrast import ContrastResult, contrast_test
+from dirconn.stats.correction import adjust_pvalues
+from dirconn.stats.significance import significance_test
+from dirconn.stats.surrogate_test import SurrogateTestResult, surrogate_test
+
+# ``import dirconn.datasets`` must keep resolving to this module, without a deprecation warning.
+# (Placed after the imports so that ruff E402 holds; nothing above imports ``dirconn.datasets``.)
+sys.modules["dirconn.datasets"] = datasets
 
 __version__: str = metadata.version("dirconn")
 

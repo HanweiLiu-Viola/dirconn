@@ -198,7 +198,7 @@ def directed_spectrum(
     curves are the two orders of one pair, not two directions: the legend says ``(A, B)`` and
     ``(B, A)`` instead of arrows, and the title says that the measure is undirected.
     """
-    from dirconn.estimator import method_info
+    from dirconn.methods.base import method_info
 
     if conn.is_complex:
         raise ValueError("Complex values cannot be drawn as a curve; take abs() or real first.")

@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from dirconn import DTF, GC, TimeSeries, significance_test, surrogate_test
-from dirconn.analytic import AnalyticTestResult, analytic_gc_test
-from dirconn.surrogate_test import SurrogateTestResult
-from dirconn.surrogates import AAFT, BlockShuffle, PhaseRandomize
+from dirconn.stats.analytic import AnalyticTestResult, analytic_gc_test
+from dirconn.stats.surrogate_test import SurrogateTestResult
+from dirconn.stats.surrogates import AAFT, BlockShuffle, PhaseRandomize
 from helpers import AbsCorr, coupled
 
 pytestmark = pytest.mark.filterwarnings(

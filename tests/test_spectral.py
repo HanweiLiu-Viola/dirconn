@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dirconn.spectral import (
+from dirconn.methods.spectral import (
     ar_polynomial,
     dtf_from_coefs,
     frequency_grid,

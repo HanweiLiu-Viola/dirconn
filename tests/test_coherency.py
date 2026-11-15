@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from dirconn import TimeSeries
-from dirconn._csd import cross_spectra
-from dirconn.coherency import PSI, ImCoh, imcoh, psi
+from dirconn.methods._csd import cross_spectra
+from dirconn.methods.coherency import PSI, ImCoh, imcoh, psi
 
 SFREQ = 100.0
 MIX = np.array([[1.0, 0.8], [0.6, 1.0]])

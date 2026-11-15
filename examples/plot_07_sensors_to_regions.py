@@ -24,12 +24,12 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from dirconn.datasets import require_sample
 
 import dirconn
-from dirconn.datasets import require_sample
+from dirconn.diagnostics.regions import centre_distances
 from dirconn.headmodel import load_head_model
 from dirconn.inverse import crosstalk, roi_series
-from dirconn.regions import centre_distances
 from dirconn.scenario import load_scenario
 from dirconn.simulation import simulate_on_head
 

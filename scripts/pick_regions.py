@@ -1,6 +1,7 @@
 """Choose the regions of the head-model scenarios.
 
-The rules are in ``dirconn.regions``; this script applies them to the MNE sample head model and
+The rules are in ``dirconn.diagnostics.regions``; this script applies them to the MNE sample head
+model and
 prints the result, which the scenario files and ``tests/test_scenario_library.py`` carry.
 
     python scripts/pick_regions.py pool        # the four regions of the hand-written scenarios
@@ -16,9 +17,7 @@ import argparse
 
 import numpy as np
 
-from dirconn.headmodel import load_head_model
-from dirconn.inverse import crosstalk
-from dirconn.regions import (
+from dirconn.diagnostics.regions import (
     centre_distances,
     distance_strata,
     distant_region,
@@ -26,6 +25,8 @@ from dirconn.regions import (
     min_visibility,
     pool,
 )
+from dirconn.headmodel import load_head_model
+from dirconn.inverse import crosstalk
 
 
 def show_pool(heads: dict, args: argparse.Namespace) -> None:

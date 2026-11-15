@@ -6,15 +6,15 @@ import numpy as np
 import pytest
 
 from dirconn import GC, DirconnWarning, TimeSeries
-from dirconn._csd import two_sided_spectra
-from dirconn.multitaper_granger import (
+from dirconn.methods._csd import two_sided_spectra
+from dirconn.methods.multitaper_granger import (
     MTGC,
     full_circle,
     geweke_spectral_gc,
     mtgc,
     wilson_factorisation,
 )
-from dirconn.spectral import transfer_function
+from dirconn.methods.spectral import transfer_function
 
 SFREQ = 100.0
 # bivariate VAR(2), layout [lag, target, source]: channel 0 drives channel 1 at lag 2

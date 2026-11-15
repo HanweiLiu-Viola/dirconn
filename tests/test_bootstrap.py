@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 
 from dirconn import Connectivity, DirconnWarning, TimeSeries
-from dirconn.bootstrap import BootstrapResult, bootstrap
 from dirconn.data.rng import RNGController
-from dirconn.estimator import Estimator, MethodInfo
+from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.stats.bootstrap import BootstrapResult, bootstrap
 from helpers import MeanDifference, coupled, epochs
 
 

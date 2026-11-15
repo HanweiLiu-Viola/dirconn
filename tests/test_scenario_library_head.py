@@ -128,13 +128,13 @@ class TestOnTheSampleHead:
 
     @pytest.fixture(scope="module")
     def geometry(self, heads):
-        from dirconn.regions import centre_distances, min_visibility
+        from dirconn.diagnostics.regions import centre_distances, min_visibility
 
         return min_visibility(heads.values()), centre_distances(heads["eeg"])
 
     def test_the_leakage_scenario_is_what_the_rules_give(self, heads, geometry):
+        from dirconn.diagnostics.regions import distant_region, leakage_pairs
         from dirconn.inverse import crosstalk
-        from dirconn.regions import distant_region, leakage_pairs
 
         visibility, distances = geometry
         names = heads["eeg"].roi_names
@@ -144,7 +144,7 @@ class TestOnTheSampleHead:
         assert (names[z], names[best.source], names[best.receiver]) == (Z, X, Y)
 
     def test_the_distance_scenarios_are_what_the_rules_give(self, heads, geometry):
-        from dirconn.regions import distance_strata
+        from dirconn.diagnostics.regions import distance_strata
 
         visibility, distances = geometry
         names = heads["eeg"].roi_names

@@ -18,9 +18,9 @@ from dirconn import (
     fit_var,
     ssgc,
 )
-from dirconn.multitaper_granger import geweke_spectral_gc
-from dirconn.spectral import transfer_function
-from dirconn.statespace import (
+from dirconn.methods.multitaper_granger import geweke_spectral_gc
+from dirconn.methods.spectral import transfer_function
+from dirconn.methods.statespace import (
     reduced_model,
     spectral_state_space_gc,
     state_space_gc,

@@ -147,7 +147,7 @@ def test_a_list_of_lists_and_numpy_pairs_are_accepted(prov):
 
 
 def test_it_works_as_the_reduce_argument_of_the_statistics_functions(prov):
-    from dirconn._resampling import make_reducer
+    from dirconn.stats._resampling import make_reducer
 
     reducer = make_reducer(lambda r: r.reduce_freq((0.0, 10.0)).reduce_time((0.2, 0.5)))
     out = reducer(movie(prov))

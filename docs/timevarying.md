@@ -14,7 +14,7 @@ the settings mean and what was changed from the old package.
 | `ADTF`, `adtf` | DTF at every time point from a time-varying VAR |
 | `TPDC`, `tpdc` | PDC at every time point from the same model |
 | `WDTF`, `wdtf` | DTF of one pooled VAR per sliding window (`window`, `step`) or per named segment (`segments`) |
-| `dirconn.tvmvar.fit_tvar`, `fit_tvar_grid` | the time-varying VAR itself; the grid version runs several forgetting factors in one pass |
+| `dirconn.methods.timevarying.tvmvar.fit_tvar`, `fit_tvar_grid` | the time-varying VAR itself; the grid version runs several forgetting factors in one pass |
 | `Connectivity.reduce_time(segments, how)` | reduce the time axis over segments, like `reduce_freq` |
 | `contrast_test(..., paired=True)` | permutation test for two segments of the same trials |
 | `Edge(..., active=[(start, stop), ...])` | an edge that acts only in time intervals; `network.truth(times=...)`, `simulate` |

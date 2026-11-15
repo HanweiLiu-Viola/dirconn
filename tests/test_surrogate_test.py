@@ -6,9 +6,9 @@ import pytest
 
 from dirconn import DTF, GC, Connectivity, DirconnWarning, TimeSeries
 from dirconn.data.rng import RNGController
-from dirconn.estimator import Estimator, MethodInfo
-from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
-from dirconn.surrogates import AAFT, BlockShuffle, CircularShift, PhaseRandomize, TrialShuffle
+from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.stats.surrogate_test import SurrogateTestResult, surrogate_test
+from dirconn.stats.surrogates import AAFT, BlockShuffle, CircularShift, PhaseRandomize, TrialShuffle
 from helpers import AbsCorr, coupled, independent
 
 # Most tests use few surrogates for speed; the power check has its own tests below.
@@ -250,7 +250,7 @@ class TestDiagnosticsOfSurrogateFits:
         assert result.checks.get("surrogate_generation").status == "pass"
 
     def test_generator_warnings_are_summarised_and_recorded(self):
-        from dirconn.surrogates import IAAFT
+        from dirconn.stats.surrogates import IAAFT
 
         with pytest.warns(DirconnWarning, match="converge") as caught:
             result = surrogate_test(

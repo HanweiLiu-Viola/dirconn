@@ -11,8 +11,8 @@ import warnings
 import numpy as np
 
 from dirconn import GC, TimeSeries
-from dirconn.surrogate_test import surrogate_test
-from dirconn.surrogates import CircularShift, PhaseRandomize
+from dirconn.stats.surrogate_test import surrogate_test
+from dirconn.stats.surrogates import CircularShift, PhaseRandomize
 
 N_DATASETS = 100
 N_SURROGATES = 39  # p <= 0.05 and p <= 0.10 then have probability exactly 0.05 and 0.10

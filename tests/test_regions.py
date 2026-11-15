@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from dirconn.regions import (
+from dirconn.diagnostics.regions import (
     distance_strata,
     distant_region,
     leakage_pairs,

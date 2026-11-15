@@ -24,9 +24,9 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.correction import adjust_pvalues
 from dirconn.data.bands import BANDS
 from dirconn.scenario import list_scenarios, load_scenario
+from dirconn.stats.correction import adjust_pvalues
 
 ALPHAS: tuple[float, ...] = (0.01, 0.05, 0.10)
 Z_95 = 1.959963984540054

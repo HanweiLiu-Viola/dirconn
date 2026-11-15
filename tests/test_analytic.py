@@ -5,7 +5,7 @@ import pytest
 from scipy import stats
 
 from dirconn import GC, DirconnWarning, TimeSeries
-from dirconn.analytic import AnalyticTestResult, analytic_gc_test
+from dirconn.stats.analytic import AnalyticTestResult, analytic_gc_test
 
 
 def var_data(n_trials=1, n_times=300, n_channels=2, seed=0, drive=0.0):
@@ -18,7 +18,7 @@ def var_data(n_trials=1, n_times=300, n_channels=2, seed=0, drive=0.0):
 
 
 def reference(data, order, demean, conditional):
-    """F test of the nested models by direct least squares; independent of dirconn.mvar."""
+    """F test of the nested models by direct least squares; independent of dirconn.methods.mvar."""
     x = data.data.copy()
     if demean:
         x = x - x.mean(axis=(0, 2), keepdims=True)

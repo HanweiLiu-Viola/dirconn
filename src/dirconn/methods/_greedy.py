@@ -35,7 +35,7 @@ from typing import Any
 
 import numpy as np
 
-from dirconn._ksg import ksg_cmi_many
+from dirconn.methods._ksg import ksg_cmi_many
 
 
 @dataclass(frozen=True)

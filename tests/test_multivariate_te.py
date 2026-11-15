@@ -6,10 +6,10 @@ import numpy as np
 import pytest
 
 from dirconn import DirconnWarning, TimeSeries, te
-from dirconn._greedy import _factorial_at_least, _p_value, min_permutations
-from dirconn._ksg import ksg_cmi, ksg_cmi_many
+from dirconn.methods._greedy import _factorial_at_least, _p_value, min_permutations
+from dirconn.methods._ksg import ksg_cmi, ksg_cmi_many
+from dirconn.methods.transfer_entropy import TE
 from dirconn.simulation import coupled_nonlinear
-from dirconn.transfer_entropy import TE
 
 SFREQ = 100.0
 FAST = {"n_perm_max_stat": 19, "n_perm_min_stat": 19, "n_perm_omnibus": 19, "n_perm_max_seq": 19}
@@ -244,7 +244,7 @@ def test_torch_float32_agrees_statistically():
 
 def test_torch_blocks_give_the_same_counts(monkeypatch):
     _torch()
-    import dirconn._ksg as ksg
+    import dirconn.methods._ksg as ksg
 
     rng = np.random.default_rng(12)
     x, y, z = rng.standard_normal((3, 300))

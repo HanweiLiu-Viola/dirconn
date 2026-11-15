@@ -120,8 +120,8 @@ def compare(folder: Path) -> None:
     import warnings
 
     from dirconn import DirconnWarning, TimeSeries
-    from dirconn._ksg import ksg_cmi
-    from dirconn.transfer_entropy import TE
+    from dirconn.methods._ksg import ksg_cmi
+    from dirconn.methods.transfer_entropy import TE
 
     reference = json.loads((folder / "idtxl_mte.json").read_text())
     series = np.load(folder / "series.npz")

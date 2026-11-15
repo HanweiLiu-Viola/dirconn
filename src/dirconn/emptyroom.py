@@ -21,8 +21,8 @@ from pathlib import Path
 
 import numpy as np
 
-from dirconn.datasets import require_sample
 from dirconn.headmodel import HeadModel
+from dirconn.io.datasets import require_sample
 
 EMPTY_ROOM_FILE = "MEG/sample/ernoise_raw.fif"
 MEG_MODALITIES = ("mag", "grad")

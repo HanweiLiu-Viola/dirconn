@@ -8,14 +8,14 @@ from scipy import stats
 from statsmodels.tsa.vector_ar.var_model import VAR
 
 from dirconn import DTF, GC, GPDC, PDC, RPDC, TRGC, DirconnWarning, TimeSeries, surrogate_test
-from dirconn._resampling import without_data_checks
-from dirconn.estimator import (
+from dirconn.methods.base import (
     WHITENESS_EXTRA_LAGS,
     WHITENESS_MIN_AUTOCORR,
     residual_whiteness_check,
 )
-from dirconn.mvar import fit_var
-from dirconn.surrogates import PhaseRandomize
+from dirconn.methods.mvar import fit_var
+from dirconn.stats._resampling import without_data_checks
+from dirconn.stats.surrogates import PhaseRandomize
 
 COEFS = np.zeros((2, 3, 3))  # [lag - 1, target, source]
 COEFS[0] = [[1.2, 0.0, 0.0], [0.4, 0.3, 0.0], [0.0, 0.0, 0.6]]

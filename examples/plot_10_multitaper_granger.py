@@ -29,8 +29,8 @@ import numpy as np
 
 import dirconn
 from dirconn import GC, MTGC, SSGC, TimeSeries
-from dirconn.multitaper_granger import geweke_spectral_gc
-from dirconn.spectral import transfer_function
+from dirconn.methods.multitaper_granger import geweke_spectral_gc
+from dirconn.methods.spectral import transfer_function
 
 QUICK = os.environ.get("DIRCONN_QUICK") == "1"  # the tests set this; readers get the full version
 SEED = 0

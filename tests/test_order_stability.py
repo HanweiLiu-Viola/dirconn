@@ -3,11 +3,11 @@ import warnings
 import numpy as np
 import pytest
 
-import dirconn.order_stability as order_stability
+import dirconn.diagnostics.order_stability as order_stability
 from dirconn import DTF, GC, GPDC, PDC, DirconnWarning, TimeSeries, surrogate_test
 from dirconn.benchmark import constructed_pair, evaluate_pair
-from dirconn.order_stability import candidate_orders, order_stability_check
-from dirconn.surrogates import PhaseRandomize
+from dirconn.diagnostics.order_stability import candidate_orders, order_stability_check
+from dirconn.stats.surrogates import PhaseRandomize
 from helpers import SFREQ, fake_recording
 
 

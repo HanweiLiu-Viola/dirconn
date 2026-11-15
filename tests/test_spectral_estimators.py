@@ -21,7 +21,7 @@ from dirconn import (
     pdc,
     simulate,
 )
-from dirconn.spectral import dtf_from_coefs, frequency_grid, pdc_from_coefs
+from dirconn.methods.spectral import dtf_from_coefs, frequency_grid, pdc_from_coefs
 
 COEFS = np.zeros((2, 3, 3))
 COEFS[0] = [[0.5, 0.0, 0.0], [0.4, 0.3, 0.0], [0.0, 0.3, 0.2]]  # 0 -> 1 -> 2, [target, source]

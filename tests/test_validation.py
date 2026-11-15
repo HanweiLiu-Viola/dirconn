@@ -5,8 +5,8 @@ import pytest
 
 from dirconn import Estimator, TimeSeries
 from dirconn.evaluation import separation
+from dirconn.methods.spectral import spectral_radius
 from dirconn.simulation import network_var
-from dirconn.spectral import spectral_radius
 from dirconn.validation import (
     METHODS,
     SCENARIOS,
@@ -175,7 +175,7 @@ class TestExtendedScoring:
         from dataclasses import dataclass
 
         from dirconn import Connectivity
-        from dirconn.estimator import MethodInfo
+        from dirconn.methods.base import MethodInfo
         from dirconn.validation import score_matrix
 
         @dataclass(frozen=True)

@@ -126,7 +126,7 @@ def test_te_grid(data):
 
 
 def test_method_info_finds_the_estimator_by_its_name():
-    from dirconn.estimator import method_info
+    from dirconn.methods.base import method_info
 
     assert method_info("imcoh") is ImCoh.info and not method_info("imcoh").directed
     assert method_info("mtgc") is MTGC.info and method_info("trgc").antisymmetric

@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from dirconn import DTF, DirconnWarning, TimeSeries
-from dirconn.contrast import contrast_test
 from dirconn.data.rng import RNGController
+from dirconn.stats.contrast import contrast_test
 from helpers import MeanDifference, Spy, epochs
 
 SFREQ = 100.0

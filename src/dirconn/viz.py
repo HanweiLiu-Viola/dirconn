@@ -89,7 +89,7 @@ def dominant_networks(regions: Sequence[Any], networks: Sequence[Any]) -> pd.Dat
 def _subjects_dir(subjects_dir: str | Path | None) -> Path:
     if subjects_dir is not None:
         return Path(subjects_dir)
-    from dirconn.datasets import require_sample
+    from dirconn.io.datasets import require_sample
 
     return require_sample() / "subjects"
 

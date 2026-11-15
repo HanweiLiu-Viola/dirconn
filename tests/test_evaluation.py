@@ -205,7 +205,7 @@ class TestConventions:
 
     @staticmethod
     def _info(**kwargs):
-        from dirconn.estimator import MethodInfo
+        from dirconn.methods.base import MethodInfo
 
         return MethodInfo(name="stub", backend="test", **kwargs)
 

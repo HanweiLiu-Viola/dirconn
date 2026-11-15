@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 
 from dirconn import Connectivity, DirconnWarning, TimeSeries
-from dirconn.contrast import ContrastResult, contrast_test
 from dirconn.data.rng import RNGController
-from dirconn.estimator import Estimator, MethodInfo
+from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.stats.contrast import ContrastResult, contrast_test
 from helpers import MeanDifference, epochs
 
 # Most tests use few permutations for speed; the power check has its own tests below.

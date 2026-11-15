@@ -64,7 +64,7 @@ scores are small and the other diagnostics do not warn. Reproduce with `scripts/
 orders (2, 4, 8, 16 and 32 times the chosen one, as far as the data allow) and use the exact F test
 of Granger causality. A pair is flagged when, at some longer order, one direction is significant at
 0.001 and the other is not significant at 0.05, while the chosen order favours the opposite
-direction (`check_order_stability`, on by default; `dirconn.order_stability`). Measured on the real
+direction (`check_order_stability`, on by default; `dirconn.diagnostics.order_stability`). Measured on the real
 pairs above (alpha 0.001):
 
 | | Result |
@@ -175,7 +175,7 @@ sampling ends at 50 Hz). The band and delay files have an unconnected node that 
 
 ### Leakage, distance and artifact scenarios
 
-The rules are in `dirconn.regions` (plain-array functions, tested on made-up data) and applied to the
+The rules are in `dirconn.diagnostics.regions` (plain-array functions, tested on made-up data) and applied to the
 sample head model by `scripts/pick_regions.py leakage` and `distance`; a sample-data test checks that
 the shipped files are what the rules give. The leakage matrix is `dirconn.inverse.crosstalk` with the
 defaults (minimum norm, `pca_flip`, 10 dB probe, seed 0); `matrix[y, x]` is the leak of region `x` into
@@ -303,7 +303,7 @@ First run of `full` (SNR 0, -5, -10 dB, lengths 30 and 60 s): the chain's best e
 
 Both use `store_scores: true`, which keeps the band-reduced score matrix of the analysed nodes in
 every stage card (six decimals; off elsewhere because it makes the files larger), and are analysed by
-`dirconn.leakage` from the saved results alone. A protocol of `kind: region_pairs` has no `scenarios`
+`dirconn.diagnostics.leakage` from the saved results alone. A protocol of `kind: region_pairs` has no `scenarios`
 and no `coupling` axis: `pairs` (`n`, `seed`, `regions`) gives `n` random pairs of the listed regions
 (the first `n` of one seeded permutation of all pairs, so asking for more keeps the pairs already
 chosen), each a two-node network without any edge, a 10 and a 20 Hz oscillator, coupling 0. The

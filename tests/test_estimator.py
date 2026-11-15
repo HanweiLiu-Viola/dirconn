@@ -7,7 +7,7 @@ import pytest
 from dirconn import AssumptionCheck, Connectivity, MethodInfo, TimeSeries
 from dirconn.data.exceptions import DirconnWarning
 from dirconn.data.provenance import STANDARD_ASSUMPTIONS, array_hash
-from dirconn.estimator import Estimator
+from dirconn.methods.base import Estimator
 
 
 def make_info(**overrides):

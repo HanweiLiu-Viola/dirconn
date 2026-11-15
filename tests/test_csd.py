@@ -6,7 +6,7 @@ import pytest
 from mne.time_frequency import csd_array_multitaper
 
 from dirconn import TimeSeries
-from dirconn._csd import CrossSpectra, cross_spectra, two_sided_spectra
+from dirconn.methods._csd import CrossSpectra, cross_spectra, two_sided_spectra
 
 SFREQ = 100.0
 

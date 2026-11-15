@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 
 from dirconn import DirconnWarning, TimeSeries
-from dirconn.mvar import OrderSelection
-from dirconn.tvmvar import TvarFit, fit_tvar, tvar_checks
+from dirconn.methods.mvar import OrderSelection
+from dirconn.methods.timevarying.tvmvar import TvarFit, fit_tvar, tvar_checks
 
 SFREQ = 100.0
 FIXTURES = Path(__file__).parent / "data" / "tvar_neurrow.npz"
@@ -698,7 +698,7 @@ def test_agrees_with_the_old_package_from_a_common_zero_start(name):
 @pytest.mark.parametrize("update", ["dual", "rls", "dekf"])
 @pytest.mark.parametrize("n_trials", [1, 3])
 def test_a_grid_of_forgetting_factors_equals_separate_fits_bit_for_bit(update, n_trials):
-    from dirconn.tvmvar import fit_tvar_grid
+    from dirconn.methods.timevarying.tvmvar import fit_tvar_grid
 
     data = _trials(n_trials, n_times=500)
     ts = series(data if n_trials > 1 else data[0])
@@ -718,7 +718,7 @@ def test_a_grid_of_forgetting_factors_equals_separate_fits_bit_for_bit(update, n
 
 
 def test_a_grid_shares_the_order_selection_and_the_seed_fit():
-    from dirconn.tvmvar import fit_tvar_grid
+    from dirconn.methods.timevarying.tvmvar import fit_tvar_grid
 
     ts = series(simulate_var1(lambda t: stationary_a(), 3000, seed=50))
     fits = fit_tvar_grid(ts, forgetting=[0.98, 0.9999], standardize=None)
@@ -728,7 +728,7 @@ def test_a_grid_shares_the_order_selection_and_the_seed_fit():
 
 
 def test_a_grid_needs_valid_factors():
-    from dirconn.tvmvar import fit_tvar_grid
+    from dirconn.methods.timevarying.tvmvar import fit_tvar_grid
 
     ts = series(simulate_var1(lambda t: stationary_a(), 600, seed=51))
     with pytest.raises(ValueError, match="at least one"):
@@ -740,7 +740,7 @@ def test_a_grid_needs_valid_factors():
 def test_the_default_forgetting_is_0_99999():
     import inspect
 
-    from dirconn.tvmvar import fit_tvar_grid
+    from dirconn.methods.timevarying.tvmvar import fit_tvar_grid
 
     assert inspect.signature(fit_tvar).parameters["forgetting"].default == 0.99999
     assert inspect.signature(fit_tvar_grid).parameters["forgetting"].default == (0.99999,)

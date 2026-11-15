@@ -18,16 +18,19 @@ from typing import Any
 import numpy as np
 
 from dirconn.benchmark import add_artifact, evaluate_stages, roi_observations
-from dirconn.coherency import PSI, ImCoh
 from dirconn.data.exceptions import DirconnWarning
 from dirconn.data.rng import RNGController
 from dirconn.emptyroom import empty_room_window, n_windows
-from dirconn.estimator import Estimator
-from dirconn.granger import GC
 from dirconn.headmodel import MODALITIES, HeadModel, load_head_model
 from dirconn.inverse import crosstalk
-from dirconn.multitaper_granger import MTGC
-from dirconn.pcmci import PCMCI
+from dirconn.methods.base import Estimator
+from dirconn.methods.coherency import PSI, ImCoh
+from dirconn.methods.granger import GC
+from dirconn.methods.multitaper_granger import MTGC
+from dirconn.methods.pcmci import PCMCI
+from dirconn.methods.spectral_estimators import DTF, GPDC, PDC, RPDC
+from dirconn.methods.time_reversal import TRGC
+from dirconn.methods.transfer_entropy import TE
 from dirconn.protocol import (
     ESTIMATOR_NAMES,
     EXTENDED_ESTIMATOR_NAMES,
@@ -38,11 +41,8 @@ from dirconn.protocol import (
     task_seed,
 )
 from dirconn.scenario import ScenarioSpec
-from dirconn.significance import significance_test
 from dirconn.simulation import simulate, simulate_on_head
-from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC
-from dirconn.time_reversal import TRGC
-from dirconn.transfer_entropy import TE
+from dirconn.stats.significance import significance_test
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     "max_order": 40,
@@ -67,7 +67,7 @@ MULTITAPER_SEGMENT_SECONDS = 2.0
 """Multitaper segment of the ``mt`` estimators (imcoh, PSI, MTGC), in seconds."""
 REFERENCE_DURATION_S = 120.0
 SAMPLING_RULE = 0.1
-"""At most one coefficient per ten observations (:func:`dirconn.estimator.sampling_check`)."""
+"""At most one coefficient per ten observations (:func:`dirconn.methods.base.sampling_check`)."""
 
 
 def settings_for(overrides: Mapping[str, Any] | None = None) -> dict[str, Any]:

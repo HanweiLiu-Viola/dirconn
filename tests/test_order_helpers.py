@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 from dirconn import DirconnWarning, TimeSeries
-from dirconn.estimator import STABILITY_RATIO_WARN, order_boundary_check, stability_check
-from dirconn.mvar import check_order_spec, choose_order, select_order
+from dirconn.methods.base import STABILITY_RATIO_WARN, order_boundary_check, stability_check
+from dirconn.methods.mvar import check_order_spec, choose_order, select_order
 
 
 def make_series(n_times=3000, seed=0):

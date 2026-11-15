@@ -31,9 +31,9 @@ from dirconn import (
     select_order,
     surrogate_test,
 )
-from dirconn.estimator import Estimator, MethodInfo, residual_whiteness_check
-from dirconn.mvar import cv_splits, lagged_design, row_mask
-from dirconn.surrogates import (
+from dirconn.methods.base import Estimator, MethodInfo, residual_whiteness_check
+from dirconn.methods.mvar import cv_splits, lagged_design, row_mask
+from dirconn.stats.surrogates import (
     AAFT,
     IAAFT,
     BlockShuffle,

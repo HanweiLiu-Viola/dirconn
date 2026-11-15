@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 
 from dirconn import GC, DirconnWarning, TimeSeries
+from dirconn.methods.transfer_entropy import TE, ksg_cmi, te
 from dirconn.simulation import coupled_nonlinear
-from dirconn.transfer_entropy import TE, ksg_cmi, te
 
 SFREQ = 100.0
 

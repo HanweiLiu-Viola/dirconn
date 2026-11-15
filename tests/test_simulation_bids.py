@@ -14,7 +14,7 @@ from dirconn import (
     simulate,
     write_simulation_bids,
 )
-from dirconn.bids import SimulationRecord
+from dirconn.io.bids import SimulationRecord
 
 A, B = "bankssts-lh", "superiorparietal-lh"
 N_SENSORS = 6

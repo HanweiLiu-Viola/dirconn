@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from dirconn import spectral
-from dirconn.spectral import (
+from dirconn.methods import spectral
+from dirconn.methods.spectral import (
     dtf_from_coefs,
     dtf_from_coefs_series,
     frequency_grid,

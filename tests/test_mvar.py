@@ -3,7 +3,14 @@ import pytest
 from statsmodels.tsa.vector_ar.var_model import VAR
 
 from dirconn import TimeSeries
-from dirconn.mvar import OrderSelection, VarFit, cv_splits, fit_var, lagged_design, select_order
+from dirconn.methods.mvar import (
+    OrderSelection,
+    VarFit,
+    cv_splits,
+    fit_var,
+    lagged_design,
+    select_order,
+)
 
 COEFS = np.zeros((2, 2, 2))
 COEFS[0] = [[0.5, 0.0], [0.4, 0.3]]  # lag 1, [target, source]: channel 0 drives channel 1

@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 
 from dirconn import surrogate_test
-from dirconn.correction import adjust_pvalues
-from dirconn.surrogates import PhaseRandomize
+from dirconn.stats.correction import adjust_pvalues
+from dirconn.stats.surrogates import PhaseRandomize
 from helpers import AbsCorr, coupled
 
 multipletests = pytest.importorskip("statsmodels.stats.multitest").multipletests

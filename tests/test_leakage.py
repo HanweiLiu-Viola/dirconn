@@ -6,7 +6,7 @@ import math
 import numpy as np
 import pytest
 
-from dirconn.leakage import adjacent_report, leakage_correlation
+from dirconn.diagnostics.leakage import adjacent_report, leakage_correlation
 
 NAMES = ["bankssts-lh", "cuneus-lh", "insula-lh", "lingual-lh"]
 PAIRS = list(itertools.combinations(NAMES, 2))  # 6 unordered pairs

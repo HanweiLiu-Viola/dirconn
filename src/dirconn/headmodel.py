@@ -25,7 +25,7 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.datasets import require_sample
+from dirconn.io.datasets import require_sample
 
 MODALITIES: tuple[str, ...] = ("eeg", "mag", "grad")
 

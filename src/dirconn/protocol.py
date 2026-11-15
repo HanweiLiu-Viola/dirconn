@@ -37,9 +37,9 @@ import yaml
 
 from dirconn.data.network import Network, dk_node
 from dirconn.data.rng import RNGController
+from dirconn.diagnostics.leakage import adjacent_report, leakage_correlation
 from dirconn.headmodel import MODALITIES
 from dirconn.inverse import INVERSE_METHODS
-from dirconn.leakage import adjacent_report, leakage_correlation
 from dirconn.noise_study import noise_report
 from dirconn.scenario import ScenarioSpec, list_scenarios, load_scenario
 from dirconn.significance_study import frequency_report, significance_report

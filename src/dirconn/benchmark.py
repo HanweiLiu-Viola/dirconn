@@ -29,8 +29,6 @@ from dirconn.data.exceptions import DirconnWarning
 from dirconn.data.network import Network
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
-from dirconn.datasets import require_sample
-from dirconn.estimator import Estimator
 from dirconn.evaluation import (
     auroc_by_frequency,
     convention_scores,
@@ -39,6 +37,8 @@ from dirconn.evaluation import (
 )
 from dirconn.headmodel import HeadModel
 from dirconn.inverse import roi_series
+from dirconn.io.datasets import require_sample
+from dirconn.methods.base import Estimator
 from dirconn.scenario import ArtifactSpec, stimulation_artifact
 from dirconn.simulation import SimulatedData
 

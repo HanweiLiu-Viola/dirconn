@@ -6,7 +6,7 @@ import pytest
 from dirconn import DirconnWarning, TimeSeries
 from dirconn.data.channels import ChannelMeta
 from dirconn.data.rng import RNGController
-from dirconn.surrogates import (
+from dirconn.stats.surrogates import (
     AAFT,
     IAAFT,
     BlockShuffle,
@@ -325,7 +325,7 @@ class TestCircularShift:
 
 class TestDocumentedLimitations:
     def test_the_table_lists_every_generator_with_its_null_and_limits(self):
-        from dirconn.surrogates import limitations_table
+        from dirconn.stats.surrogates import limitations_table
 
         table = limitations_table()
         for generator in [cls() for cls in ALL] + [BlockShuffle(block_size=50)]:
@@ -337,7 +337,7 @@ class TestDocumentedLimitations:
     def test_the_documentation_contains_the_generated_table(self):
         from pathlib import Path
 
-        from dirconn.surrogates import limitations_table
+        from dirconn.stats.surrogates import limitations_table
 
         doc = Path(__file__).parent.parent / "docs" / "surrogates.md"
         assert limitations_table() in doc.read_text(encoding="utf-8")

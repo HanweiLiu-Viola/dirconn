@@ -8,8 +8,8 @@ import pytest
 from scipy.signal import lfilter
 
 from dirconn import GC, Connectivity, DirconnWarning, TimeSeries
-from dirconn.estimator import Estimator, MethodInfo
-from dirconn.time_reversal import (
+from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.methods.time_reversal import (
     TRGC,
     TimeReversalAsymmetry,
     reverse_time,
@@ -106,16 +106,16 @@ def test_trgc_reuses_the_forward_order_and_passes_conditional():
 
 def test_trgc_selects_the_order_only_once(monkeypatch):
     """The reversed fit reuses the forward order instead of selecting its own."""
-    import dirconn.granger
+    import dirconn.methods.granger
 
     calls = []
-    original = dirconn.granger.choose_order
+    original = dirconn.methods.granger.choose_order
 
     def spy(data, order, *args, **kwargs):
         calls.append(order)
         return original(data, order, *args, **kwargs)
 
-    monkeypatch.setattr(dirconn.granger, "choose_order", spy)
+    monkeypatch.setattr(dirconn.methods.granger, "choose_order", spy)
     result = _fit(TRGC(order="bic", max_order=8, check_order_stability=False), _lagged(2))
     assert calls == ["bic", result.provenance.model_order]
 

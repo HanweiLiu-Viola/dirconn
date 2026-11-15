@@ -8,11 +8,11 @@ import numpy as np
 import pytest
 
 from dirconn import Connectivity, Provenance
-from dirconn import nonstationary as ns
 from dirconn.evaluation import switch_times
+from dirconn.methods.spectral import spectral_radius
+from dirconn.methods.timevarying import nonstationary as ns
 from dirconn.scenario import load_scenario
 from dirconn.simulation import network_var_schedule
-from dirconn.spectral import spectral_radius
 
 ROOT = Path(__file__).resolve().parents[1]
 R1, R2, R3 = "transversetemporal-rh", "cuneus-rh", "transversetemporal-lh"
