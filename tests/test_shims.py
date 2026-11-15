@@ -47,6 +47,17 @@ MOVED = {
     "dirconn.order_stability": "dirconn.diagnostics.order_stability",
     "dirconn.leakage": "dirconn.diagnostics.leakage",
     "dirconn.regions": "dirconn.diagnostics.regions",
+    "dirconn.scenario": "dirconn.simulation.scenario",
+    "dirconn.headmodel": "dirconn.simulation.headmodel",
+    "dirconn.inverse": "dirconn.simulation.inverse",
+    "dirconn.emptyroom": "dirconn.simulation.emptyroom",
+    "dirconn.protocol": "dirconn.validation.protocol",
+    "dirconn.sweep": "dirconn.validation.sweep",
+    "dirconn.benchmark": "dirconn.validation.benchmark",
+    "dirconn.evaluation": "dirconn.validation.evaluation",
+    "dirconn.noise_study": "dirconn.validation.noise_study",
+    "dirconn.significance_study": "dirconn.validation.significance_study",
+    "dirconn.report": "dirconn.validation.benchmark_report",
 }
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "dirconn"
@@ -141,9 +152,7 @@ def test_validation_package_forwards_old_names_with_warning():
 def test_validation_submodules_do_not_warn():
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
-        import dirconn.validation as v
+        from dirconn.validation import method_validation, protocol
 
-        assert v.protocol is importlib.import_module("dirconn.validation.protocol")
-        assert v.method_validation is importlib.import_module(
-            "dirconn.validation.method_validation"
-        )
+    assert protocol is importlib.import_module("dirconn.validation.protocol")
+    assert method_validation is importlib.import_module("dirconn.validation.method_validation")
