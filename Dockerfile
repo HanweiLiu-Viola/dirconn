@@ -6,7 +6,7 @@
 # environment, not a workflow: there is no entrypoint and no pipeline inside; analysis scripts
 # and notebooks are mounted into /work and run there.
 #
-# Build:  python scripts/build_image.py          (passes the git SHA, date and version)
+# Build:  python tools/build_image.py          (passes the git SHA, date and version)
 # Use:    see "Reproducible Docker environment" in README.md
 
 ARG PYTHON_IMAGE=python:3.11.16-slim-bookworm
@@ -28,7 +28,7 @@ ENV OMP_NUM_THREADS=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# git: the analysis repositories mounted into /work record their commit (dirconn.protocol); they
+# git: the analysis repositories mounted into /work record their commit (dirconn.validation.protocol); they
 # belong to another user than the container's, which git refuses unless the directory is trusted.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git \
@@ -37,7 +37,7 @@ RUN apt-get update \
 
 COPY . /opt/dirconn-src
 
-# Extras: everything except `gpu` (torch is measured separately, scripts/gpu_check.py) and
+# Extras: everything except `gpu` (torch is measured separately, tools/gpu_check.py) and
 # `plot-extra` (3D needs a display; surface maps are drawn on the host from exported results).
 # pytest, nbformat and packaging run the test suite inside the image. The notebooks are generated
 # from examples/ and are never committed, so they are made here.
@@ -45,7 +45,7 @@ RUN pip install --no-cache-dir -c /opt/dirconn-src/constraints/docker.txt \
         "/opt/dirconn-src[connectivity,pcmci,stats,parallel,speed,plot]" \
         jupyterlab pytest nbformat packaging \
  && pip freeze > /opt/environment-lock.txt \
- && python /opt/dirconn-src/scripts/make_notebooks.py --out /opt/dirconn/tutorials \
+ && python /opt/dirconn-src/tools/make_notebooks.py --out /opt/dirconn/tutorials \
  && python -c "import dirconn, mne, mne_connectivity, tigramite, pycirclize; print('dirconn', dirconn.__version__)"
 
 # A normal user: with a bind-mounted /work, a root container writes files the host user may not

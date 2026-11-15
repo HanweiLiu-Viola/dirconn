@@ -14,7 +14,7 @@ dist/
 docs/_build/
 docs/auto_tutorials/
 docs/generated/
-benchmark_results/
+validation/results/
 slides/
 paper_notes/
 _notes/

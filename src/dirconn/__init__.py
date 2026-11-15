@@ -5,48 +5,67 @@ imported lazily by the modules that need it; tigramite, statsmodels, mne-connect
 plotting libraries are optional extras.
 """
 
+import importlib
+import sys
+import types
 from importlib import metadata
+from typing import Any
 
-from dirconn import datasets, viz
-from dirconn.analytic import (
+from dirconn import viz
+from dirconn.data.bands import BANDS
+from dirconn.data.channels import ChannelMeta
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.network import Edge, Network, direct_node, dk_node
+from dirconn.data.provenance import AssumptionCheck, AssumptionChecklist, Provenance
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
+from dirconn.io import datasets
+from dirconn.io.bids import read_bids, write_roi_bids
+from dirconn.io.simulation_bids import (
+    SimulationRecord,
+    read_simulation_bids,
+    write_simulation_bids,
+)
+from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.methods.coherency import PSI, ImCoh, imcoh, psi
+from dirconn.methods.granger import GC, gc
+from dirconn.methods.multitaper_granger import MTGC, mtgc
+from dirconn.methods.mvar import OrderSelection, VarFit, fit_var, select_order
+from dirconn.methods.pcmci import PCMCI, PCMCITestResult, pcmci, pcmci_test
+from dirconn.methods.spectral_estimators import (
+    DTF,
+    GPDC,
+    PDC,
+    RPDC,
+    SSGC,
+    dtf,
+    gpdc,
+    pdc,
+    rpdc,
+    ssgc,
+)
+from dirconn.methods.time_reversal import TRGC, TimeReversalAsymmetry, time_reversal_asymmetry, trgc
+from dirconn.methods.timevarying.timevarying import ADTF, TPDC, adtf, tpdc
+from dirconn.methods.timevarying.windowed import WDTF, wdtf
+from dirconn.methods.transfer_entropy import TE, te
+from dirconn.simulation import NodeDynamics, SimulatedData, coupled_nonlinear, simulate
+from dirconn.stats.analytic import (
     AnalyticTestResult,
     AsymptoticTestResult,
     analytic_gc_test,
     analytic_pdc_test,
     analytic_rpdc_test,
 )
-from dirconn.bands import BANDS
-from dirconn.baseline import baseline_normalise
-from dirconn.bids import (
-    SimulationRecord,
-    read_bids,
-    read_simulation_bids,
-    write_roi_bids,
-    write_simulation_bids,
-)
-from dirconn.bootstrap import BootstrapResult, bootstrap
-from dirconn.channels import ChannelMeta
-from dirconn.coherency import PSI, ImCoh, imcoh, psi
-from dirconn.contrast import ContrastResult, contrast_test
-from dirconn.correction import adjust_pvalues
-from dirconn.estimator import Estimator, MethodInfo
-from dirconn.exceptions import DirconnWarning
-from dirconn.granger import GC, gc
-from dirconn.multitaper_granger import MTGC, mtgc
-from dirconn.mvar import OrderSelection, VarFit, fit_var, select_order
-from dirconn.network import Edge, Network, direct_node, dk_node
-from dirconn.pcmci import PCMCI, PCMCITestResult, pcmci, pcmci_test
-from dirconn.provenance import AssumptionCheck, AssumptionChecklist, Provenance
-from dirconn.result import Connectivity
-from dirconn.significance import significance_test
-from dirconn.simulation import NodeDynamics, SimulatedData, coupled_nonlinear, simulate
-from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC, SSGC, dtf, gpdc, pdc, rpdc, ssgc
-from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
-from dirconn.time_reversal import TRGC, TimeReversalAsymmetry, time_reversal_asymmetry, trgc
-from dirconn.timeseries import TimeSeries
-from dirconn.timevarying import ADTF, TPDC, adtf, tpdc
-from dirconn.transfer_entropy import TE, te
-from dirconn.windowed import WDTF, wdtf
+from dirconn.stats.baseline import baseline_normalise
+from dirconn.stats.bootstrap import BootstrapResult, bootstrap
+from dirconn.stats.contrast import ContrastResult, contrast_test
+from dirconn.stats.correction import adjust_pvalues
+from dirconn.stats.significance import significance_test
+from dirconn.stats.surrogate_test import SurrogateTestResult, surrogate_test
+
+# ``import dirconn.datasets`` must keep resolving to this module, without a deprecation warning.
+# (Placed after the imports so that ruff E402 holds; nothing above imports ``dirconn.datasets``.)
+sys.modules["dirconn.datasets"] = datasets
 
 __version__: str = metadata.version("dirconn")
 
@@ -130,3 +149,83 @@ __all__ = [
     "write_roi_bids",
     "write_simulation_bids",
 ]
+
+
+class _Package(types.ModuleType):
+    """The package module: a deprecated submodule import may not replace a public function.
+
+    Importing the old path ``dirconn`` + ``.bootstrap`` loads the shim and then binds it to
+    ``dirconn.bootstrap``, which is the function; before the subpackage move the real
+    submodule was imported during package initialisation and the function always won.
+    """
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        current = self.__dict__.get(name)
+        if isinstance(value, types.ModuleType) and name in __all__ and callable(current):
+            return
+        super().__setattr__(name, value)
+
+
+# The old top-level module paths, all deprecated shims (``tests/test_shims.py::MOVED`` holds the
+# full old -> new map and checks this list against it). 0.1.0 bound them as attributes during
+# package initialisation, so attribute access to them after ``import dirconn`` keeps working
+# through ``__getattr__`` below, with the shim's warning.
+_DEPRECATED_MODULES = (
+    "analytic",
+    "bands",
+    "baseline",
+    "benchmark",
+    "bids",
+    "bootstrap",
+    "channels",
+    "coherency",
+    "contrast",
+    "correction",
+    "emptyroom",
+    "estimator",
+    "evaluation",
+    "exceptions",
+    "granger",
+    "headmodel",
+    "inverse",
+    "leakage",
+    "multitaper_granger",
+    "mvar",
+    "network",
+    "noise_study",
+    "nonstationary",
+    "order_stability",
+    "pcmci",
+    "plotting",
+    "protocol",
+    "provenance",
+    "regions",
+    "report",
+    "result",
+    "rng",
+    "scenario",
+    "significance",
+    "significance_study",
+    "spectral",
+    "spectral_estimators",
+    "statespace",
+    "surrogate_test",
+    "surrogates",
+    "sweep",
+    "time_reversal",
+    "timeseries",
+    "timevarying",
+    "transfer_entropy",
+    "tvmvar",
+    "windowed",
+)
+
+
+def __getattr__(name: str) -> Any:
+    """Import a deprecated old module path on attribute access; the shim emits the warning."""
+    if name in _DEPRECATED_MODULES:
+        return importlib.import_module(f"dirconn.{name}")
+    raise AttributeError(f"module 'dirconn' has no attribute {name!r}")
+
+
+sys.modules[__name__].__class__ = _Package

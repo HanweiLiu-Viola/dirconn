@@ -14,11 +14,11 @@ the settings mean and what was changed from the old package.
 | `ADTF`, `adtf` | DTF at every time point from a time-varying VAR |
 | `TPDC`, `tpdc` | PDC at every time point from the same model |
 | `WDTF`, `wdtf` | DTF of one pooled VAR per sliding window (`window`, `step`) or per named segment (`segments`) |
-| `dirconn.tvmvar.fit_tvar`, `fit_tvar_grid` | the time-varying VAR itself; the grid version runs several forgetting factors in one pass |
+| `dirconn.methods.timevarying.tvmvar.fit_tvar`, `fit_tvar_grid` | the time-varying VAR itself; the grid version runs several forgetting factors in one pass |
 | `Connectivity.reduce_time(segments, how)` | reduce the time axis over segments, like `reduce_freq` |
 | `contrast_test(..., paired=True)` | permutation test for two segments of the same trials |
 | `Edge(..., active=[(start, stop), ...])` | an edge that acts only in time intervals; `network.truth(times=...)`, `simulate` |
-| `dirconn.evaluation` (time-resolved part) | `auroc_by_time`, `score_stable`, `tracking_latency`, `switch_times`, ... |
+| `dirconn.validation.evaluation` (time-resolved part) | `auroc_by_time`, `score_stable`, `tracking_latency`, `switch_times`, ... |
 
 All of them share the layout `values[source, target, freq, time]`, the direction convention
 `source -> target`, and the provenance and assumption checklist of the rest of the package.
@@ -47,7 +47,7 @@ would make the filter remember `1 / (1 - lambda)` samples. In this recursion it 
 noise `1 / lambda - 1`** (and the speed of the innovation-variance recursion), and the filter's real
 memory is much shorter. `TvarFit.memory_samples` measures it: the reciprocal of the mean gain along the
 regressor over the samples after the burn-in. It is recorded in the provenance (`memory_samples`) and
-used for the sampling check and for the default guard band of `dirconn.evaluation.guard_seconds`.
+used for the sampling check and for the default guard band of `dirconn.validation.evaluation.guard_seconds`.
 
 Measured values:
 
@@ -79,7 +79,7 @@ coupling changes slowly, a smaller one when it changes fast.
 | `rls` | "faster, one fewer knob" | the same coefficients as `dual` |
 
 The numerical core agrees with the old one to 1e-9 from a common zero start (five fixtures in
-`tests/data`, made by `scripts/make_tvar_fixtures.py`) and with a slow joint reference implementation of
+`tests/data`, made by `tools/make_tvar_fixtures.py`) and with a slow joint reference implementation of
 the DEKF to 1e-8.
 
 Defaults that were kept: process noise `1 / lambda - 1`, `init_samples =

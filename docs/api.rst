@@ -103,11 +103,11 @@ coefficients known in advance (for example the truth of a simulation):
    :toctree: generated
    :nosignatures:
 
-   statespace.var_to_state_space
-   statespace.reduced_model
-   statespace.state_space_gc
-   statespace.spectral_state_space_gc
-   statespace.InnovationsForm
+   methods.statespace.var_to_state_space
+   methods.statespace.reduced_model
+   methods.statespace.state_space_gc
+   methods.statespace.spectral_state_space_gc
+   methods.statespace.InnovationsForm
 
 A heuristic that compares any estimator with itself on time-reversed data (not an estimator, not a
 test):
@@ -187,10 +187,31 @@ Modules the tutorials use
    :toctree: generated
    :nosignatures:
 
-   scenario.load_scenario
-   scenario.list_scenarios
-   simulation.simulate_on_head
-   headmodel.load_head_model
-   inverse.roi_series
-   inverse.crosstalk
-   regions.centre_distances
+   simulation.scenario.load_scenario
+   simulation.scenario.list_scenarios
+   simulation.simulation.simulate_on_head
+   simulation.headmodel.load_head_model
+   simulation.inverse.roi_series
+   simulation.inverse.crosstalk
+   diagnostics.regions.centre_distances
+
+Modules
+-------
+
+The package is split into eight subpackages of ``dirconn`` (see
+:doc:`decisions/0002-package-layout`). The old top-level module paths (such as ``dirconn.granger``
+or ``dirconn.plotting``) are deprecated shims that warn on import and are removed in dirconn 0.4.0.
+
+.. currentmodule:: dirconn
+
+.. autosummary::
+   :toctree: generated
+
+   data
+   io
+   methods
+   stats
+   diagnostics
+   simulation
+   validation
+   viz

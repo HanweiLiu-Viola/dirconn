@@ -32,7 +32,7 @@ Documentation, tutorials and API reference: <https://hanweiliu-viola.github.io/d
 - **Simulation and validation**: networks with a known truth, simulated through the head models of
   the MNE `sample` dataset, so that leakage, observation noise and hidden drivers can be measured
   instead of assumed. The benchmark protocols, their saved results and what they do and do not show
-  are part of the repository (`protocols/`, `benchmark_results/`, `docs/benchmark*.md`).
+  are part of the repository (`validation/protocols/`, `validation/results/`, `docs/benchmark*.md`).
 
 ## Install
 
@@ -120,7 +120,7 @@ keep large data on an SSD, or copy it into a Docker volume first. The image cont
 3D plotting: surface maps are drawn on the host from saved results. Under Apptainer the image runs
 unchanged (`apptainer pull docker://ghcr.io/hanweiliu-viola/dirconn:<tag>`); nothing is written into
 it at run time. The image is checked against the published validation numbers with
-`scripts/validate_methods.py` and `scripts/compare_validation.py`.
+`tools/validate_methods.py` and `tools/compare_validation.py`.
 
 ## Citing
 

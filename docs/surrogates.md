@@ -25,7 +25,7 @@ generators move samples within a trial and refuse masked data.
 
 ## Null hypotheses and their limitations
 
-The table is generated from the code (`dirconn.surrogates.limitations_table()`); a test keeps it
+The table is generated from the code (`dirconn.stats.surrogates.limitations_table()`); a test keeps it
 identical to the classes' `null` and `limitations`.
 
 | Surrogate | Null hypothesis | How the null can be rejected without coupling |
@@ -41,7 +41,7 @@ identical to the classes' `null` and `limitations`.
 
 ```python
 from dirconn import GC, surrogate_test
-from dirconn.surrogates import IAAFT
+from dirconn.stats.surrogates import IAAFT
 
 result = surrogate_test(GC(order=2), data, IAAFT(), n_surrogates=199, seed=0, reduce=None)
 result.pvalues  # (source, target, freq, time); NaN for undefined cells such as the diagonal
@@ -77,7 +77,7 @@ Bonferroni-type correction over `m` cells needs `n_surrogates >= m / alpha - 1`.
 
 ## Reproducibility
 
-Each surrogate uses its own generator, derived from one seed by `dirconn.rng.RNGController`:
+Each surrogate uses its own generator, derived from one seed by `dirconn.data.rng.RNGController`:
 generator `i` depends only on the seed and `i`, not on the number of workers, and raising the number
 of surrogates leaves the earlier ones unchanged. The seed is required.
 

@@ -63,11 +63,11 @@ Measured with the scripts and tests named in the right column; all p-values shou
 
 | Test | Setting | Result | Where |
 |---|---|---|---|
-| surrogate, `phase_randomize` / `circular_shift` | GC order 2, independent AR(1), 100 datasets, 39 surrogates, 200 p-values | rejections at 0.05: 5 / 7 (10 expected); mean p 0.497 / 0.495 | `scripts/calibrate_surrogate_test.py` |
-| surrogate, `block_shuffle` | GC order 2, 600 samples in blocks of 50, 19 surrogates, 300 p-values | share at or below 0.05: 0.053; mean p 0.526 (0.525 expected for 19 surrogates) | `tests/test_surrogate_test.py` |
-| contrast | mean differences, 10 trials each, 19 permutations, 1500 datasets, 3 cells | share at or below 0.10: 0.107 / 0.092 / 0.095 | `tests/test_contrast.py` |
-| analytic GC | independent noise, 1500 datasets | rejections at 0.05: 4.4% (1 trial of 150) and 5.5% (5 trials of 60); KS p 0.21 and 0.92 | `tests/test_analytic.py` |
-| bootstrap | 30 trials, nominal 90% band, 300 datasets | covered 86.2% | `tests/test_bootstrap.py` |
+| surrogate, `phase_randomize` / `circular_shift` | GC order 2, independent AR(1), 100 datasets, 39 surrogates, 200 p-values | rejections at 0.05: 5 / 7 (10 expected); mean p 0.497 / 0.495 | `tools/calibrate_surrogate_test.py` |
+| surrogate, `block_shuffle` | GC order 2, 600 samples in blocks of 50, 19 surrogates, 300 p-values | share at or below 0.05: 0.053; mean p 0.526 (0.525 expected for 19 surrogates) | `tests/stats/test_surrogate_test.py` |
+| contrast | mean differences, 10 trials each, 19 permutations, 1500 datasets, 3 cells | share at or below 0.10: 0.107 / 0.092 / 0.095 | `tests/stats/test_contrast.py` |
+| analytic GC | independent noise, 1500 datasets | rejections at 0.05: 4.4% (1 trial of 150) and 5.5% (5 trials of 60); KS p 0.21 and 0.92 | `tests/stats/test_analytic.py` |
+| bootstrap | 30 trials, nominal 90% band, 300 datasets | covered 86.2% | `tests/stats/test_bootstrap.py` |
 
 With 19 resamples the p-values are 1/20, ..., 1 and average 0.525 under the null, not 0.5.
 

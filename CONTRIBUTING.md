@@ -39,8 +39,12 @@ macOS with Python 3.10 to 3.13.
 ruff format .
 ruff check .
 mypy
+lint-imports
 pytest
 ```
+
+`lint-imports` (from `import-linter`, in the `dev` extra) checks the dependency direction between the
+subpackages described in [Package layout](#package-layout).
 
 `pytest` turns `RuntimeWarning` into an error, so numerical warnings cannot slip through. Tests marked
 `sample_data` need the MNE sample dataset and never run by default.
@@ -48,6 +52,31 @@ pytest
 ## Conventions
 
 ### Code
+
+#### Package layout
+
+The package has eight subpackages ([decision 0002](docs/decisions/0002-package-layout.md)):
+
+- `dirconn.data`: the data structures (`TimeSeries`, `Network`, `Connectivity`, `Provenance`), bands,
+  random generators and exceptions.
+- `dirconn.io`: reading and writing (BIDS, NetCDF, MNE objects, the `sample` dataset).
+- `dirconn.methods`: `Estimator` and `MethodInfo`, the VAR core and every estimator; time-varying
+  estimators in `dirconn.methods.timevarying`.
+- `dirconn.stats`: surrogates, significance tests, bootstrap, contrasts, correction, baseline.
+- `dirconn.diagnostics`: checks on a fit or a source model (order stability, leakage, regions).
+- `dirconn.simulation`: networks with a known truth, scenarios, head models, inverse, empty-room noise.
+- `dirconn.validation`: protocols, sweeps, the benchmark and its report, metrics and the
+  method-validation runner; code that scores methods against a truth.
+- `dirconn.viz`: figures, and the `plot()` dispatcher behind `Connectivity.plot`.
+
+Dependencies point one way: `data` imports no other subpackage, `methods` does not import `io`,
+`viz`, `simulation` or `validation`, and no library subpackage (`data`, `io`, `methods`, `stats`,
+`diagnostics`, `simulation`, `viz`) imports `validation`. `lint-imports`
+enforces it; the few accepted exceptions are listed in `[tool.importlinter]` in `pyproject.toml` and in
+decision 0002. The old top-level module paths (`dirconn.granger`, `dirconn.plotting`, ...) are
+deprecated shims that are removed in 0.4.0; new code and tests import the new paths.
+
+#### Style
 
 - Python 3.10+, line length 100, English docstrings in numpydoc style, type hints on public code.
 - Estimators are **frozen dataclasses** deriving from `dirconn.Estimator`, with typed parameters, a
@@ -106,14 +135,14 @@ Write the test first and watch it fail.
   find what depends on one. A reported number without its environment is not a result.
 - The Docker image (`Dockerfile`) installs with `constraints/docker.txt`, which repeats the
   benchmark pins and adds the rest of the stack; a test keeps the shared pins equal. Push only
-  images built from a clean commit (`scripts/build_image.py --push` refuses otherwise).
+  images built from a clean commit (`tools/build_image.py --push` refuses otherwise).
 - `__version__` is read from the package metadata and is never hard-coded.
 
 ## Tutorials
 
 The tutorials are the scripts `examples/plot_*.py`: plain Python with `# %%` cells (the sphinx-gallery
 layout), so they diff cleanly and run with `python`. Notebooks are generated for viewing and are never
-committed: `python scripts/make_notebooks.py` writes them to `docs/_build/notebooks` (needs `nbformat`).
+committed: `python tools/make_notebooks.py` writes them to `docs/_build/notebooks` (needs `nbformat`).
 
 Every tutorial follows the same rules, and `tests/test_examples.py` checks them and runs the script:
 
@@ -181,27 +210,31 @@ driver, collider, bidirectional pair, feedback loop, zero-lag coupling, hidden d
 noise), how every method scores. It is generated, not written: rerun
 
 ```bash
-python scripts/validate_methods.py            # full run, about ten minutes
-python scripts/validate_methods.py --seeds 3  # quick look
-python scripts/validate_methods.py --from-results   # re-render the saved rows only
+python tools/validate_methods.py            # full run, about ten minutes
+python tools/validate_methods.py --seeds 3  # quick look
+python tools/validate_methods.py --from-results   # re-render the saved rows only
 ```
 
 after a change that can move the numbers (a new method, a new default, a change in the VAR core,
 a new numpy or scipy), and commit the report together with the saved rows. The scenarios and the
-runner live in `dirconn.validation`; the metrics are in `dirconn.evaluation`. Add a method to
+runner live in `dirconn.validation.method_validation`; the metrics are in `dirconn.validation.evaluation`. Add a method to
 `METHODS` and it appears in every table; add a scenario to `SCENARIOS` and it appears in the report.
 
 ## Adding a method
 
-1. Write the tests: an exact or independently computed reference, the `info` guardrails, finiteness,
-   and the axis convention.
-2. Subclass `Estimator`, define `info` (`name`, `backend`, `directed`, node limits, `scale_dependent`,
+1. Write the tests under `tests/methods/`: an exact or independently computed reference, the `info`
+   guardrails, finiteness, and the axis convention.
+2. Put the method in a module under `src/dirconn/methods/` (time-varying methods under
+   `src/dirconn/methods/timevarying/`). Subclass `Estimator`, define `info` (`name`, `backend`, `directed`, node limits, `scale_dependent`,
    frequency or time resolution, relevant assumptions) and implement `_fit`.
 3. Build the provenance with `self._provenance(...)` and return a `Connectivity`; use
    `_extra_checks` for method-specific diagnostics.
 4. If the method is stochastic or iterative, expose `seed` and the order or tuning parameters, and
    record them.
-5. Add it to `dirconn.validation.METHODS` and regenerate the validation report, so that it is
+5. Export the class and its lower-case function in `src/dirconn/__init__.py` (import and
+   `__all__`; `tests/test_public_api.py` pins the list, so add the names there too) and list them
+   under "Estimators" in `docs/api.rst`.
+6. Add it to `dirconn.validation.method_validation.METHODS` and regenerate the validation report, so that it is
    evaluated against known truth from the day it exists (the simulation benchmark builds on the
    same scenarios).
 

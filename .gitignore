@@ -15,24 +15,24 @@ docs/_build/
 docs/auto_tutorials/
 docs/generated/
 docs/sg_execution_times.rst
-# notebooks are generated from examples/*.py (scripts/make_notebooks.py), never committed
+# notebooks are generated from examples/*.py (tools/make_notebooks.py), never committed
 *.ipynb
 .pytest_tmp*/
 
 # the results of the published run are part of the repository; quick and local copies are not
-benchmark_results/*
-!benchmark_results/full.jsonl
-!benchmark_results/order.jsonl
-!benchmark_results/inverse.jsonl
-!benchmark_results/coupling.jsonl
-!benchmark_results/extent.jsonl
-!benchmark_results/size.jsonl
-!benchmark_results/leakage_adjacent.jsonl
-!benchmark_results/leakage_pairs.jsonl
-!benchmark_results/significance.jsonl
-!benchmark_results/noise.jsonl
+validation/results/*
+!validation/results/full.jsonl
+!validation/results/order.jsonl
+!validation/results/inverse.jsonl
+!validation/results/coupling.jsonl
+!validation/results/extent.jsonl
+!validation/results/size.jsonl
+!validation/results/leakage_adjacent.jsonl
+!validation/results/leakage_pairs.jsonl
+!validation/results/significance.jsonl
+!validation/results/noise.jsonl
 # add-on protocols, run after the published run
-!benchmark_results/noise_hard.jsonl
-!benchmark_results/significance_power.jsonl
-!benchmark_results/m5_methods.jsonl
-!benchmark_results/asymptotic_calibration.jsonl
+!validation/results/noise_hard.jsonl
+!validation/results/significance_power.jsonl
+!validation/results/m5_methods.jsonl
+!validation/results/asymptotic_calibration.jsonl

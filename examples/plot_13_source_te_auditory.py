@@ -34,15 +34,15 @@ from itertools import combinations
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
+from dirconn.datasets import require_sample
 
 import dirconn
 from dirconn import TE, Edge, Network, NodeDynamics, TimeSeries, dk_node
-from dirconn.channels import ChannelMeta
-from dirconn.datasets import require_sample
-from dirconn.headmodel import load_head_model
-from dirconn.inverse import crosstalk, roi_series
+from dirconn.data.channels import ChannelMeta
 from dirconn.simulation import simulate_on_head
-from dirconn.surrogates import TrialShuffle
+from dirconn.simulation.headmodel import load_head_model
+from dirconn.simulation.inverse import crosstalk, roi_series
+from dirconn.stats.surrogates import TrialShuffle
 
 QUICK = os.environ.get("DIRCONN_QUICK") == "1"  # the tests set this; readers get the full version
 SEED = 0

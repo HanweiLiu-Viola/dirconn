@@ -1,7 +1,7 @@
 ## Findings
 
 Read from the tables below (10 seeds, 10000 samples, region-level series). They describe these
-scenarios and settings, not every dataset; re-run `scripts/validate_methods.py` after any change.
+scenarios and settings, not every dataset; re-run `tools/validate_methods.py` after any change.
 
 1. **Ranking is easy, specificity is not.** In the simple topologies (chain, common driver,
    collider, bidirectional pair, feedback loop) every method puts the true edges first, so AUROC is

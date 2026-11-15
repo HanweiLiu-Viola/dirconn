@@ -23,8 +23,8 @@ import numpy as np
 import pandas as pd
 
 import dirconn
-from dirconn.bands import BANDS
-from dirconn.scenario import load_scenario
+from dirconn.data.bands import BANDS
+from dirconn.simulation.scenario import load_scenario
 
 QUICK = os.environ.get("DIRCONN_QUICK") == "1"  # the tests set this; readers get the full version
 SEED = 0
@@ -91,7 +91,7 @@ for ax, (name, result) in zip(axes, results.items(), strict=True):
 # From a spectrum to a band
 # -------------------------
 # Often one number per band is wanted. ``reduce_freq`` averages a spectrum over a band; the names
-# come from ``dirconn.bands.BANDS`` and you can also pass ``(fmin, fmax)`` in Hz. Other reductions
+# come from ``dirconn.data.bands.BANDS`` and you can also pass ``(fmin, fmax)`` in Hz. Other reductions
 # are ``"median"``, ``"max"`` and ``"peak_freq"`` (the frequency of the peak, instead of its
 # height).
 print(BANDS)
