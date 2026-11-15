@@ -156,3 +156,51 @@ def test_validation_submodules_do_not_warn():
 
     assert protocol is importlib.import_module("dirconn.validation.protocol")
     assert method_validation is importlib.import_module("dirconn.validation.method_validation")
+
+
+def test_viz_public_names_unchanged():
+    import dirconn.viz as viz
+
+    for name in [
+        "dominant_networks",
+        "yeo_networks",
+        "yeo_groups",
+        "group_matrix",
+        "chord_diagram",
+        "region_values",
+        "degree_imbalance_map",
+        "connectivity_grid",
+        "directed_spectrum",
+        "truth_comparison",
+        "time_frequency",
+        "network_graph",
+        "plot",
+    ]:
+        assert callable(getattr(viz, name)), name
+        assert name in viz.__all__
+    assert isinstance(viz.PLOT_KINDS, tuple)
+
+
+def test_plot_dispatch_kinds():
+    pytest.importorskip("matplotlib")
+    import matplotlib.pyplot as plt
+
+    from dirconn import Connectivity
+    from dirconn.viz import PLOT_KINDS, plot
+
+    conn = Connectivity.from_netcdf(TESTS / "data" / "connectivity_main_0e2b04e.nc")
+    # the fixture is a (3, 3) result with no frequency or time axis, so directed_spectrum and
+    # time_frequency (both need a frequency axis) cannot draw it and are skipped here
+    kwargs = {
+        "connectivity_grid": {},
+        "network_graph": {"threshold": 0.0},
+        "truth_comparison": {"truth": conn},  # a truth on the same nodes and axes
+    }
+    try:
+        for kind in PLOT_KINDS:
+            if kind in kwargs:
+                assert plot(conn, kind, **kwargs[kind]) is not None
+        with pytest.raises(ValueError, match="Unknown plot kind"):
+            plot(conn, "no_such_kind")
+    finally:
+        plt.close("all")

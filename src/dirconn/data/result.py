@@ -349,7 +349,7 @@ class Connectivity:
         matplotlib.axes.Axes or tuple of two Axes
             The axes drawn on (the pair ``(truth, estimate)`` for ``"truth_comparison"``).
         """
-        from dirconn.plotting import plot
+        from dirconn.viz import plot
 
         return plot(self, kind, **kwargs)
 
