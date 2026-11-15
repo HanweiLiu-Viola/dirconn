@@ -9,9 +9,9 @@ import pytest
 
 from dirconn import Connectivity, Provenance
 from dirconn.methods.spectral import spectral_radius
-from dirconn.methods.timevarying import nonstationary as ns
 from dirconn.simulation import network_var_schedule
 from dirconn.simulation.scenario import load_scenario
+from dirconn.validation import nonstationary as ns
 from dirconn.validation.evaluation import switch_times
 
 ROOT = Path(__file__).resolve().parents[2]

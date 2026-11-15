@@ -35,7 +35,7 @@ MOVED = {
     "dirconn.tvmvar": "dirconn.methods.timevarying.tvmvar",
     "dirconn.timevarying": "dirconn.methods.timevarying.timevarying",
     "dirconn.windowed": "dirconn.methods.timevarying.windowed",
-    "dirconn.nonstationary": "dirconn.methods.timevarying.nonstationary",
+    "dirconn.nonstationary": "dirconn.validation.nonstationary",
     "dirconn.surrogates": "dirconn.stats.surrogates",
     "dirconn.surrogate_test": "dirconn.stats.surrogate_test",
     "dirconn.significance": "dirconn.stats.significance",

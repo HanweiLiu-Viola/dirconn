@@ -35,7 +35,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
-from dirconn.methods.timevarying.nonstationary import (  # noqa: E402
+from dirconn.validation.nonstationary import (  # noqa: E402
     N_SEEDS,
     SNR_DB,
     datasets,

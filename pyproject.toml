@@ -122,17 +122,12 @@ name = "methods do not import io or viz"
 type = "forbidden"
 source_modules = ["dirconn.methods"]
 forbidden_modules = ["dirconn.io", "dirconn.viz", "dirconn.simulation", "dirconn.validation"]
-# Accepted exceptions: (a) the data-class lazy imports (see the first contract), reached transitively
-#   through dirconn.data; (b) methods.timevarying.nonstationary is an evaluation harness that drives
-#   simulation and validation at module level (candidate to move out of methods later).
+# Accepted exceptions: the data-class lazy imports (see the first contract), reached transitively
+#   through dirconn.data.
 ignore_imports = [
     "dirconn.data.result -> dirconn.viz",
     "dirconn.data.result -> dirconn.io.netcdf",
     "dirconn.data.timeseries -> dirconn.io.mne",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.simulation",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.simulation.scenario",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.validation.evaluation",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.validation.method_validation",
 ]
 
 [[tool.importlinter.contracts]]
@@ -140,10 +135,3 @@ name = "library does not import validation"
 type = "forbidden"
 source_modules = ["dirconn.data", "dirconn.io", "dirconn.methods", "dirconn.stats", "dirconn.diagnostics", "dirconn.viz"]
 forbidden_modules = ["dirconn.validation"]
-# Accepted exception: methods.timevarying.nonstationary is an evaluation harness (see the previous contract).
-ignore_imports = [
-    "dirconn.methods.timevarying.nonstationary -> dirconn.simulation",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.simulation.scenario",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.validation.evaluation",
-    "dirconn.methods.timevarying.nonstationary -> dirconn.validation.method_validation",
-]
