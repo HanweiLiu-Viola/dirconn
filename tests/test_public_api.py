@@ -1,4 +1,6 @@
 import importlib
+import subprocess
+import sys
 import warnings
 from pathlib import Path
 
@@ -104,6 +106,16 @@ def test_importing_dirconn_emits_no_deprecation_warning():
     with warnings.catch_warnings():
         warnings.simplefilter("error", DeprecationWarning)
         importlib.reload(dirconn)
+
+
+def test_fresh_interpreter_import_emits_no_deprecation_warning():
+    code = "import dirconn, dirconn.viz, dirconn.io.bids"
+    proc = subprocess.run(
+        [sys.executable, "-W", "error:.*moved to:DeprecationWarning", "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
 
 
 def test_netcdf_written_before_restructure_loads():
