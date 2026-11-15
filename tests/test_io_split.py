@@ -54,17 +54,40 @@ def test_pre_restructure_fixture_loads():
     assert conn.provenance.method == "gc"
 
 
-def test_timeseries_from_mne_matches_method():
-    rng = np.random.default_rng(0)
-    data = rng.standard_normal((3, 200)) * 1e-6
+def _located_info():
     info = mne.create_info(["Fz", "Cz", "Pz"], 100.0, "eeg")
-    raw = mne.io.RawArray(data, info, verbose="error")
-    a = timeseries_from_mne(raw)
-    b = TimeSeries.from_mne(raw)
+    for i, ch in enumerate(info["chs"]):
+        ch["loc"][:3] = [0.01 * (i + 1), 0.02, 0.03]
+    return info
+
+
+def _assert_same_series(a, b):
     assert np.array_equal(a.data, b.data)
     assert a.names == b.names
     assert a.sfreq == b.sfreq
     assert a.segmentation == b.segmentation
+    assert a.tmin == b.tmin
+    assert a.channels == b.channels
+
+
+def test_timeseries_from_mne_matches_method_for_raw():
+    rng = np.random.default_rng(0)
+    raw = mne.io.RawArray(rng.standard_normal((3, 200)) * 1e-6, _located_info(), verbose="error")
+    a = timeseries_from_mne(raw)
+    _assert_same_series(a, TimeSeries.from_mne(raw))
+    assert a.segmentation == "continuous"
+    assert all(ch.pos is not None for ch in a.channels)
+
+
+def test_timeseries_from_mne_matches_method_for_epochs():
+    rng = np.random.default_rng(1)
+    epochs = mne.EpochsArray(
+        rng.standard_normal((4, 3, 80)) * 1e-6, _located_info(), tmin=-0.2, verbose="error"
+    )
+    a = timeseries_from_mne(epochs)
+    _assert_same_series(a, TimeSeries.from_mne(epochs))
+    assert a.segmentation == "epoched"
+    assert a.tmin == -0.2
 
 
 def test_simulation_bids_names_are_the_same_objects():
@@ -87,7 +110,15 @@ def test_data_model_does_not_load_io_modules_eagerly():
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
-def test_import_order_of_bids_modules():
-    for first, second in (("simulation_bids", "bids"), ("bids", "simulation_bids")):
-        code = f"import dirconn.io.{first}; import dirconn.io.{second}"
-        subprocess.run([sys.executable, "-c", code], check=True)
+def test_simulation_bids_reimport_after_bids_is_loaded():
+    # The real hazard of the bids <-> simulation_bids cycle: simulation_bids executing while
+    # dirconn.io.bids is absent or half-initialised.
+    code = (
+        "import sys, importlib; import dirconn\n"
+        "sys.modules.pop('dirconn.io.simulation_bids', None)\n"
+        "sys.modules.pop('dirconn.io.bids', None)\n"
+        "importlib.import_module('dirconn.io.simulation_bids')\n"
+        "import dirconn.io.bids\n"
+        "from dirconn.io.bids import SimulationRecord\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)

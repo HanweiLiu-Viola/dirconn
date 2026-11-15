@@ -422,9 +422,23 @@ def _read_roi(
     )
 
 
-# Kept importable from here; the simulation layout lives in dirconn.io.simulation_bids.
-from dirconn.io.simulation_bids import (  # noqa: E402, F401
-    SimulationRecord,
-    read_simulation_bids,
-    write_simulation_bids,
-)
+# The simulation layout lives in dirconn.io.simulation_bids, which imports helpers from this
+# module. A module-level re-export would therefore depend on which of the two is imported first,
+# so the old names are resolved lazily (PEP 562).
+_SIMULATION_NAMES = ("SimulationRecord", "read_simulation_bids", "write_simulation_bids")
+
+
+def __getattr__(name: str) -> Any:
+    if name in _SIMULATION_NAMES:
+        from dirconn.io import simulation_bids
+
+        return getattr(simulation_bids, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+if TYPE_CHECKING:
+    from dirconn.io.simulation_bids import (  # noqa: F401
+        SimulationRecord,
+        read_simulation_bids,
+        write_simulation_bids,
+    )
