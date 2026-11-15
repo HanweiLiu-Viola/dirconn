@@ -19,7 +19,7 @@ All notable changes to dirconn are listed here. The format follows
 - `SSGC` and `ssgc()`: conditional (or pairwise) spectral Granger causality from the same
   state-space form, `(source, target, freq)`. A parametric alternative to `MTGC` that conditions
   on the other channels and works on short data; its mean over frequency is the time-domain value.
-- `dirconn.statespace`: `var_to_state_space`, `reduced_model`, `state_space_gc` and
+- `dirconn.methods.statespace`: `var_to_state_space`, `reduced_model`, `state_space_gc` and
   `spectral_state_space_gc` for VAR coefficients known in advance.
 - Per-sample masks on `TimeSeries`: `valid` (gaps and bad segments) and `predict` (the samples that
   contribute a regression row, for example bursts). A VAR row at time `t` is used only when
@@ -37,6 +37,31 @@ All notable changes to dirconn are listed here. The format follows
   seed=...)` draws matched control locks. Both are recorded in `TimeSeries.history`, which every
   estimator copies into the provenance (`preprocessing["data_history"]`).
 - Documentation page "Gaps, selected samples and event locks".
+- `dirconn.io.netcdf.write_connectivity` and `read_connectivity` (behind `Connectivity.to_netcdf` and
+  `Connectivity.from_netcdf`), and `dirconn.io.mne.timeseries_from_mne` (behind
+  `TimeSeries.from_mne`).
+- `dirconn.io.simulation_bids`: `write_simulation_bids`, `read_simulation_bids` and
+  `SimulationRecord` in a module of their own; `dirconn.io.bids` still provides them.
+- `dirconn.viz.plot(conn, kind=...)`, the dispatcher behind `Connectivity.plot`, and
+  `dirconn.viz.PLOT_KINDS`.
+- `import-linter` in CI (`lint-imports`) checks the dependency direction between the subpackages.
+- Decision record 0002 on the package layout.
+
+### Changed
+
+- The package is organised in eight subpackages: `dirconn.data`, `dirconn.io`, `dirconn.methods`,
+  `dirconn.stats`, `dirconn.diagnostics`, `dirconn.simulation`, `dirconn.validation` and
+  `dirconn.viz`. `dirconn.__all__` is unchanged; everything importable from `dirconn` stays there.
+- The old top-level module paths (`dirconn.granger`, `dirconn.bids`, `dirconn.plotting`, ... 47 in
+  all) are deprecated: they still work, emit a `DeprecationWarning` that names the new module, and
+  are removed in dirconn 0.4.0. `dirconn.simulation`, `dirconn.validation` and `dirconn.viz` are
+  packages now; the names of the former `dirconn.validation` module moved to
+  `dirconn.validation.method_validation` and are forwarded with the same warning.
+  `dirconn.datasets` stays available without a warning.
+- The private helpers of `dirconn.plotting` (such as `_select`) can no longer be imported through
+  the old path; they live in `dirconn.viz.matrices`.
+- Repository directories: `scripts/` is now `tools/`, `protocols/` is now `validation/protocols/`,
+  and `benchmark_results/` is now `validation/results/`. `tests/` mirrors the subpackages.
 
 ## [0.1.0] - 2026-11-07
 

@@ -194,3 +194,24 @@ Modules the tutorials use
    simulation.inverse.roi_series
    simulation.inverse.crosstalk
    diagnostics.regions.centre_distances
+
+Modules
+-------
+
+The package is split into eight subpackages of ``dirconn`` (see
+:doc:`decisions/0002-package-layout`). The old top-level module paths (such as ``dirconn.granger``
+or ``dirconn.plotting``) are deprecated shims that warn on import and are removed in dirconn 0.4.0.
+
+.. currentmodule:: dirconn
+
+.. autosummary::
+   :toctree: generated
+
+   data
+   io
+   methods
+   stats
+   diagnostics
+   simulation
+   validation
+   viz
