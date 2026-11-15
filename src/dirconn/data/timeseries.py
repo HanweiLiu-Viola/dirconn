@@ -509,55 +509,9 @@ class TimeSeries:
         -------
         TimeSeries
         """
-        import mne
-        from mne.io import BaseRaw
+        from dirconn.io.mne import timeseries_from_mne
 
-        if isinstance(inst, BaseRaw):
-            segmentation, tmin = "continuous", 0.0
-        elif isinstance(inst, mne.BaseEpochs):
-            segmentation, tmin = "epoched", float(inst.tmin)
-        else:
-            raise TypeError(f"inst must be an MNE Raw or Epochs object, got {type(inst).__name__}.")
-
-        info = inst.info
-        if picks is None:
-            idx = [
-                int(i)
-                for i in mne.pick_types(
-                    info,
-                    meg=True,
-                    eeg=True,
-                    seeg=True,
-                    ecog=True,
-                    dbs=True,
-                    misc=True,
-                    exclude="bads",
-                )
-            ]
-            if not idx:
-                raise ValueError("No data channels found to convert.")
-        else:
-            idx = [_channel_index(info["ch_names"], p) for p in picks]
-            if not idx:
-                raise ValueError("picks is empty.")
-
-        data = inst.get_data(picks=idx)
-        channels = tuple(
-            ChannelMeta(
-                info["ch_names"][i],
-                type=str(mne.channel_type(info, i)),
-                pos=_mne_position(info["chs"][i]["loc"]),
-            )
-            for i in idx
-        )
-        return cls.from_array(
-            data,
-            float(info["sfreq"]),
-            channels=channels,
-            segmentation=segmentation,
-            tmin=tmin,
-            nan=nan,
-        )
+        return timeseries_from_mne(inst, picks, nan=nan)
 
 
 def _check_mask(mask: Any, name: str, shape: tuple[int, ...]) -> np.ndarray | None:
@@ -598,22 +552,3 @@ def _event_times(events: Any) -> np.ndarray:
     if not np.isfinite(times).all():
         raise ValueError("Event times must be finite.")
     return times
-
-
-def _channel_index(ch_names: Sequence[str], pick: str | int) -> int:
-    if isinstance(pick, str):
-        try:
-            return list(ch_names).index(pick)
-        except ValueError:
-            raise ValueError(f"Channel {pick!r} is not in the data.") from None
-    index = int(pick)
-    if not 0 <= index < len(ch_names):
-        raise ValueError(f"Channel index {index} is out of range.")
-    return index
-
-
-def _mne_position(loc: Any) -> tuple[float, float, float] | None:
-    xyz = np.asarray(loc[:3], dtype=float)
-    if not np.isfinite(xyz).all() or not xyz.any():
-        return None
-    return (float(xyz[0]), float(xyz[1]), float(xyz[2]))

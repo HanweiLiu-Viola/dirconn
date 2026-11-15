@@ -515,56 +515,16 @@ class Connectivity:
 
         Complex values are stored as ``values_real`` and ``values_imag``.
         """
-        coords = {
-            "source": list(self.source),
-            "target": list(self.target),
-            "freq": self.freqs,
-            "time": self.times,
-        }
-        if self.is_complex:
-            data_vars = {
-                "values_real": (DIMS, np.ascontiguousarray(self.values.real)),
-                "values_imag": (DIMS, np.ascontiguousarray(self.values.imag)),
-            }
-        else:
-            data_vars = {"values": (DIMS, np.ascontiguousarray(self.values))}
-        dataset = xr.Dataset(
-            data_vars,
-            coords=coords,
-            attrs={
-                "dirconn_format_version": FORMAT_VERSION,
-                "provenance": self.provenance.to_json(),
-            },
-        )
-        dataset.to_netcdf(os.fspath(path), engine="netcdf4")
+        from dirconn.io.netcdf import write_connectivity
+
+        write_connectivity(self, path)
 
     @classmethod
     def from_netcdf(cls, path: str | os.PathLike[str]) -> Connectivity:
         """Read a result written by :meth:`to_netcdf`."""
-        file = os.fspath(path)
-        if not os.path.exists(file):
-            raise FileNotFoundError(file)
-        with xr.open_dataset(file, engine="netcdf4") as ds:
-            version = ds.attrs.get("dirconn_format_version")
-            if version is None or str(version) != FORMAT_VERSION:
-                raise ValueError(
-                    f"Unsupported dirconn format version {version!r} (expected {FORMAT_VERSION!r})."
-                )
-            if "provenance" not in ds.attrs:
-                raise ValueError("The file has no provenance attribute.")
-            provenance = Provenance.from_json(str(ds.attrs["provenance"]))
-            if "values_real" in ds:
-                values = ds["values_real"].values + 1j * ds["values_imag"].values
-            else:
-                values = ds["values"].values
-            return cls(
-                values=np.array(values),
-                source=tuple(str(s) for s in ds["source"].values),
-                target=tuple(str(t) for t in ds["target"].values),
-                freqs=np.array(ds["freq"].values, dtype=float),
-                times=np.array(ds["time"].values, dtype=float),
-                provenance=provenance,
-            )
+        from dirconn.io.netcdf import read_connectivity
+
+        return read_connectivity(path)
 
 
 def _reduce(sub: np.ndarray, coord: np.ndarray, how: str, axis: int = 2) -> np.ndarray:

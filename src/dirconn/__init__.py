@@ -19,11 +19,10 @@ from dirconn.data.provenance import AssumptionCheck, AssumptionChecklist, Proven
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
 from dirconn.io import datasets
-from dirconn.io.bids import (
+from dirconn.io.bids import read_bids, write_roi_bids
+from dirconn.io.simulation_bids import (
     SimulationRecord,
-    read_bids,
     read_simulation_bids,
-    write_roi_bids,
     write_simulation_bids,
 )
 from dirconn.methods.base import Estimator, MethodInfo
