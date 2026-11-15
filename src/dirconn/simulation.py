@@ -1,6 +1,6 @@
 """Simulation of directed networks with a tiny artificial forward model.
 
-A :class:`~dirconn.network.Network` is turned into a coupled linear system: every node has its
+A :class:`~dirconn.data.network.Network` is turned into a coupled linear system: every node has its
 own dynamics (an AR(2) oscillator or white noise) and every edge adds ``strength * x_source[t -
 delay]`` to its target. Edges with a band pass the source through a causal band-pass filter
 first. The node activity is mixed to sensors with a leadfield, background 1/f sources and white
@@ -19,12 +19,12 @@ from typing import Any
 import numpy as np
 from scipy import signal
 
-from dirconn.channels import ChannelMeta
+from dirconn.data.channels import ChannelMeta
+from dirconn.data.network import ROUNDING_MODES, Edge, Network
+from dirconn.data.provenance import Provenance
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.headmodel import HeadModel
-from dirconn.network import ROUNDING_MODES, Edge, Network
-from dirconn.provenance import Provenance
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 NODE_SCALES: tuple[str, ...] = ("none", "unit")
 SOURCE_MODELS: tuple[str, ...] = ("partial", "focal", "patch")

@@ -1,7 +1,7 @@
 version: 1
 name: band_alpha
 description: >-
-  A -> B acting only in the alpha band [8.0, 13.0] Hz (the limits are those of dirconn.bands.BANDS), coupling 0.4, delay
+  A -> B acting only in the alpha band [8.0, 13.0] Hz (the limits are those of dirconn.data.bands.BANDS), coupling 0.4, delay
   20 ms; both oscillate at 10 Hz, in the middle of the band. C is unconnected and
   gives the null edges. The truth is 1 only inside the band.
 network:

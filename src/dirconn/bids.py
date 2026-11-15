@@ -19,11 +19,11 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 import pandas as pd
 
-from dirconn.channels import NODE_KINDS, ChannelMeta
-from dirconn.network import Network
-from dirconn.provenance import Provenance
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
+from dirconn.data.channels import NODE_KINDS, ChannelMeta
+from dirconn.data.network import Network
+from dirconn.data.provenance import Provenance
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 
 if TYPE_CHECKING:
     from dirconn.simulation import SimulatedData

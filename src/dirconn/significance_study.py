@@ -24,8 +24,8 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.bands import BANDS
 from dirconn.correction import adjust_pvalues
+from dirconn.data.bands import BANDS
 from dirconn.scenario import list_scenarios, load_scenario
 
 ALPHAS: tuple[float, ...] = (0.01, 0.05, 0.10)
@@ -259,7 +259,7 @@ def frequency_report(
 
     A group is as in :func:`significance_report`; only results that carry a frequency grid
     (``freqs``) are used. Every group has a row for the whole grid (``band`` ``"all"``) and one
-    for each band of ``bands`` (names of :data:`dirconn.bands.BANDS`, both limits inclusive). A
+    for each band of ``bands`` (names of :data:`dirconn.data.bands.BANDS`, both limits inclusive). A
     *pair* is an off-diagonal cell, null or an edge as in :func:`significance_report`.
 
     Parameters
@@ -297,7 +297,7 @@ def frequency_report(
     Raises
     ------
     ValueError
-        For a band that is not in :data:`dirconn.bands.BANDS`.
+        For a band that is not in :data:`dirconn.data.bands.BANDS`.
     """
     unknown = [b for b in bands if b not in BANDS]
     if unknown:

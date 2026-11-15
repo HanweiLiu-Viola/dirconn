@@ -33,6 +33,9 @@ from typing import Any
 
 import numpy as np
 
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator
 from dirconn.evaluation import (
     auroc,
@@ -41,11 +44,8 @@ from dirconn.evaluation import (
     score_stable,
     switch_times,
 )
-from dirconn.exceptions import DirconnWarning
-from dirconn.result import Connectivity
 from dirconn.scenario import ScenarioSpec, load_scenario
 from dirconn.simulation import simulate
-from dirconn.timeseries import TimeSeries
 from dirconn.timevarying import ADTF, TPDC
 from dirconn.tvmvar import TvarFit, fit_tvar_grid
 from dirconn.validation import add_observation_noise, environment

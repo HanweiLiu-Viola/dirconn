@@ -6,7 +6,7 @@ import pytest
 
 import dirconn
 from dirconn import AssumptionCheck, AssumptionChecklist, Provenance
-from dirconn.provenance import STANDARD_ASSUMPTIONS, array_hash
+from dirconn.data.provenance import STANDARD_ASSUMPTIONS, array_hash
 
 
 class TestAssumptionChecklist:
@@ -212,7 +212,7 @@ class TestArrayHash:
 
 def test_collected_versions_are_a_private_copy_each_time():
     # The lookup is cached because it is slow; a caller changing its dict must not change the next.
-    from dirconn.provenance import collect_versions
+    from dirconn.data.provenance import collect_versions
 
     first = collect_versions()
     first["python"] = "tampered"

@@ -17,7 +17,7 @@ import numpy as np
 
 from dirconn import DTF, GC, GPDC, Estimator
 from dirconn.benchmark import constructed_pair, evaluate_pair, real_eeg_series
-from dirconn.timeseries import TimeSeries
+from dirconn.data.timeseries import TimeSeries
 
 DURATION = 40.0  # seconds; six non-overlapping slots fit into the 278 s recording
 N_SLOTS = 6

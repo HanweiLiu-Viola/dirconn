@@ -23,11 +23,11 @@ import warnings
 
 import numpy as np
 
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import AssumptionCheck
+from dirconn.data.rng import _as_count
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import SAMPLING_RATIO_WARN
-from dirconn.exceptions import DirconnWarning
-from dirconn.provenance import AssumptionCheck
-from dirconn.rng import _as_count
-from dirconn.timeseries import TimeSeries
 
 #: Multiples of the chosen order that are tried.
 MULTIPLIERS: tuple[int, ...] = (2, 4, 8, 16, 32)

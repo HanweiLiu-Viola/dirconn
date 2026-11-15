@@ -83,7 +83,7 @@ def test_the_default_step_is_half_the_window():
     assert result.times.size == 9
 
 
-@pytest.mark.filterwarnings("ignore:the smallest window:dirconn.exceptions.DirconnWarning")
+@pytest.mark.filterwarnings("ignore:the smallest window:dirconn.data.exceptions.DirconnWarning")
 def test_segments_are_fitted_one_by_one_and_labelled_by_their_centre():
     ts = chain(1000, seed=4, tmin=-1.0)
     segments = [(-0.5, 1.49), (2.0, 4.99)]
@@ -127,7 +127,7 @@ def test_standardising_uses_one_scale_for_all_windows():
     assert result.provenance.preprocessing["standardized"] is True
 
 
-@pytest.mark.filterwarnings("ignore:the smallest window:dirconn.exceptions.DirconnWarning")
+@pytest.mark.filterwarnings("ignore:the smallest window:dirconn.data.exceptions.DirconnWarning")
 @pytest.mark.parametrize("order", [1, "bic"])
 def test_the_direction_follows_a_mid_recording_switch(order):
     n_times = 6000
@@ -180,7 +180,7 @@ def test_fewer_than_50_samples_per_coefficient_warns_but_runs():
     assert check.value == pytest.approx(2 / 99)
 
 
-@pytest.mark.filterwarnings("ignore:.*:dirconn.exceptions.DirconnWarning")
+@pytest.mark.filterwarnings("ignore:.*:dirconn.data.exceptions.DirconnWarning")
 def test_unstable_windows_are_counted_and_warn_above_five_percent():
     """Two noiseless-ish exponentials: every window fits coefficients 1.05 and 1.06."""
     rng = np.random.default_rng(0)

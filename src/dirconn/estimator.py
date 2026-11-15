@@ -13,18 +13,18 @@ from typing import Any, ClassVar
 import numpy as np
 from scipy import stats
 
-from dirconn.exceptions import DirconnWarning
-from dirconn.mvar import OrderSelection
-from dirconn.provenance import (
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import (
     STANDARD_ASSUMPTIONS,
     AssumptionCheck,
     AssumptionChecklist,
     Provenance,
     array_hash,
 )
-from dirconn.result import Connectivity
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
+from dirconn.mvar import OrderSelection
 from dirconn.spectral import spectral_radius
-from dirconn.timeseries import TimeSeries
 
 SCALE_RATIO_WARN = 10.0
 """Ratio between the largest and smallest channel standard deviation that triggers a warning."""
@@ -582,7 +582,7 @@ class Estimator(ABC):
 def input_hash(data: TimeSeries) -> str:
     """Return the input hash recorded in a provenance: the data, and the masks if there are any.
 
-    Without masks it is :func:`dirconn.provenance.array_hash` of the samples, as before masks
+    Without masks it is :func:`dirconn.data.provenance.array_hash` of the samples, as before masks
     existed, so data that carry no masks keep their hash.
     """
     if not data.has_mask:

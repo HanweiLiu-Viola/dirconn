@@ -37,7 +37,7 @@ import numpy as np
 
 import dirconn
 from dirconn import TE, Edge, Network, NodeDynamics, TimeSeries, dk_node
-from dirconn.channels import ChannelMeta
+from dirconn.data.channels import ChannelMeta
 from dirconn.datasets import require_sample
 from dirconn.headmodel import load_head_model
 from dirconn.inverse import crosstalk, roi_series

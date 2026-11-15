@@ -15,7 +15,6 @@ from dirconn.analytic import (
     analytic_pdc_test,
     analytic_rpdc_test,
 )
-from dirconn.bands import BANDS
 from dirconn.baseline import baseline_normalise
 from dirconn.bids import (
     SimulationRecord,
@@ -25,25 +24,26 @@ from dirconn.bids import (
     write_simulation_bids,
 )
 from dirconn.bootstrap import BootstrapResult, bootstrap
-from dirconn.channels import ChannelMeta
 from dirconn.coherency import PSI, ImCoh, imcoh, psi
 from dirconn.contrast import ContrastResult, contrast_test
 from dirconn.correction import adjust_pvalues
+from dirconn.data.bands import BANDS
+from dirconn.data.channels import ChannelMeta
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.network import Edge, Network, direct_node, dk_node
+from dirconn.data.provenance import AssumptionCheck, AssumptionChecklist, Provenance
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo
-from dirconn.exceptions import DirconnWarning
 from dirconn.granger import GC, gc
 from dirconn.multitaper_granger import MTGC, mtgc
 from dirconn.mvar import OrderSelection, VarFit, fit_var, select_order
-from dirconn.network import Edge, Network, direct_node, dk_node
 from dirconn.pcmci import PCMCI, PCMCITestResult, pcmci, pcmci_test
-from dirconn.provenance import AssumptionCheck, AssumptionChecklist, Provenance
-from dirconn.result import Connectivity
 from dirconn.significance import significance_test
 from dirconn.simulation import NodeDynamics, SimulatedData, coupled_nonlinear, simulate
 from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC, SSGC, dtf, gpdc, pdc, rpdc, ssgc
 from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
 from dirconn.time_reversal import TRGC, TimeReversalAsymmetry, time_reversal_asymmetry, trgc
-from dirconn.timeseries import TimeSeries
 from dirconn.timevarying import ADTF, TPDC, adtf, tpdc
 from dirconn.transfer_entropy import TE, te
 from dirconn.windowed import WDTF, wdtf

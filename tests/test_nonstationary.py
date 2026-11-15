@@ -296,7 +296,9 @@ def test_a_dataset_is_reproducible(small_dataset):
     assert stable(again) == stable(small_dataset)
 
 
-@pytest.mark.filterwarnings("ignore:.*coefficients per equation:dirconn.exceptions.DirconnWarning")
+@pytest.mark.filterwarnings(
+    "ignore:.*coefficients per equation:dirconn.data.exceptions.DirconnWarning"
+)
 def test_the_grid_rows_equal_those_of_separate_estimator_fits():
     spec = load_scenario("switch_on")
     series = ns.simulate_roi(spec, snr_db=10.0, seed=ns.dataset_seed("switch_on", 10.0, 0))

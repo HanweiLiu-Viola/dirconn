@@ -15,11 +15,11 @@ from typing import Any
 
 import numpy as np
 
+from dirconn.data.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo, sampling_check
-from dirconn.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
-from dirconn.result import Connectivity
 from dirconn.spectral import dtf_from_coefs_series, frequency_grid, pdc_from_coefs_series
-from dirconn.timeseries import TimeSeries
 from dirconn.tvmvar import (
     DEFAULT_MAX_ORDER,
     TvarFit,

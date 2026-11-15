@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from dirconn import DirconnWarning, TimeSeries
-from dirconn.channels import ChannelMeta
-from dirconn.rng import RNGController
+from dirconn.data.channels import ChannelMeta
+from dirconn.data.rng import RNGController
 from dirconn.surrogates import (
     AAFT,
     IAAFT,

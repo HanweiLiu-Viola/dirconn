@@ -51,7 +51,9 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.exceptions import DirconnWarning
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import AssumptionCheck
+from dirconn.data.timeseries import TimeSeries
 from dirconn.mvar import (
     OrderSelection,
     _check_rows,
@@ -61,8 +63,6 @@ from dirconn.mvar import (
     choose_order,
     lagged_design,
 )
-from dirconn.provenance import AssumptionCheck
-from dirconn.timeseries import TimeSeries
 
 UPDATES: tuple[str, ...] = ("dual", "rls", "dekf")
 STANDARDISERS: tuple[str | None, ...] = (None, "zscore", "demean")
@@ -621,7 +621,7 @@ def fit_tvar(
         For invalid options, a recording too short for the model, a channel without variance
         under ``standardize="zscore"``, or a seed fit that fails.
     TypeError
-        If ``data`` is not a :class:`~dirconn.timeseries.TimeSeries`.
+        If ``data`` is not a :class:`~dirconn.data.timeseries.TimeSeries`.
     """
     return fit_tvar_grid(
         data,
@@ -832,7 +832,7 @@ def stationarity_check(
     """Check how many slices of a trajectory of fitted models are unstable.
 
     A slice is unstable when the spectral radius of its companion matrix is 1 or more. The check
-    is ``"warn"`` with a :class:`~dirconn.exceptions.DirconnWarning` when more than 5 % of the
+    is ``"warn"`` with a :class:`~dirconn.data.exceptions.DirconnWarning` when more than 5 % of the
     ``n_total`` slices (``unit``: for example ``"time points"`` or ``"windows"``) are unstable;
     ``value`` is the unstable fraction.
     """
@@ -872,7 +872,7 @@ def seconds_to_samples(value: float, sfreq: float, name: str) -> int:
 def tvar_checks(fit: TvarFit, *, stacklevel: int = 3) -> list[AssumptionCheck]:
     """Diagnostics of a time-varying fit, for the assumption checklist of a result.
 
-    Diagnostics warn with :class:`~dirconn.exceptions.DirconnWarning` and never stop a run.
+    Diagnostics warn with :class:`~dirconn.data.exceptions.DirconnWarning` and never stop a run.
 
     Returns
     -------

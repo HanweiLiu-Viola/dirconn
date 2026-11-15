@@ -27,12 +27,12 @@ from dirconn._resampling import (
     without_data_checks,
 )
 from dirconn.correction import check_alpha
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import AssumptionCheck, AssumptionChecklist
+from dirconn.data.result import Connectivity
+from dirconn.data.rng import RNGController, _as_count
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator
-from dirconn.exceptions import DirconnWarning
-from dirconn.provenance import AssumptionCheck, AssumptionChecklist
-from dirconn.result import Connectivity
-from dirconn.rng import RNGController, _as_count
-from dirconn.timeseries import TimeSeries
 
 MIN_UNITS = 20
 

@@ -9,6 +9,9 @@ from typing import Any, ClassVar
 
 import numpy as np
 
+from dirconn.data.provenance import STANDARD_ASSUMPTIONS
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import (
     Estimator,
     MethodInfo,
@@ -19,8 +22,6 @@ from dirconn.estimator import (
     stability_check,
 )
 from dirconn.mvar import VarFit, check_order_spec, choose_order, fit_var, row_mask
-from dirconn.provenance import STANDARD_ASSUMPTIONS
-from dirconn.result import Connectivity
 from dirconn.spectral import (
     dtf_from_coefs,
     frequency_grid,
@@ -29,7 +30,6 @@ from dirconn.spectral import (
     rpdc_from_coefs,
 )
 from dirconn.statespace import spectral_state_space_gc
-from dirconn.timeseries import TimeSeries
 
 
 def _standardise(data: TimeSeries) -> tuple[TimeSeries, dict[str, Any]]:

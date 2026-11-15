@@ -77,7 +77,7 @@ Bonferroni-type correction over `m` cells needs `n_surrogates >= m / alpha - 1`.
 
 ## Reproducibility
 
-Each surrogate uses its own generator, derived from one seed by `dirconn.rng.RNGController`:
+Each surrogate uses its own generator, derived from one seed by `dirconn.data.rng.RNGController`:
 generator `i` depends only on the seed and `i`, not on the number of workers, and raising the number
 of surrogates leaves the earlier ones unchanged. The seed is required.
 

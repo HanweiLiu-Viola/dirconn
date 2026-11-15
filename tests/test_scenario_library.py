@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from dirconn.bands import BANDS
+from dirconn.data.bands import BANDS
 from dirconn.scenario import list_scenarios, load_scenario
 from dirconn.simulation import simulate
 

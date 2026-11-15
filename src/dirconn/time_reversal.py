@@ -18,12 +18,12 @@ from typing import Any
 
 import numpy as np
 
+from dirconn.data.provenance import STANDARD_ASSUMPTIONS
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo, check_switches
 from dirconn.granger import GC
 from dirconn.mvar import check_order_spec
-from dirconn.provenance import STANDARD_ASSUMPTIONS
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 
 def reverse_time(data: TimeSeries) -> TimeSeries:

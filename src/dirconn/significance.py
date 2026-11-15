@@ -12,6 +12,7 @@ from dirconn.analytic import (
     analytic_pdc_test,
     analytic_rpdc_test,
 )
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator
 from dirconn.spectral_estimators import PDC, RPDC
 from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
@@ -24,7 +25,6 @@ from dirconn.surrogates import (
     SurrogateGenerator,
     TrialShuffle,
 )
-from dirconn.timeseries import TimeSeries
 
 TESTS: tuple[str, ...] = ("surrogate", "block_perm", "analytic")
 

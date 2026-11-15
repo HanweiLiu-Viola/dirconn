@@ -25,12 +25,12 @@ from dirconn._resampling import (
     without_data_checks,
 )
 from dirconn.correction import Correctable, check_alpha
+from dirconn.data.provenance import AssumptionChecklist, array_hash
+from dirconn.data.result import Connectivity
+from dirconn.data.rng import RNGController, _as_count
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator
-from dirconn.provenance import AssumptionChecklist, array_hash
-from dirconn.result import Connectivity
-from dirconn.rng import RNGController, _as_count
 from dirconn.surrogates import SurrogateGenerator
-from dirconn.timeseries import TimeSeries
 
 
 @dataclass(frozen=True, eq=False)

@@ -6,7 +6,7 @@ import pytest
 import xarray as xr
 
 from dirconn import Connectivity, Provenance
-from dirconn.result import DIMS
+from dirconn.data.result import DIMS
 
 
 @pytest.fixture

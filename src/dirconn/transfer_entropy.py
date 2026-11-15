@@ -32,10 +32,10 @@ from dirconn._ksg import (  # noqa: F401  (re-exported: the estimator used to li
     ksg_cmi,
 )
 from dirconn.correction import adjust_pvalues, check_alpha
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo
 from dirconn.mvar import check_order_spec, choose_order
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 
 def _embed(

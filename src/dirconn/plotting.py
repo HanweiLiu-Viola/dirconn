@@ -12,7 +12,7 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.result import Connectivity
+from dirconn.data.result import Connectivity
 
 
 def _pyplot() -> Any:

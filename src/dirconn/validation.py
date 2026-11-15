@@ -25,22 +25,22 @@ from typing import Any
 import numpy as np
 
 from dirconn.coherency import PSI, ImCoh
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.network import Edge, Network, dk_node
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator
 from dirconn.evaluation import (
     chance_auprc,
     convention_metrics,
     edge_density,
 )
-from dirconn.exceptions import DirconnWarning
 from dirconn.granger import GC
 from dirconn.multitaper_granger import MTGC
-from dirconn.network import Edge, Network, dk_node
 from dirconn.pcmci import PCMCI
-from dirconn.result import Connectivity
 from dirconn.simulation import NodeDynamics, simulate
 from dirconn.spectral_estimators import DTF, GPDC, PDC, RPDC
 from dirconn.time_reversal import TRGC
-from dirconn.timeseries import TimeSeries
 from dirconn.transfer_entropy import TE
 
 SFREQ = 250.0

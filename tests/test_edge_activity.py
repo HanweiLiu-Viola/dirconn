@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import yaml
 
-from dirconn.network import Edge, Network, dk_node
+from dirconn.data.network import Edge, Network, dk_node
 from dirconn.scenario import ScenarioSpec, load_scenario
 from dirconn.simulation import (
     NodeDynamics,

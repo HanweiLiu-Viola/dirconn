@@ -19,9 +19,10 @@ import numpy as np
 
 from dirconn.benchmark import add_artifact, evaluate_stages, roi_observations
 from dirconn.coherency import PSI, ImCoh
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.rng import RNGController
 from dirconn.emptyroom import empty_room_window, n_windows
 from dirconn.estimator import Estimator
-from dirconn.exceptions import DirconnWarning
 from dirconn.granger import GC
 from dirconn.headmodel import MODALITIES, HeadModel, load_head_model
 from dirconn.inverse import crosstalk
@@ -36,7 +37,6 @@ from dirconn.protocol import (
     expand,
     task_seed,
 )
-from dirconn.rng import RNGController
 from dirconn.scenario import ScenarioSpec
 from dirconn.significance import significance_test
 from dirconn.simulation import simulate, simulate_on_head

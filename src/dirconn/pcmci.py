@@ -19,10 +19,10 @@ from typing import Any
 import numpy as np
 
 from dirconn.correction import Correctable, check_alpha
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo
 from dirconn.mvar import check_order_spec, choose_order
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 NULL = (
     "momentary conditional independence (ParCorr): at every lag, the source's past is linearly "

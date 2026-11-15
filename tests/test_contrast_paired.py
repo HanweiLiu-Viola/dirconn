@@ -5,11 +5,13 @@ import pytest
 
 from dirconn import DTF, DirconnWarning, TimeSeries
 from dirconn.contrast import contrast_test
-from dirconn.rng import RNGController
+from dirconn.data.rng import RNGController
 from helpers import MeanDifference, Spy, epochs
 
 SFREQ = 100.0
-pytestmark = pytest.mark.filterwarnings("ignore:n_permutations=:dirconn.exceptions.DirconnWarning")
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:n_permutations=:dirconn.data.exceptions.DirconnWarning"
+)
 
 
 def swapped(a, b, n_permutations, seed):

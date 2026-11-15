@@ -22,9 +22,9 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.exceptions import DirconnWarning
-from dirconn.rng import _as_count
-from dirconn.timeseries import TimeSeries
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.rng import _as_count
+from dirconn.data.timeseries import TimeSeries
 
 
 class SurrogateGenerator(ABC):

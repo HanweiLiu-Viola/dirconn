@@ -15,14 +15,14 @@ from typing import Any
 
 import numpy as np
 
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
+from dirconn.data.result import Connectivity, check_segments
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo
-from dirconn.exceptions import DirconnWarning
 from dirconn.mvar import check_order_spec, choose_order, fit_var
-from dirconn.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
-from dirconn.result import Connectivity, check_segments
 from dirconn.spectral import dtf_from_coefs, frequency_grid, spectral_radius
 from dirconn.spectral_estimators import _standardise
-from dirconn.timeseries import TimeSeries
 from dirconn.tvmvar import DEFAULT_MAX_ORDER, seconds_to_samples, stationarity_check
 
 SAMPLES_PER_COEFFICIENT_WARN = 50

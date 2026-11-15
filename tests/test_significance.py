@@ -7,7 +7,9 @@ from dirconn.surrogate_test import SurrogateTestResult
 from dirconn.surrogates import AAFT, BlockShuffle, PhaseRandomize
 from helpers import AbsCorr, coupled
 
-pytestmark = pytest.mark.filterwarnings("ignore:n_surrogates=:dirconn.exceptions.DirconnWarning")
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:n_surrogates=:dirconn.data.exceptions.DirconnWarning"
+)
 
 
 def continuous(n_times=600, seed=0):

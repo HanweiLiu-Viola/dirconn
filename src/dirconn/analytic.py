@@ -22,12 +22,12 @@ import numpy as np
 from scipy import stats
 
 from dirconn.correction import Correctable, check_alpha
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.granger import GC
 from dirconn.mvar import VarFit, fit_var
-from dirconn.result import Connectivity
 from dirconn.spectral import ar_polynomial, pdc_null_scale, rpdc_from_coefs
 from dirconn.spectral_estimators import PDC, RPDC, _SpectralVAR
-from dirconn.timeseries import TimeSeries
 
 NULL = (
     "the past of the source adds no predictive information about the target beyond the past of "

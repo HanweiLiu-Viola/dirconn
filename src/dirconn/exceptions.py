@@ -1,10 +1,5 @@
-"""Warning categories raised by dirconn."""
+"""Moved to ``dirconn.data.exceptions``; this path is removed in 0.4.0."""
 
+from dirconn._compat import redirect
 
-class DirconnWarning(UserWarning):
-    """A diagnostic about the input or the estimate that does not stop the computation.
-
-    Filter it like any warning, for example
-    ``warnings.simplefilter("ignore", DirconnWarning)``. The same diagnostic is also recorded in
-    the assumption checklist of the result.
-    """
+__getattr__, __all__ = redirect(__name__, "dirconn.data.exceptions")

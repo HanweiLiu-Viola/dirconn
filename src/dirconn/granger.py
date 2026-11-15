@@ -8,6 +8,9 @@ from typing import Any
 
 import numpy as np
 
+from dirconn.data.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import (
     Estimator,
     MethodInfo,
@@ -29,10 +32,7 @@ from dirconn.mvar import (
     masks_of,
     row_mask,
 )
-from dirconn.provenance import STANDARD_ASSUMPTIONS, AssumptionCheck
-from dirconn.result import Connectivity
 from dirconn.statespace import state_space_gc
-from dirconn.timeseries import TimeSeries
 
 _PERFECT_FIT = 1e-12
 

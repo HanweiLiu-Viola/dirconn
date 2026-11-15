@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dirconn.rng import RNGController
+from dirconn.data.rng import RNGController
 
 
 def draws(generators, n=3):

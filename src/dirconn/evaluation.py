@@ -21,10 +21,10 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 from scipy.stats import rankdata
 
-from dirconn.bands import BANDS
-from dirconn.exceptions import DirconnWarning
-from dirconn.network import Network
-from dirconn.result import Connectivity
+from dirconn.data.bands import BANDS
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.network import Network
+from dirconn.data.result import Connectivity
 
 if TYPE_CHECKING:
     from dirconn.estimator import MethodInfo

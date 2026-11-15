@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from dirconn import ADTF, DTF, WDTF, Connectivity, DirconnWarning, Provenance, TimeSeries
+from dirconn.data.network import Edge, Network, dk_node
 from dirconn.evaluation import (
     auroc_by_time,
     guard_seconds,
@@ -15,7 +16,6 @@ from dirconn.evaluation import (
     tracking_latency,
     truth_switch_times,
 )
-from dirconn.network import Edge, Network, dk_node
 
 A, B, C = "bankssts-lh", "superiorparietal-lh", "precuneus-rh"
 SFREQ = 100.0
@@ -23,7 +23,7 @@ SFREQ = 100.0
 # The default settings remember only a few samples, so the ADTF fits here carry
 # the sampling warning; it is not what these tests look at.
 pytestmark = pytest.mark.filterwarnings(
-    "ignore:.*coefficients per equation:dirconn.exceptions.DirconnWarning"
+    "ignore:.*coefficients per equation:dirconn.data.exceptions.DirconnWarning"
 )
 
 

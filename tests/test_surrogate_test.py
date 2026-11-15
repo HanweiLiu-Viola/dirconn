@@ -5,14 +5,16 @@ import numpy as np
 import pytest
 
 from dirconn import DTF, GC, Connectivity, DirconnWarning, TimeSeries
+from dirconn.data.rng import RNGController
 from dirconn.estimator import Estimator, MethodInfo
-from dirconn.rng import RNGController
 from dirconn.surrogate_test import SurrogateTestResult, surrogate_test
 from dirconn.surrogates import AAFT, BlockShuffle, CircularShift, PhaseRandomize, TrialShuffle
 from helpers import AbsCorr, coupled, independent
 
 # Most tests use few surrogates for speed; the power check has its own tests below.
-pytestmark = pytest.mark.filterwarnings("ignore:n_surrogates=:dirconn.exceptions.DirconnWarning")
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:n_surrogates=:dirconn.data.exceptions.DirconnWarning"
+)
 
 
 @dataclass(frozen=True)
@@ -100,7 +102,7 @@ class TestPValues:
         np.testing.assert_allclose(result.effect, observed - null.mean(axis=0))
         np.testing.assert_allclose(result.zscore, result.effect / null.std(axis=0, ddof=1))
 
-    @pytest.mark.filterwarnings("ignore::dirconn.exceptions.DirconnWarning")
+    @pytest.mark.filterwarnings("ignore::dirconn.data.exceptions.DirconnWarning")
     def test_a_surrogate_distribution_without_spread_gives_no_zscore(self):
         # Noisy returns the constant 1 for every surrogate: effect 0, z undefined, p = 1.
         result = surrogate_test(
@@ -407,7 +409,7 @@ class TestPreparedData:
         return TimeSeries.from_array(x, 100.0)
 
     def test_the_provenance_records_that_the_data_were_cut_into_blocks(self):
-        from dirconn.provenance import array_hash
+        from dirconn.data.provenance import array_hash
 
         data = self.continuous()
         result = surrogate_test(

@@ -8,9 +8,9 @@ import warnings
 from collections.abc import Callable, Sequence
 from typing import Any
 
-from dirconn.exceptions import DirconnWarning
-from dirconn.provenance import AssumptionCheck
-from dirconn.result import Connectivity
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import AssumptionCheck
+from dirconn.data.result import Connectivity
 
 Reduction = Callable[[Connectivity], Connectivity] | str | Sequence[float] | None
 

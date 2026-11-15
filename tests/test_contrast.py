@@ -6,12 +6,14 @@ import pytest
 
 from dirconn import Connectivity, DirconnWarning, TimeSeries
 from dirconn.contrast import ContrastResult, contrast_test
+from dirconn.data.rng import RNGController
 from dirconn.estimator import Estimator, MethodInfo
-from dirconn.rng import RNGController
 from helpers import MeanDifference, epochs
 
 # Most tests use few permutations for speed; the power check has its own tests below.
-pytestmark = pytest.mark.filterwarnings("ignore:n_permutations=:dirconn.exceptions.DirconnWarning")
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:n_permutations=:dirconn.data.exceptions.DirconnWarning"
+)
 
 
 def pooled(a, b):

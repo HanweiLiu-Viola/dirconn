@@ -25,6 +25,10 @@ from scipy import signal
 from scipy.optimize import linear_sum_assignment
 from scipy.stats import spearmanr
 
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.network import Network
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.datasets import require_sample
 from dirconn.estimator import Estimator
 from dirconn.evaluation import (
@@ -33,14 +37,10 @@ from dirconn.evaluation import (
     score_result,
     scoring_band,
 )
-from dirconn.exceptions import DirconnWarning
 from dirconn.headmodel import HeadModel
 from dirconn.inverse import roi_series
-from dirconn.network import Network
-from dirconn.result import Connectivity
 from dirconn.scenario import ArtifactSpec, stimulation_artifact
 from dirconn.simulation import SimulatedData
-from dirconn.timeseries import TimeSeries
 
 
 @dataclass(frozen=True, eq=False)

@@ -27,8 +27,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from dirconn.data.result import Connectivity
 from dirconn.plotting import _select
-from dirconn.result import Connectivity
 
 #: Printed on every figure that shows sources and sinks.
 GUARD_CAPTION = "Predictive, not causal. No leakage correction."

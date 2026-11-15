@@ -16,11 +16,11 @@ import numpy as np
 
 from dirconn._resampling import Reduction, make_reducer
 from dirconn.bootstrap import bootstrap
+from dirconn.data.exceptions import DirconnWarning
+from dirconn.data.provenance import array_hash
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator
-from dirconn.exceptions import DirconnWarning
-from dirconn.provenance import array_hash
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 NORMALISATIONS: tuple[str, ...] = ("difference", "ratio", "zscore")
 

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from dirconn import Connectivity, Provenance
-from dirconn.result import TIME_REDUCTIONS
+from dirconn.data.result import TIME_REDUCTIONS
 
 
 @pytest.fixture

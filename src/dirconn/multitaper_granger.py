@@ -16,9 +16,9 @@ from typing import Any
 import numpy as np
 
 from dirconn._csd import DEFAULT_TIME_HALFBANDWIDTH, two_sided_spectra
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 WILSON_TOL = 1e-10
 """Convergence: largest relative error ``||S - psi psi^H|| / ||S||`` over the frequencies."""

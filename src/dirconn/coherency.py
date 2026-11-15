@@ -17,10 +17,10 @@ from typing import Any
 import numpy as np
 
 from dirconn._csd import DEFAULT_TIME_HALFBANDWIDTH, CrossSpectra, cross_spectra
-from dirconn.bands import BANDS
+from dirconn.data.bands import BANDS
+from dirconn.data.result import Connectivity
+from dirconn.data.timeseries import TimeSeries
 from dirconn.estimator import Estimator, MethodInfo
-from dirconn.result import Connectivity
-from dirconn.timeseries import TimeSeries
 
 _BACKEND = "own coherency from multitaper cross-spectra (mne.time_frequency.csd_array_multitaper)"
 _ASSUMPTIONS = ("stationarity", "linearity", "filtering")

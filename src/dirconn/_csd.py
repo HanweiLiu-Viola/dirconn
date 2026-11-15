@@ -24,7 +24,7 @@ from typing import Any
 
 import numpy as np
 
-from dirconn.timeseries import TimeSeries
+from dirconn.data.timeseries import TimeSeries
 from dirconn.tvmvar import seconds_to_samples
 
 DEFAULT_TIME_HALFBANDWIDTH = 4.0

@@ -20,10 +20,10 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from dirconn.channels import ChannelMeta
+from dirconn.data.channels import ChannelMeta
+from dirconn.data.network import dk_node
+from dirconn.data.timeseries import TimeSeries
 from dirconn.headmodel import HeadModel
-from dirconn.network import dk_node
-from dirconn.timeseries import TimeSeries
 
 INVERSE_METHODS: tuple[str, ...] = ("lcmv", "mne", "dspm", "eloreta")
 ROI_MODES: tuple[str, ...] = ("pca_flip", "mean_flip")

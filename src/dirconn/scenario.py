@@ -1,7 +1,7 @@
 """Versioned scenario files: a ground-truth network together with how to simulate it.
 
 A scenario is one YAML file with ``version: 1``. It holds the network (nodes and edges, as in
-:meth:`dirconn.network.Network.from_dict`), the own dynamics of the nodes, defaults for the
+:meth:`dirconn.data.network.Network.from_dict`), the own dynamics of the nodes, defaults for the
 sampling rate, the SNR and the data length, the background sources, and optionally nodes that are
 simulated but hidden from the methods. :func:`load_scenario` reads a file or one of the files
 shipped in :data:`SCENARIO_DIR`; :func:`list_scenarios` names the shipped ones.
@@ -24,7 +24,7 @@ from typing import Any
 import numpy as np
 import yaml
 
-from dirconn.network import Edge, Network, dk_node
+from dirconn.data.network import Edge, Network, dk_node
 from dirconn.simulation import NodeDynamics, network_var, network_var_schedule
 
 SCENARIO_VERSION = 1

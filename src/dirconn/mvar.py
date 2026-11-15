@@ -23,7 +23,7 @@ from typing import Any, TypedDict
 
 import numpy as np
 
-from dirconn.timeseries import TimeSeries
+from dirconn.data.timeseries import TimeSeries
 
 INFORMATION_CRITERIA: tuple[str, ...] = ("aic", "bic", "hqc")
 CRITERIA: tuple[str, ...] = (*INFORMATION_CRITERIA, "cv")

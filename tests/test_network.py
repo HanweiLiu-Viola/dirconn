@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from dirconn import ChannelMeta, Connectivity, DirconnWarning
-from dirconn.network import Edge, Network, direct_node, dk_node
+from dirconn.data.network import Edge, Network, direct_node, dk_node
 
 
 def make_network(**overrides):

@@ -25,7 +25,7 @@ SFREQ = 100.0
 # The default settings remember only a few samples, so most fits here carry
 # the sampling warning; the tests that look at warnings say so with pytest.warns.
 pytestmark = pytest.mark.filterwarnings(
-    "ignore:.*coefficients per equation:dirconn.exceptions.DirconnWarning"
+    "ignore:.*coefficients per equation:dirconn.data.exceptions.DirconnWarning"
 )
 
 
@@ -185,7 +185,9 @@ def test_several_trials_are_averaged_and_the_assumption_is_listed():
     assert "trial_locking" in {c.name for c in result.provenance.assumptions.checks}
 
 
-@pytest.mark.filterwarnings("ignore:.*companion spectral radius:dirconn.exceptions.DirconnWarning")
+@pytest.mark.filterwarnings(
+    "ignore:.*companion spectral radius:dirconn.data.exceptions.DirconnWarning"
+)
 def test_a_short_memory_with_many_coefficients_warns_about_sampling():
     ts = chain(2000, seed=10)
     with pytest.warns(DirconnWarning, match="coefficients per equation"):
@@ -200,7 +202,9 @@ def test_a_healthy_run_raises_no_dirconn_warning():
         ADTF(order=1, forgetting=0.99999, n_freqs=9).fit(ts)  # a memory of about 100 samples
 
 
-@pytest.mark.filterwarnings("ignore:.*companion spectral radius:dirconn.exceptions.DirconnWarning")
+@pytest.mark.filterwarnings(
+    "ignore:.*companion spectral radius:dirconn.data.exceptions.DirconnWarning"
+)
 def test_without_standardising_unequal_channel_scales_are_flagged():
     data = chain(2000, seed=12).data.copy()
     data[0, 1] *= 50.0
