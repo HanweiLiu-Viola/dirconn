@@ -103,11 +103,11 @@ coefficients known in advance (for example the truth of a simulation):
    :toctree: generated
    :nosignatures:
 
-   statespace.var_to_state_space
-   statespace.reduced_model
-   statespace.state_space_gc
-   statespace.spectral_state_space_gc
-   statespace.InnovationsForm
+   methods.statespace.var_to_state_space
+   methods.statespace.reduced_model
+   methods.statespace.state_space_gc
+   methods.statespace.spectral_state_space_gc
+   methods.statespace.InnovationsForm
 
 A heuristic that compares any estimator with itself on time-reversed data (not an estimator, not a
 test):
@@ -193,4 +193,4 @@ Modules the tutorials use
    headmodel.load_head_model
    inverse.roi_series
    inverse.crosstalk
-   regions.centre_distances
+   diagnostics.regions.centre_distances

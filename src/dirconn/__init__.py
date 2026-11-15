@@ -6,7 +6,9 @@ plotting libraries are optional extras.
 """
 
 import sys
+import types
 from importlib import metadata
+from typing import Any
 
 from dirconn import viz
 from dirconn.data.bands import BANDS
@@ -147,3 +149,21 @@ __all__ = [
     "write_roi_bids",
     "write_simulation_bids",
 ]
+
+
+class _Package(types.ModuleType):
+    """The package module: a deprecated submodule import may not replace a public function.
+
+    Importing the old path ``dirconn`` + ``.bootstrap`` loads the shim and then binds it to
+    ``dirconn.bootstrap``, which is the function; before the subpackage move the real
+    submodule was imported during package initialisation and the function always won.
+    """
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        current = self.__dict__.get(name)
+        if isinstance(value, types.ModuleType) and name in __all__ and callable(current):
+            return
+        super().__setattr__(name, value)
+
+
+sys.modules[__name__].__class__ = _Package

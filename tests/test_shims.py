@@ -93,6 +93,17 @@ def test_no_internal_module_imports_a_shim():
     assert not offenders, "\n".join(offenders)
 
 
+@pytest.mark.parametrize("name", ["bootstrap", "pcmci", "surrogate_test"])
+def test_function_named_old_paths_keep_the_function(name):
+    import dirconn
+
+    sys.modules.pop(f"dirconn.{name}", None)
+    with pytest.warns(DeprecationWarning, match="moved to"):
+        shim = importlib.import_module(f"dirconn.{name}")
+    assert callable(getattr(dirconn, name))  # still the function
+    assert getattr(shim, name) is getattr(dirconn, name)  # the shim forwards to it
+
+
 def test_datasets_alias_is_the_io_module():
     import dirconn
     import dirconn.io.datasets
