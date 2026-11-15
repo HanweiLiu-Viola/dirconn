@@ -30,6 +30,7 @@ jobs:
         run: |
           ruff check .
           ruff format --check .
+          lint-imports
       - name: Type check
         run: mypy
       - name: Test
