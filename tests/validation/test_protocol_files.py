@@ -225,7 +225,7 @@ def test_the_pairs_protocol_is_what_the_script_writes():
 
     import yaml
 
-    path = PROTOCOL_DIR.parent / "scripts" / "make_leakage_pairs_protocol.py"
+    path = PROTOCOL_DIR.parent / "tools" / "make_leakage_pairs_protocol.py"
     spec = importlib.util.spec_from_file_location("make_leakage_pairs_protocol", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

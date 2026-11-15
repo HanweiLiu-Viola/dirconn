@@ -1,4 +1,4 @@
-"""Compare two runs of scripts/validate_methods.py, e.g. the Docker image against the published one.
+"""Compare two runs of tools/validate_methods.py, e.g. the Docker image against the published one.
 
 Rows are matched by scenario, method and seed. The script prints how many rows agree exactly, the
 largest absolute difference of every score, and every scenario and method whose median over the
@@ -7,9 +7,9 @@ conclusion). It exits 1 when the two runs do not cover the same rows or the same
 
 Usage::
 
-    python scripts/validate_methods.py --results run.json --output run.md     # e.g. in the image
-    python scripts/compare_validation.py run.json                             # vs the published
-    python scripts/compare_validation.py run.json --reference other.json
+    python tools/validate_methods.py --results run.json --output run.md     # e.g. in the image
+    python tools/compare_validation.py run.json                             # vs the published
+    python tools/compare_validation.py run.json --reference other.json
 """
 
 from __future__ import annotations

@@ -5,10 +5,10 @@ Every table is computed from ``benchmark_results/<protocol>.jsonl``
 the generated part is typed by hand. The hand-written reading of the numbers is
 ``docs/benchmark_conclusions.md``; when it exists it is put in front of the tables unchanged::
 
-    python scripts/make_report.py                    # needs the results of all ten protocols
-    python scripts/make_report.py --allow-missing    # what exists, with the others named as not run
+    python tools/make_report.py                    # needs the results of all ten protocols
+    python tools/make_report.py --allow-missing    # what exists, with the others named as not run
 
-The results come from ``python scripts/run_benchmark.py <protocol>``; the environment they were
+The results come from ``python tools/run_benchmark.py <protocol>``; the environment they were
 made in is in ``constraints/benchmark.txt`` and in the header of every results file.
 """
 

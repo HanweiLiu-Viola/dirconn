@@ -6,10 +6,10 @@ runner simulates every task once through the head model and scores all estimator
 go to ``benchmark_results/<name>.jsonl``, one line per finished task, so an interrupted run resumes
 where it stopped::
 
-    python scripts/run_benchmark.py quick --dry-run        # count the tasks, run nothing
-    python scripts/run_benchmark.py quick --gate-only      # time one task per network size
-    python scripts/run_benchmark.py quick                  # gate, then run what is not done yet
-    python scripts/run_benchmark.py quick --from-results   # re-render the saved results
+    python tools/run_benchmark.py quick --dry-run        # count the tasks, run nothing
+    python tools/run_benchmark.py quick --gate-only      # time one task per network size
+    python tools/run_benchmark.py quick                  # gate, then run what is not done yet
+    python tools/run_benchmark.py quick --from-results   # re-render the saved results
 
 Before a run the budget gate times one task per network size and estimates the wall-clock time of
 the whole protocol; above the protocol's ``budget_hours`` it refuses unless ``--force``. A task

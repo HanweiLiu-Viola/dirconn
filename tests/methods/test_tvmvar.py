@@ -666,7 +666,7 @@ def test_tvarfit_is_the_documented_type():
 
 
 # --------------------------------------------------------------------------
-# The old package as a numerical reference (fixtures made by scripts/make_tvar_fixtures.py)
+# The old package as a numerical reference (fixtures made by tools/make_tvar_fixtures.py)
 # --------------------------------------------------------------------------
 
 

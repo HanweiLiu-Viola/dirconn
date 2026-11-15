@@ -312,7 +312,7 @@ class TestOnTheRealEstimators:
 class TestTypeIErrorCalibration:
     """Under a true null the p-values are uniform.
 
-    Full experiment (scripts/calibrate_surrogate_test.py; 100 datasets, 39 surrogates, 200 p-values
+    Full experiment (tools/calibrate_surrogate_test.py; 100 datasets, 39 surrogates, 200 p-values
     per generator, GC of order 2 on independent AR(1) channels): rejections at 0.05 were 5
     (phase_randomize) and 7 (circular_shift) against 10 expected, at 0.10 they were 19 and 16
     against 20, and the mean p-value was 0.497 and 0.495. This is the reduced version for the fast

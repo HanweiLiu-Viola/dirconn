@@ -120,7 +120,7 @@ keep large data on an SSD, or copy it into a Docker volume first. The image cont
 3D plotting: surface maps are drawn on the host from saved results. Under Apptainer the image runs
 unchanged (`apptainer pull docker://ghcr.io/hanweiliu-viola/dirconn:<tag>`); nothing is written into
 it at run time. The image is checked against the published validation numbers with
-`scripts/validate_methods.py` and `scripts/compare_validation.py`.
+`tools/validate_methods.py` and `tools/compare_validation.py`.
 
 ## Citing
 

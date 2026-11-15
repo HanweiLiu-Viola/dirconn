@@ -6,9 +6,9 @@ needs a ``docker login ghcr.io`` first (a token with ``write:packages``).
 
 Usage::
 
-    python scripts/build_image.py --dry-run     # print the commands, run nothing
-    python scripts/build_image.py               # build ghcr.io/hanweiliu-viola/dirconn:<tag>
-    python scripts/build_image.py --push        # build, then push the tag
+    python tools/build_image.py --dry-run     # print the commands, run nothing
+    python tools/build_image.py               # build ghcr.io/hanweiliu-viola/dirconn:<tag>
+    python tools/build_image.py --push        # build, then push the tag
 """
 
 from __future__ import annotations

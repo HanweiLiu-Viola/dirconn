@@ -28,7 +28,7 @@ EXPECTED = {
 
 def load_script():
     spec = importlib.util.spec_from_file_location(
-        "run_nonstationary", ROOT / "scripts" / "run_nonstationary.py"
+        "run_nonstationary", ROOT / "tools" / "run_nonstationary.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

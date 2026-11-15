@@ -3,7 +3,7 @@ name: distance_near
 description: >-
   A -> B with coupling 0.4 and a delay of 10 ms between two regions of the same hemisphere
   whose centres are 34 mm apart: the near tercile of the distances between regions of that
-  hemisphere with visibility 0.9 to 1.5 (scripts/pick_regions.py distance). Only the distance
+  hemisphere with visibility 0.9 to 1.5 (tools/pick_regions.py distance). Only the distance
   differs between the three distance scenarios; the leakage between A and B falls with it.
 network:
   nodes:

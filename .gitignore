@@ -15,7 +15,7 @@ docs/_build/
 docs/auto_tutorials/
 docs/generated/
 docs/sg_execution_times.rst
-# notebooks are generated from examples/*.py (scripts/make_notebooks.py), never committed
+# notebooks are generated from examples/*.py (tools/make_notebooks.py), never committed
 *.ipynb
 .pytest_tmp*/
 

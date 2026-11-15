@@ -79,7 +79,7 @@ coupling changes slowly, a smaller one when it changes fast.
 | `rls` | "faster, one fewer knob" | the same coefficients as `dual` |
 
 The numerical core agrees with the old one to 1e-9 from a common zero start (five fixtures in
-`tests/data`, made by `scripts/make_tvar_fixtures.py`) and with a slow joint reference implementation of
+`tests/data`, made by `tools/make_tvar_fixtures.py`) and with a slow joint reference implementation of
 the DEKF to 1e-8.
 
 Defaults that were kept: process noise `1 / lambda - 1`, `init_samples =

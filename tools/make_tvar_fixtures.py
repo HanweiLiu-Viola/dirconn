@@ -7,7 +7,7 @@ starts from **zero coefficients** (``init="zeros"``): the old kernel seeds from 
 and the new one from its own OLS core, so a common explicit start is the only way to compare the
 recursions themselves. Rerunning this script reproduces the file exactly.
 
-    python scripts/make_tvar_fixtures.py --neurrow C:/Projects/neurrow-toolkit/src
+    python tools/make_tvar_fixtures.py --neurrow C:/Projects/neurrow-toolkit/src
 """
 
 from __future__ import annotations

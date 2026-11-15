@@ -6,7 +6,7 @@ of the three counts), the same candidates as the random scenarios. The list is w
 file, so the protocol needs no head model to be expanded; rerunning this script reproduces the file
 exactly. Needs the MNE sample dataset.
 
-    python scripts/make_leakage_pairs_protocol.py
+    python tools/make_leakage_pairs_protocol.py
 """
 
 from __future__ import annotations
@@ -41,7 +41,7 @@ def build(regions: tuple[str, ...], n: int = N_PAIRS, seed: int = PAIR_SEED) -> 
             "(crosstalk matrix in the results header). Conditional Granger causality and gPDC, "
             "BIC order, one seed per pair; 45 pairs because the gate estimated 0.23 h for 150. "
             f"The regions are those with a visibility of at least {MIN_VISIBILITY:g} on all three "
-            "modalities (scripts/make_leakage_pairs_protocol.py)."
+            "modalities (tools/make_leakage_pairs_protocol.py)."
         ),
         "kind": "region_pairs",
         "pairs": {"n": n, "seed": seed, "regions": list(regions)},

@@ -4,9 +4,9 @@ The rules are in ``dirconn.diagnostics.regions``; this script applies them to th
 model and
 prints the result, which the scenario files and ``tests/simulation/test_scenario_library.py`` carry.
 
-    python scripts/pick_regions.py pool        # the four regions of the hand-written scenarios
-    python scripts/pick_regions.py leakage     # leaking neighbour pair and a far, quiet region
-    python scripts/pick_regions.py distance    # one pair per distance tercile
+    python tools/pick_regions.py pool        # the four regions of the hand-written scenarios
+    python tools/pick_regions.py leakage     # leaking neighbour pair and a far, quiet region
+    python tools/pick_regions.py distance    # one pair per distance tercile
 
 Needs the MNE sample dataset.
 """

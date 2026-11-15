@@ -5,10 +5,10 @@ are scored with the time-resolved metrics of ``dirconn.validation.evaluation``. 
 (scenario, SNR,
 seed) is one unit of work; the methods all see the same series::
 
-    python scripts/run_nonstationary.py --gate-only      # time one dataset, measure the efficiency
-    python scripts/run_nonstationary.py --tier quick     # 8 datasets: the daily regression
-    python scripts/run_nonstationary.py                  # the full grid: gate, run, report
-    python scripts/run_nonstationary.py --from-results   # re-render without simulating
+    python tools/run_nonstationary.py --gate-only      # time one dataset, measure the efficiency
+    python tools/run_nonstationary.py --tier quick     # 8 datasets: the daily regression
+    python tools/run_nonstationary.py                  # the full grid: gate, run, report
+    python tools/run_nonstationary.py --from-results   # re-render without simulating
 
 Finished datasets are appended to ``<results>.partial.jsonl`` as they come in, so an interrupted run
 resumes where it stopped; the partial file is removed when the results file is written. The gate

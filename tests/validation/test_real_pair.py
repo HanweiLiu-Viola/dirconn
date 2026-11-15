@@ -217,7 +217,7 @@ class TestRealRecording:
     def test_the_known_direction_is_recovered_in_real_background_with_a_long_enough_model(
         self, real
     ):
-        # Full study (scripts/real_pair_study.py): 24 random channel pairs and non-overlapping 40 s
+        # Full study (tools/real_pair_study.py): 24 random channel pairs and non-overlapping 40 s
         # windows, 20 ms delay, band 8 to 12 Hz. Direction accuracy at strength 1 and 3:
         #   GC order 8: 0.29 and 0.33 (below chance: the direction comes out reversed)
         #   GC order 32, 64 and BIC up to 64 (it chose about 63), DTF order 64, gPDC order 64: 1.00

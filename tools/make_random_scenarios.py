@@ -8,7 +8,7 @@ a large network are part of the difficulty. The graphs come from
 this script
 reproduces the files exactly. Needs the MNE sample dataset.
 
-    python scripts/make_random_scenarios.py
+    python tools/make_random_scenarios.py
 """
 
 from __future__ import annotations

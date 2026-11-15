@@ -1,4 +1,4 @@
-"""The command line of the benchmark (scripts/run_benchmark.py), with a fake runner."""
+"""The command line of the benchmark (tools/run_benchmark.py), with a fake runner."""
 
 import importlib.util
 from pathlib import Path
@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def load_script():
     spec = importlib.util.spec_from_file_location(
-        "run_benchmark", ROOT / "scripts" / "run_benchmark.py"
+        "run_benchmark", ROOT / "tools" / "run_benchmark.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

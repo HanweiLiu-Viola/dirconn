@@ -58,7 +58,7 @@ plus real noise. Over 24 random channel pairs and 40 s windows at 150 Hz:
 At order 8 the direction is reversed more often than chance (0.29 and 0.33 against 0.5). A
 narrow-band influence on a long-memory background cannot be summarised by a short AR model, and the
 other channel inherits the memory. The wrong answer does not look like a failure: at order 8 the
-scores are small and the other diagnostics do not warn. Reproduce with `scripts/real_pair_study.py`.
+scores are small and the other diagnostics do not warn. Reproduce with `tools/real_pair_study.py`.
 
 **The order-stability check.** Because of this, GC, DTF, PDC and gPDC now refit the model at longer
 orders (2, 4, 8, 16 and 32 times the chosen one, as far as the data allow) and use the exact F test
@@ -159,7 +159,7 @@ The scenarios of the sweeps are YAML files in `src/dirconn/simulation/scenarios/
 network, the own dynamics of the nodes, defaults (100 Hz, 10 dB, 120 s) and the hidden nodes; difficulty
 (SNR, length, coupling, source extent) is **not** in the files, it is an axis of the protocols.
 
-The hand-written scenarios use a fixed pool of four regions, chosen by `scripts/pick_regions.py`: a
+The hand-written scenarios use a fixed pool of four regions, chosen by `tools/pick_regions.py`: a
 region qualifies when its visibility (norm of its topography relative to the median region) is at least
 1.0 on EEG, magnetometers and gradiometers and at most 1.8 on the least visible of the three, and the
 regions are taken in order of decreasing visibility when their centres are at least 60 mm from the ones
@@ -176,7 +176,7 @@ sampling ends at 50 Hz). The band and delay files have an unconnected node that 
 ### Leakage, distance and artifact scenarios
 
 The rules are in `dirconn.diagnostics.regions` (plain-array functions, tested on made-up data) and applied to the
-sample head model by `scripts/pick_regions.py leakage` and `distance`; a sample-data test checks that
+sample head model by `tools/pick_regions.py leakage` and `distance`; a sample-data test checks that
 the shipped files are what the rules give. The leakage matrix is `dirconn.simulation.inverse.crosstalk` with the
 defaults (minimum norm, `pca_flip`, 10 dB probe, seed 0); `matrix[y, x]` is the leak of region `x` into
 the series of region `y`, relative to the response of that series to its own region.
@@ -207,7 +207,7 @@ the series of region `y`, relative to the response of that series to its own reg
 ### Random sparse networks
 
 `random_5`, `random_10` and `random_20` come from `dirconn.simulation.scenario.random_scenario` (seeds in
-`RANDOM_SEEDS`; `scripts/make_random_scenarios.py` regenerates the files exactly). Per graph:
+`RANDOM_SEEDS`; `tools/make_random_scenarios.py` regenerates the files exactly). Per graph:
 `round(1.5 * n)` edges on distinct unordered pairs (so a pair never has edges in both directions),
 all but two from an earlier to a later node of a hidden order, so the graph is acyclic apart from two
 feedback edges; strengths 0.2 to 0.4 (positive), delays 1 to 3 samples (10 to 30 ms), every node an
@@ -227,7 +227,7 @@ numbers come from the three shipped seeds, not from a study of the generator.
 ## Protocols, results files and the budget gate
 
 A protocol (`protocols/<name>.yaml`, `version: 1`, `dirconn.validation.protocol`) lists axes; the runner
-(`scripts/run_benchmark.py`, `dirconn.validation.sweep`) takes their Cartesian product.
+(`tools/run_benchmark.py`, `dirconn.validation.sweep`) takes their Cartesian product.
 
 - **A task is one simulation**: a scenario, an SNR, a data length, a coupling strength, a source model,
   a modality and a seed number. The estimators are not part of the task: it simulates once through the
@@ -261,7 +261,7 @@ A protocol (`protocols/<name>.yaml`, `version: 1`, `dirconn.validation.protocol`
   sees it and `snr_db` does not count it.
 - **Time-varying scenarios are refused** when a protocol is loaded (`Network.has_intervals`: `burst`,
   `direction_flip`, `switch_on`, `switch_off`): the stages are scored against one static truth, so
-  their numbers would be about another experiment. They belong to `scripts/run_nonstationary.py`.
+  their numbers would be about another experiment. They belong to `tools/run_nonstationary.py`.
 - **Cards**: per estimator and stage the output of `evaluate_stages` (AUROC, AUPRC, direction
   accuracy, separation, selected order, diagnostics that warned) plus, for the spectral estimators,
   the AUROC at every frequency (`auroc_by_frequency`, four decimals, NaN where the truth has no edge

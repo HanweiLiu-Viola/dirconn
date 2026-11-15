@@ -7,7 +7,7 @@ from dirconn.data.bands import BANDS
 from dirconn.simulation import simulate
 from dirconn.simulation.scenario import list_scenarios, load_scenario
 
-# The region pool of the hand-written scenarios, chosen by scripts/pick_regions.py: visibility
+# The region pool of the hand-written scenarios, chosen by tools/pick_regions.py: visibility
 # of at least 1.0 times the median region on EEG, magnetometers and gradiometers, the smallest of
 # the three at most 1.8, and centres at least 60 mm apart.
 R1, R2, R3, R4 = (

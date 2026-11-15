@@ -106,14 +106,14 @@ Write the test first and watch it fail.
   find what depends on one. A reported number without its environment is not a result.
 - The Docker image (`Dockerfile`) installs with `constraints/docker.txt`, which repeats the
   benchmark pins and adds the rest of the stack; a test keeps the shared pins equal. Push only
-  images built from a clean commit (`scripts/build_image.py --push` refuses otherwise).
+  images built from a clean commit (`tools/build_image.py --push` refuses otherwise).
 - `__version__` is read from the package metadata and is never hard-coded.
 
 ## Tutorials
 
 The tutorials are the scripts `examples/plot_*.py`: plain Python with `# %%` cells (the sphinx-gallery
 layout), so they diff cleanly and run with `python`. Notebooks are generated for viewing and are never
-committed: `python scripts/make_notebooks.py` writes them to `docs/_build/notebooks` (needs `nbformat`).
+committed: `python tools/make_notebooks.py` writes them to `docs/_build/notebooks` (needs `nbformat`).
 
 Every tutorial follows the same rules, and `tests/test_examples.py` checks them and runs the script:
 
@@ -181,9 +181,9 @@ driver, collider, bidirectional pair, feedback loop, zero-lag coupling, hidden d
 noise), how every method scores. It is generated, not written: rerun
 
 ```bash
-python scripts/validate_methods.py            # full run, about ten minutes
-python scripts/validate_methods.py --seeds 3  # quick look
-python scripts/validate_methods.py --from-results   # re-render the saved rows only
+python tools/validate_methods.py            # full run, about ten minutes
+python tools/validate_methods.py --seeds 3  # quick look
+python tools/validate_methods.py --from-results   # re-render the saved rows only
 ```
 
 after a change that can move the numbers (a new method, a new default, a change in the VAR core,

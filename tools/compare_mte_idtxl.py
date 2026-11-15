@@ -3,10 +3,10 @@ r"""Compare dirconn's multivariate transfer entropy with IDTxl's ``MultivariateT
 Three steps, the middle one inside a container that has IDTxl 1.6.1 and JIDT (the image
 ``neurrow-toolkit:0.2.0``)::
 
-    python scripts/compare_mte_idtxl.py export <dir>      # dirconn environment: write series.npz
-    docker run --rm -v <dir>:/work -v C:/Projects/dirconn/scripts:/scripts -w /work \\
-        neurrow-toolkit:0.2.0 python /scripts/compare_mte_idtxl.py idtxl /work
-    python scripts/compare_mte_idtxl.py compare <dir>     # dirconn environment: compare
+    python tools/compare_mte_idtxl.py export <dir>      # dirconn environment: write series.npz
+    docker run --rm -v <dir>:/work -v C:/Projects/dirconn/tools:/tools -w /work \\
+        neurrow-toolkit:0.2.0 python /tools/compare_mte_idtxl.py idtxl /work
+    python tools/compare_mte_idtxl.py compare <dir>     # dirconn environment: compare
 
 Both use the same candidates (target lags 1..MAX_ORDER, source lags 1..MAX_DELAY), the same rows
 (from the longest lag on), the KSG estimator with 4 neighbours on standardised variables, and the

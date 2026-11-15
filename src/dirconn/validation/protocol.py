@@ -259,7 +259,7 @@ class Protocol:
                         f"Scenario {name!r} has edges that act only in some time intervals. The "
                         "stages of this benchmark are scored against one static truth, so its "
                         "numbers would be about another experiment; use the time-resolved study "
-                        "(scripts/run_nonstationary.py)."
+                        "(tools/run_nonstationary.py)."
                     )
             if kind == "significance":
                 for key in ("modality", "source_model", "inverse"):

@@ -1,4 +1,4 @@
-"""scripts/compare_validation.py: two validation runs, row by row and by multi-seed medians."""
+"""tools/compare_validation.py: two validation runs, row by row and by multi-seed medians."""
 
 import importlib.util
 import json
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def load_script():
     spec = importlib.util.spec_from_file_location(
-        "compare_validation", ROOT / "scripts" / "compare_validation.py"
+        "compare_validation", ROOT / "tools" / "compare_validation.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

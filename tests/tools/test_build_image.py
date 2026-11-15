@@ -1,4 +1,4 @@
-"""scripts/build_image.py: the image tag names the commit, and a dirty tree is marked."""
+"""tools/build_image.py: the image tag names the commit, and a dirty tree is marked."""
 
 import importlib.util
 from pathlib import Path
@@ -6,14 +6,14 @@ from pathlib import Path
 import pytest
 
 # The script reads pyproject.toml with tomllib (Python 3.11+); images are built on the workstation.
-pytest.importorskip("tomllib", reason="scripts/build_image.py needs Python 3.11 or later")
+pytest.importorskip("tomllib", reason="tools/build_image.py needs Python 3.11 or later")
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_script():
     spec = importlib.util.spec_from_file_location(
-        "build_image", ROOT / "scripts" / "build_image.py"
+        "build_image", ROOT / "tools" / "build_image.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

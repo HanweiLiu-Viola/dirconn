@@ -3,8 +3,8 @@
 Run on a machine with a CUDA (or XPU / MPS) build of PyTorch::
 
     pip install -e ".[dev,parallel,gpu]"
-    python scripts/gpu_check.py                 # device "cuda"
-    python scripts/gpu_check.py --device xpu
+    python tools/gpu_check.py                 # device "cuda"
+    python tools/gpu_check.py --device xpu
     pytest -m gpu                               # the marked tests
 
 It prints, for a few data lengths, the time of one conditional mutual information on the CPU

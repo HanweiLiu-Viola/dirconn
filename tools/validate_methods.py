@@ -5,9 +5,9 @@ Runs every method of ``dirconn.validation.method_validation.METHODS`` on every s
 seeds, scores the estimates against the known networks and writes the tables. The raw rows are kept
 next to the report so that the text can be rendered again without simulating anything::
 
-    python scripts/validate_methods.py                     # full run, about ten minutes
-    python scripts/validate_methods.py --seeds 3           # quick look
-    python scripts/validate_methods.py --from-results      # re-render from the saved rows
+    python tools/validate_methods.py                     # full run, about ten minutes
+    python tools/validate_methods.py --seeds 3           # quick look
+    python tools/validate_methods.py --from-results      # re-render from the saved rows
 
 The hand-written reading of the numbers lives in ``docs/method_validation_findings.md`` and is
 inserted at the top of the report when the file exists.

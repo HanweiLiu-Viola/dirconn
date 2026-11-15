@@ -425,7 +425,7 @@ def _node_dynamics(value: Any, where: str) -> NodeDynamics:
 
 
 RANDOM_SEEDS: dict[str, int] = {"random_5": 1005, "random_10": 1010, "random_20": 1020}
-"""Seeds of the shipped random scenarios; ``scripts/make_random_scenarios.py`` regenerates them."""
+"""Seeds of the shipped random scenarios; ``tools/make_random_scenarios.py`` regenerates them."""
 
 
 @dataclass(frozen=True)

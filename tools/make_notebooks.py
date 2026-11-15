@@ -7,8 +7,8 @@ Nothing is executed and the tutorials are not modified.
 
 Usage::
 
-    python scripts/make_notebooks.py                       # every examples/plot_*.py
-    python scripts/make_notebooks.py examples/plot_01_*.py --out my_notebooks
+    python tools/make_notebooks.py                       # every examples/plot_*.py
+    python tools/make_notebooks.py examples/plot_01_*.py --out my_notebooks
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""scripts/make_notebooks.py: tutorials (.py with # %% cells) to notebooks, for local viewing."""
+"""tools/make_notebooks.py: tutorials (.py with # %% cells) to notebooks, for local viewing."""
 
 import importlib.util
 from pathlib import Path
@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def load_script():
     spec = importlib.util.spec_from_file_location(
-        "make_notebooks", ROOT / "scripts" / "make_notebooks.py"
+        "make_notebooks", ROOT / "tools" / "make_notebooks.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

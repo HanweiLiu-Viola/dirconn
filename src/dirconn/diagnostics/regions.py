@@ -1,7 +1,7 @@
 """Choosing the regions of benchmark scenarios from the properties of a head model.
 
 The scenario files carry region names, not rules. These functions are the rules, written on plain
-arrays so they can be tested without a head model; ``scripts/pick_regions.py`` applies them to the
+arrays so they can be tested without a head model; ``tools/pick_regions.py`` applies them to the
 sample head model and ``tests/simulation/test_scenario_library.py`` checks that the shipped files
 are what they give. Leakage matrices are the ones of :func:`dirconn.simulation.inverse.crosstalk`:
 ``matrix[i, j]`` is

@@ -1,4 +1,4 @@
-"""scripts/make_report.py: writes the generated report from a directory of results files."""
+"""tools/make_report.py: writes the generated report from a directory of results files."""
 
 import importlib.util
 import json
@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def load_script():
     spec = importlib.util.spec_from_file_location(
-        "make_report", ROOT / "scripts" / "make_report.py"
+        "make_report", ROOT / "tools" / "make_report.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
