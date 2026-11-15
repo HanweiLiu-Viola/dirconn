@@ -1,4 +1,4 @@
-"""The shipped protocol files (protocols/*.yaml) are valid and mean what they say."""
+"""The shipped protocol files (validation/protocols/*.yaml) are valid and mean what they say."""
 
 from pathlib import Path
 
@@ -7,7 +7,7 @@ import pytest
 from dirconn.validation.benchmark_report import ADDONS
 from dirconn.validation.protocol import VAR_ESTIMATOR_NAMES, expand, load_protocol
 
-PROTOCOL_DIR = Path(__file__).resolve().parents[2] / "protocols"
+PROTOCOL_DIR = Path(__file__).resolve().parents[2] / "validation" / "protocols"
 FILES = sorted(PROTOCOL_DIR.glob("*.yaml"))
 
 
@@ -225,7 +225,7 @@ def test_the_pairs_protocol_is_what_the_script_writes():
 
     import yaml
 
-    path = PROTOCOL_DIR.parent / "tools" / "make_leakage_pairs_protocol.py"
+    path = PROTOCOL_DIR.parents[1] / "tools" / "make_leakage_pairs_protocol.py"
     spec = importlib.util.spec_from_file_location("make_leakage_pairs_protocol", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

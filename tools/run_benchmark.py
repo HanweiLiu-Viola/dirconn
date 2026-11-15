@@ -1,9 +1,9 @@
 """Run a benchmark protocol, or re-render the results of one that has run.
 
-A protocol (``protocols/<name>.yaml``, see ``dirconn.validation.protocol``) lists scenarios and
-axes; the
+A protocol (``validation/protocols/<name>.yaml``, see ``dirconn.validation.protocol``)
+lists scenarios and axes; the
 runner simulates every task once through the head model and scores all estimators on it. Results
-go to ``benchmark_results/<name>.jsonl``, one line per finished task, so an interrupted run resumes
+go to ``validation/results/<name>.jsonl``, one line per finished task, so an interrupted run resumes
 where it stopped::
 
     python tools/run_benchmark.py quick --dry-run        # count the tasks, run nothing
@@ -49,12 +49,12 @@ from dirconn.validation.protocol import (  # noqa: E402
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-PROTOCOL_DIR = ROOT / "protocols"
-RESULTS_DIR = ROOT / "benchmark_results"
+PROTOCOL_DIR = ROOT / "validation" / "protocols"
+RESULTS_DIR = ROOT / "validation" / "results"
 
 
 def resolve_protocol(name: str) -> Path:
-    """Return the file of a protocol given as a path or as a bare name in ``protocols/``."""
+    """Return the file of a protocol given as a path or a bare name under validation/protocols."""
     path = Path(name)
     if path.suffix and path.exists():
         return path
@@ -132,7 +132,9 @@ def main(
 ) -> int:
     """Run the command line; ``runner``, ``gate_measure`` and ``crosstalk_fn`` are test hooks."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("protocol", help="a protocol name in protocols/ or a path to a YAML file")
+    parser.add_argument(
+        "protocol", help="a protocol name in validation/protocols/ or a path to a YAML file"
+    )
     parser.add_argument("--results", type=Path, help="results file (default: by protocol name)")
     parser.add_argument("--workers", type=int, help="processes (default: CPUs - 1, at most 6)")
     parser.add_argument("--dry-run", action="store_true", help="count the tasks and stop")

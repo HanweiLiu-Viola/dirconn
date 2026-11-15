@@ -4,7 +4,7 @@ This page describes how the simulation benchmark is built and what each part of 
 tables, and in front of them what they do and do not show, are in
 [the benchmark results](benchmark_results.md).
 
-The saved results (`benchmark_results/*.jsonl`) and the pages generated from them name the commit each
+The saved results (`validation/results/*.jsonl`) and the pages generated from them name the commit each
 run was made at (for example `0de0d7f`). These identifiers belong to the development history that
 preceded this public repository; they are kept so that the record of every run stays as it was
 written, but they cannot be checked out here. The environment of every run (Python and library
@@ -226,7 +226,7 @@ numbers come from the three shipped seeds, not from a study of the generator.
 
 ## Protocols, results files and the budget gate
 
-A protocol (`protocols/<name>.yaml`, `version: 1`, `dirconn.validation.protocol`) lists axes; the runner
+A protocol (`validation/protocols/<name>.yaml`, `version: 1`, `dirconn.validation.protocol`) lists axes; the runner
 (`tools/run_benchmark.py`, `dirconn.validation.sweep`) takes their Cartesian product.
 
 - **A task is one simulation**: a scenario, an SNR, a data length, a coupling strength, a source model,
@@ -246,7 +246,7 @@ A protocol (`protocols/<name>.yaml`, `version: 1`, `dirconn.validation.protocol`
   `RNGController`), not from its position: adding a value to an axis, or a seed, leaves every existing
   task's seed alone. The task id also contains a hash of the scenario as simulated, so an edited
   scenario file gives a new id (same seed, results not reused).
-- **Results** go to `benchmark_results/<protocol>.jsonl`: a header (protocol settings that decide the
+- **Results** go to `validation/results/<protocol>.jsonl`: a header (protocol settings that decide the
   numbers, versions, the gate measurement), one line per finished task, a summary line. Only the
   published `full` results are meant for git. A run resumes: finished tasks are skipped, failed ones are
   retried, a cut-off last line is ignored. A resume is refused (with the difference named) when the

@@ -1,4 +1,4 @@
-"""Write ``protocols/leakage_pairs.yaml``, the region-pair leakage study.
+"""Write ``validation/protocols/leakage_pairs.yaml``, the region-pair leakage study.
 
 The protocol lists the regions the pairs are drawn from: those whose visibility is at least
 ``--min-visibility`` times the median region on EEG, magnetometers and gradiometers (the smallest
@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_random_scenarios import candidate_regions  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUT = ROOT / "protocols" / "leakage_pairs.yaml"
+DEFAULT_OUT = ROOT / "validation" / "protocols" / "leakage_pairs.yaml"
 N_PAIRS = 45
 PAIR_SEED = 14
 MIN_VISIBILITY = 0.5

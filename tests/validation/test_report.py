@@ -507,9 +507,9 @@ class TestCodeInTheRunTimeSection:
 def test_the_gitignore_lets_exactly_the_published_and_add_on_results_through():
     lines = [x.strip() for x in (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()]
     allowed = {
-        x.removeprefix("!benchmark_results/").removesuffix(".jsonl")
+        x.removeprefix("!validation/results/").removesuffix(".jsonl")
         for x in lines
-        if x.startswith("!benchmark_results/")
+        if x.startswith("!validation/results/")
     }
     assert allowed == set(PUBLISHED) | set(ADDONS)
-    assert "benchmark_results/*" in lines and "quick" not in allowed
+    assert "validation/results/*" in lines and "quick" not in allowed

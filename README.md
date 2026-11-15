@@ -32,7 +32,7 @@ Documentation, tutorials and API reference: <https://hanweiliu-viola.github.io/d
 - **Simulation and validation**: networks with a known truth, simulated through the head models of
   the MNE `sample` dataset, so that leakage, observation noise and hidden drivers can be measured
   instead of assumed. The benchmark protocols, their saved results and what they do and do not show
-  are part of the repository (`protocols/`, `benchmark_results/`, `docs/benchmark*.md`).
+  are part of the repository (`validation/protocols/`, `validation/results/`, `docs/benchmark*.md`).
 
 ## Install
 

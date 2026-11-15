@@ -12,9 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_script():
-    spec = importlib.util.spec_from_file_location(
-        "make_report", ROOT / "tools" / "make_report.py"
-    )
+    spec = importlib.util.spec_from_file_location("make_report", ROOT / "tools" / "make_report.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module

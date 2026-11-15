@@ -1,6 +1,6 @@
 """Write ``docs/benchmark_results.md`` from the published results of the benchmark.
 
-Every table is computed from ``benchmark_results/<protocol>.jsonl``
+Every table is computed from ``validation/results/<protocol>.jsonl``
 (``dirconn.validation.benchmark_report``); nothing in
 the generated part is typed by hand. The hand-written reading of the numbers is
 ``docs/benchmark_conclusions.md``; when it exists it is put in front of the tables unchanged::
@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main(argv: list[str] | None = None) -> int:
     """Build the report and write it; return the exit code."""
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--results-dir", type=Path, default=ROOT / "benchmark_results")
+    parser.add_argument("--results-dir", type=Path, default=ROOT / "validation" / "results")
     parser.add_argument(
         "--conclusions", type=Path, default=ROOT / "docs" / "benchmark_conclusions.md"
     )
