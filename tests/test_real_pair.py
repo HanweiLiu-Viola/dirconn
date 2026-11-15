@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from dirconn import GC, DirconnWarning, TimeSeries
-from dirconn.benchmark import (
+from dirconn.validation.benchmark import (
     constructed_pair,
     delayed_bandpass,
     evaluate_pair,

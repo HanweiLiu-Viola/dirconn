@@ -2,13 +2,13 @@ import numpy as np
 import pytest
 
 from dirconn import DTF, GC, Edge, Network, direct_node, dk_node
-from dirconn.benchmark import (
+from dirconn.simulation import simulate_on_head
+from dirconn.validation.benchmark import (
     evaluate_stages,
     representative_sensors,
     roi_observations,
     sensor_series,
 )
-from dirconn.simulation import simulate_on_head
 from helpers import ROIS, chain, head
 
 
@@ -270,9 +270,9 @@ def test_unequal_node_power_is_what_degrades_the_sensor_stage():
 from dataclasses import dataclass  # noqa: E402
 
 from dirconn import Connectivity  # noqa: E402
-from dirconn.benchmark import add_artifact  # noqa: E402
 from dirconn.methods.base import Estimator, MethodInfo  # noqa: E402
-from dirconn.scenario import ArtifactSpec, stimulation_artifact  # noqa: E402
+from dirconn.simulation.scenario import ArtifactSpec, stimulation_artifact  # noqa: E402
+from dirconn.validation.benchmark import add_artifact  # noqa: E402
 from helpers import Spy  # noqa: E402
 
 A, B, C, H = ROIS[0], ROIS[1], ROIS[2], ROIS[3]

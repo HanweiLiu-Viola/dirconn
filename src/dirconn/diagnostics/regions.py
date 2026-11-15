@@ -3,7 +3,8 @@
 The scenario files carry region names, not rules. These functions are the rules, written on plain
 arrays so they can be tested without a head model; ``scripts/pick_regions.py`` applies them to the
 sample head model and ``tests/test_scenario_library.py`` checks that the shipped files are what
-they give. Leakage matrices are the ones of :func:`dirconn.inverse.crosstalk`: ``matrix[i, j]`` is
+they give. Leakage matrices are the ones of :func:`dirconn.simulation.inverse.crosstalk`:
+``matrix[i, j]`` is
 the response of the series of region ``i`` to region ``j``, so the leak of region ``x`` *into the
 series of* ``y`` is ``matrix[y, x]``.
 """
@@ -15,7 +16,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from dirconn.headmodel import HeadModel
+from dirconn.simulation.headmodel import HeadModel
 
 POOL_VISIBILITY = (1.0, 1.8)
 POOL_MIN_DISTANCE = 60.0

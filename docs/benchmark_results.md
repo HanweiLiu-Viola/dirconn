@@ -1470,7 +1470,7 @@ Power, pairs with a true edge:
 
 ## Further methods on the head models (add-on)
 
-Conditional Granger causality with the BIC order next to the further estimators, on three simple topologies. Scoring follows each method's convention (`dirconn.evaluation.convention_metrics`): `imcoh` is undirected (magnitude, an edge in either direction, no direction accuracy), `pcmci` is signed (magnitude), `trgc` and `psi` are net flows (a pair coupled both ways is left out). Mean AUROC over seeds:
+Conditional Granger causality with the BIC order next to the further estimators, on three simple topologies. Scoring follows each method's convention (`dirconn.validation.evaluation.convention_metrics`): `imcoh` is undirected (magnitude, an edge in either direction, no direction accuracy), `pcmci` is signed (magnitude), `trgc` and `psi` are net flows (a pair coupled both ways is left out). Mean AUROC over seeds:
 
 Stage: roi.
 

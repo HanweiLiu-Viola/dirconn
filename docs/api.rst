@@ -187,10 +187,10 @@ Modules the tutorials use
    :toctree: generated
    :nosignatures:
 
-   scenario.load_scenario
-   scenario.list_scenarios
-   simulation.simulate_on_head
-   headmodel.load_head_model
-   inverse.roi_series
-   inverse.crosstalk
+   simulation.scenario.load_scenario
+   simulation.scenario.list_scenarios
+   simulation.simulation.simulate_on_head
+   simulation.headmodel.load_head_model
+   simulation.inverse.roi_series
+   simulation.inverse.crosstalk
    diagnostics.regions.centre_distances

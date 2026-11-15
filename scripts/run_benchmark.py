@@ -1,6 +1,7 @@
 """Run a benchmark protocol, or re-render the results of one that has run.
 
-A protocol (``protocols/<name>.yaml``, see ``dirconn.protocol``) lists scenarios and axes; the
+A protocol (``protocols/<name>.yaml``, see ``dirconn.validation.protocol``) lists scenarios and
+axes; the
 runner simulates every task once through the head model and scores all estimators on it. Results
 go to ``benchmark_results/<name>.jsonl``, one line per finished task, so an interrupted run resumes
 where it stopped::
@@ -34,7 +35,7 @@ from collections.abc import Callable  # noqa: E402
 from pathlib import Path  # noqa: E402
 from typing import Any  # noqa: E402
 
-from dirconn.protocol import (  # noqa: E402
+from dirconn.validation.protocol import (  # noqa: E402
     DEFAULT_EFFICIENCY,
     Protocol,
     check_budget,
@@ -173,7 +174,7 @@ def main(
         print(f"  estimators ({len(protocol.estimators)}): {', '.join(protocol.estimators)}")
         return 0
 
-    from dirconn.sweep import crosstalk_matrices, make_runner, measure_gate
+    from dirconn.validation.sweep import crosstalk_matrices, make_runner, measure_gate
 
     workers = args.workers
     if workers is None:

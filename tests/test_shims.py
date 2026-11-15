@@ -112,3 +112,38 @@ def test_datasets_alias_is_the_io_module():
         warnings.simplefilter("error", DeprecationWarning)
         import dirconn.datasets
     assert dirconn.datasets is dirconn.io.datasets
+
+
+def test_scenarios_ship_with_simulation_subpackage():
+    from dirconn.simulation.scenario import SCENARIO_DIR, list_scenarios
+
+    assert SCENARIO_DIR.is_dir() and "chain" in list_scenarios()
+
+
+def test_simulation_package_keeps_the_old_module_names_without_warning():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        from dirconn.simulation import NodeDynamics, simulate
+    sim = importlib.import_module("dirconn.simulation.simulation")
+    assert simulate is sim.simulate and NodeDynamics is sim.NodeDynamics
+
+
+def test_validation_package_forwards_old_names_with_warning():
+    import dirconn.validation as v
+
+    target = importlib.import_module("dirconn.validation.method_validation")
+    with pytest.warns(DeprecationWarning, match="moved to dirconn.validation.method_validation"):
+        assert v.simulate_scenario is target.simulate_scenario
+    with pytest.raises(AttributeError):
+        v.no_such_name  # noqa: B018
+
+
+def test_validation_submodules_do_not_warn():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        import dirconn.validation as v
+
+        assert v.protocol is importlib.import_module("dirconn.validation.protocol")
+        assert v.method_validation is importlib.import_module(
+            "dirconn.validation.method_validation"
+        )

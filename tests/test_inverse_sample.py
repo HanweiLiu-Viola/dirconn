@@ -6,7 +6,7 @@ Run with ``pytest -m sample_data``.
 import numpy as np
 import pytest
 
-from dirconn.inverse import ROI_MODES, extract_roi
+from dirconn.simulation.inverse import ROI_MODES, extract_roi
 
 pytestmark = pytest.mark.sample_data
 
@@ -15,8 +15,8 @@ MNE_NAMES = {"mne": "MNE", "dspm": "dSPM", "eloreta": "eLORETA"}
 
 
 def simulated(modality, n_times=1500, snr_db=5.0, seed=1, n_trials=1):
-    from dirconn.headmodel import load_head_model
     from dirconn.simulation import simulate_on_head
+    from dirconn.simulation.headmodel import load_head_model
     from helpers import chain
 
     head = load_head_model(modality)
@@ -90,7 +90,7 @@ class TestSpatialFilter:
     @pytest.mark.parametrize("method", ["lcmv", "mne", "dspm"])
     @pytest.mark.parametrize("modality", ["eeg", "grad"])
     def test_the_filter_gives_mnes_own_source_estimate(self, modality, method):
-        from dirconn.inverse import spatial_filter
+        from dirconn.simulation.inverse import spatial_filter
 
         head, sim = simulated(modality)
         data = sim.data.data[:, : head.n_channels]
@@ -102,7 +102,7 @@ class TestSpatialFilter:
         )
 
     def test_eloreta_also_matches_mne(self):
-        from dirconn.inverse import spatial_filter
+        from dirconn.simulation.inverse import spatial_filter
 
         head, sim = simulated("eeg", n_times=600)
         data = sim.data.data[:, : head.n_channels]
@@ -113,7 +113,7 @@ class TestSpatialFilter:
         )
 
     def test_eeg_filters_ignore_the_common_mode(self):
-        from dirconn.inverse import spatial_filter
+        from dirconn.simulation.inverse import spatial_filter
 
         head, sim = simulated("eeg")
         data = sim.data.data[:, : head.n_channels]
@@ -122,7 +122,7 @@ class TestSpatialFilter:
             assert np.abs(weights.sum(axis=1)).max() < 1e-9 * np.abs(weights).sum(axis=1).max()
 
     def test_the_regularisation_matters(self):
-        from dirconn.inverse import spatial_filter
+        from dirconn.simulation.inverse import spatial_filter
 
         head, sim = simulated("grad")
         data = sim.data.data[:, : head.n_channels]
@@ -131,14 +131,14 @@ class TestSpatialFilter:
         assert not np.allclose(a, b)
 
     def test_a_head_model_without_forward_or_info_is_refused(self):
-        from dirconn.inverse import spatial_filter
+        from dirconn.simulation.inverse import spatial_filter
         from helpers import head as made_up_head
 
         with pytest.raises(ValueError, match="forward"):
             spatial_filter(made_up_head(), np.ones((1, 12, 100)), method="lcmv")
 
     def test_invalid_arguments_are_refused(self):
-        from dirconn.inverse import spatial_filter
+        from dirconn.simulation.inverse import spatial_filter
 
         head, sim = simulated("grad", n_times=300)
         data = sim.data.data[:, : head.n_channels]
@@ -152,7 +152,7 @@ class TestSpatialFilter:
 
 class TestDefaults:
     def test_the_default_method_is_minimum_norm(self):
-        from dirconn.inverse import roi_series, spatial_filter
+        from dirconn.simulation.inverse import roi_series, spatial_filter
 
         head, sim = simulated("grad", n_times=600)
         data = sim.data.data[:, : head.n_channels]
@@ -170,9 +170,9 @@ class TestRoiSeries:
     @pytest.mark.parametrize("mode", ROI_MODES)
     def test_the_extraction_matches_mnes_extract_label_time_course(self, mode):
         import mne
-
         from dirconn.datasets import require_sample
-        from dirconn.headmodel import load_head_model
+
+        from dirconn.simulation.headmodel import load_head_model
 
         head = load_head_model("grad")
         data = np.random.default_rng(0).standard_normal((head.n_sources, 200))
@@ -199,7 +199,7 @@ class TestRoiSeries:
 
     @pytest.mark.parametrize("modality", ["grad", "eeg"])
     def test_minimum_norm_series_follow_the_true_node_activity(self, modality):
-        from dirconn.inverse import roi_series
+        from dirconn.simulation.inverse import roi_series
 
         # Measured over 8 seeds x 3 nodes at 10 dB (coupled chain, partly coherent sources, c = 0.7,
         # the default): |r| median 0.90 and minimum 0.81 (gradiometers), 0.93 and 0.89 (EEG),
@@ -219,7 +219,7 @@ class TestRoiSeries:
         # with focal, partly coherent and whole-label sources alike, at every coupling strength,
         # although the filter is right at the vertex where the source is (|r| 0.99). If this test
         # fails because the recipe improved, update the documentation, not the bound.
-        from dirconn.inverse import roi_series
+        from dirconn.simulation.inverse import roi_series
 
         head, sim = simulated("grad", n_times=3000, snr_db=10.0)
         sensors = sim.data.pick(list(head.channel_names))
@@ -230,14 +230,14 @@ class TestRoiSeries:
         assert max(correlation) < 0.2
 
     def test_epoched_data_keep_their_shape_and_trials(self):
-        from dirconn.inverse import roi_series
+        from dirconn.simulation.inverse import roi_series
 
         head, sim = simulated("grad", n_times=400, n_trials=6, seed=2)
         out = roi_series(sim.data.pick(list(head.channel_names)), head, NODES)
         assert out.data.shape == (6, 3, 400) and out.segmentation == "epoched"
 
     def test_the_input_must_be_the_channels_of_the_head_model_in_order(self):
-        from dirconn.inverse import roi_series
+        from dirconn.simulation.inverse import roi_series
 
         head, sim = simulated("grad", n_times=300)
         shuffled = sim.data.pick(list(head.channel_names)[::-1])
@@ -245,7 +245,7 @@ class TestRoiSeries:
             roi_series(shuffled, head, NODES)
 
     def test_unknown_regions_are_named(self):
-        from dirconn.inverse import roi_series
+        from dirconn.simulation.inverse import roi_series
 
         head, sim = simulated("grad", n_times=300)
         sensors = sim.data.pick(list(head.channel_names))

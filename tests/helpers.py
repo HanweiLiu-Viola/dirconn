@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from dirconn import Connectivity, Edge, Network, TimeSeries, dk_node
-from dirconn.headmodel import HeadModel
 from dirconn.methods.base import Estimator, MethodInfo
+from dirconn.simulation.headmodel import HeadModel
 
 
 @dataclass(frozen=True)

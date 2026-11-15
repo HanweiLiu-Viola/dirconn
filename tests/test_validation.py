@@ -4,10 +4,10 @@ import numpy as np
 import pytest
 
 from dirconn import Estimator, TimeSeries
-from dirconn.evaluation import separation
 from dirconn.methods.spectral import spectral_radius
 from dirconn.simulation import network_var
-from dirconn.validation import (
+from dirconn.validation.evaluation import separation
+from dirconn.validation.method_validation import (
     METHODS,
     SCENARIOS,
     SFREQ,
@@ -160,7 +160,7 @@ class TestExtendedScoring:
         assert result["direction_accuracy"] == 1.0
 
     def test_a_true_edge_pointing_the_wrong_way_counts_as_zero(self, monkeypatch):
-        import dirconn.validation as validation
+        import dirconn.validation.method_validation as validation
 
         scenario = SCENARIOS["chain"]  # A -> B -> C, D isolated
         series = simulate_scenario(scenario, seed=0, n_times=2000)
@@ -176,7 +176,7 @@ class TestExtendedScoring:
 
         from dirconn import Connectivity
         from dirconn.methods.base import MethodInfo
-        from dirconn.validation import score_matrix
+        from dirconn.validation.method_validation import score_matrix
 
         @dataclass(frozen=True)
         class Signed(Estimator):
@@ -194,7 +194,7 @@ class TestExtendedScoring:
         np.testing.assert_allclose(scores, expected)
 
     def test_an_undirected_measure_counts_the_reverse_cell_of_a_true_edge(self, monkeypatch):
-        import dirconn.validation as validation
+        import dirconn.validation.method_validation as validation
 
         scenario = SCENARIOS["chain"]  # A -> B -> C, D isolated
         series = simulate_scenario(scenario, seed=0, n_times=500)
@@ -206,7 +206,7 @@ class TestExtendedScoring:
         assert evaluate_series(scenario, "gc", series)["auroc"] < 1.0  # directed truth
 
     def test_an_undirected_measure_counts_every_pair_once(self, monkeypatch):
-        import dirconn.validation as validation
+        import dirconn.validation.method_validation as validation
 
         scenario = SCENARIOS["chain"]  # A - B and B - C undirected; A - C, D - x are non-edges
         series = simulate_scenario(scenario, seed=0, n_times=500)
@@ -397,7 +397,7 @@ class TestKnownBehaviour:
     def test_pcmci_finds_the_longer_delay_once_tau_max_covers_it(self, monkeypatch):
         # bidirectional: B -> A has a 3-sample delay, the BIC order is 2. Seed 1, measured:
         # separation 0.05 with the BIC order alone and 1.64 with the default 30 ms floor (8 samples)
-        import dirconn.validation as validation
+        import dirconn.validation.method_validation as validation
         from dirconn import PCMCI
 
         scenario = SCENARIOS["bidirectional"]

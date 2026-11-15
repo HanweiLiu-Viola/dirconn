@@ -1,6 +1,7 @@
 """Write ``docs/benchmark_results.md`` from the published results of the benchmark.
 
-Every table is computed from ``benchmark_results/<protocol>.jsonl`` (``dirconn.report``); nothing in
+Every table is computed from ``benchmark_results/<protocol>.jsonl``
+(``dirconn.validation.benchmark_report``); nothing in
 the generated part is typed by hand. The hand-written reading of the numbers is
 ``docs/benchmark_conclusions.md``; when it exists it is put in front of the tables unchanged::
 
@@ -17,8 +18,13 @@ import argparse
 import sys
 from pathlib import Path
 
-from dirconn.protocol import read_results
-from dirconn.report import PUBLISHED, build_report, load_add_ons, load_published
+from dirconn.validation.benchmark_report import (
+    PUBLISHED,
+    build_report,
+    load_add_ons,
+    load_published,
+)
+from dirconn.validation.protocol import read_results
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from dirconn.protocol import VAR_ESTIMATOR_NAMES, expand, load_protocol
-from dirconn.report import ADDONS
+from dirconn.validation.benchmark_report import ADDONS
+from dirconn.validation.protocol import VAR_ESTIMATOR_NAMES, expand, load_protocol
 
 PROTOCOL_DIR = Path(__file__).resolve().parents[1] / "protocols"
 FILES = sorted(PROTOCOL_DIR.glob("*.yaml"))

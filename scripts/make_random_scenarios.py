@@ -4,7 +4,8 @@ The regions are drawn from those whose visibility is at least ``--min-visibility
 region on EEG, magnetometers and gradiometers (the smallest of the three counts), without the
 60 mm spacing of the hand-written pool: 20 regions do not fit into that, and neighbouring regions in
 a large network are part of the difficulty. The graphs come from
-``dirconn.scenario.random_scenario`` with the seeds in ``RANDOM_SEEDS``, so rerunning this script
+``dirconn.simulation.scenario.random_scenario`` with the seeds in ``RANDOM_SEEDS``, so rerunning
+this script
 reproduces the files exactly. Needs the MNE sample dataset.
 
     python scripts/make_random_scenarios.py
@@ -17,8 +18,8 @@ from pathlib import Path
 
 import numpy as np
 
-from dirconn.headmodel import load_head_model
-from dirconn.scenario import RANDOM_SEEDS, SCENARIO_DIR, random_scenario
+from dirconn.simulation.headmodel import load_head_model
+from dirconn.simulation.scenario import RANDOM_SEEDS, SCENARIO_DIR, random_scenario
 
 
 def candidate_regions(min_visibility: float) -> tuple[str, ...]:

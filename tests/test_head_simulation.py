@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 
 from dirconn import Edge, Network, direct_node, dk_node, simulate
-from dirconn.headmodel import HeadModel
 from dirconn.simulation import simulate_on_head
+from dirconn.simulation.headmodel import HeadModel
 from helpers import ROIS, chain, head
 
 
@@ -130,7 +130,7 @@ class TestProvenance:
 class TestOnTheSampleHeadModel:
     @pytest.mark.parametrize("modality, n_channels", [("eeg", 59), ("mag", 102), ("grad", 203)])
     def test_a_chain_through_the_real_head_model(self, modality, n_channels):
-        from dirconn.headmodel import load_head_model
+        from dirconn.simulation.headmodel import load_head_model
 
         model = load_head_model(modality)
         names = ("superiorfrontal-lh", "precuneus-rh", "lateraloccipital-lh")
@@ -152,7 +152,7 @@ class TestOnTheSampleHeadModel:
     def test_the_other_source_models_use_the_regions_topography_or_centre_source(
         self, source_model
     ):
-        from dirconn.headmodel import load_head_model
+        from dirconn.simulation.headmodel import load_head_model
 
         model = load_head_model("grad")
         names = ("superiorfrontal-lh", "precuneus-rh", "lateraloccipital-lh")

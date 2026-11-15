@@ -4,7 +4,13 @@ import numpy as np
 import pytest
 
 from dirconn import Connectivity, DirconnWarning, Edge, Network, Provenance, dk_node
-from dirconn.evaluation import auprc, auroc, chance_auprc, direction_accuracy, edge_density
+from dirconn.validation.evaluation import (
+    auprc,
+    auroc,
+    chance_auprc,
+    direction_accuracy,
+    edge_density,
+)
 
 
 def off_diagonal(matrix):
@@ -210,7 +216,7 @@ class TestConventions:
         return MethodInfo(name="stub", backend="test", **kwargs)
 
     def test_a_net_flow_keeps_its_sign_and_leaves_a_pair_coupled_both_ways_out(self):
-        from dirconn.evaluation import score_result
+        from dirconn.validation.evaluation import score_result
 
         truth = np.array([[np.nan, 1, 0], [1, np.nan, 1], [0, 0, np.nan]])  # 0 <-> 1, 1 -> 2
         values = np.array([[np.nan, 0.5, 0.1], [-0.5, np.nan, 0.4], [-0.1, -0.4, np.nan]])
@@ -223,7 +229,7 @@ class TestConventions:
         assert plain["direction_accuracy"] < 1.0  # magnitudes cannot tell 1 -> 2 from 2 -> 1
 
     def test_an_undirected_measure_is_scored_on_its_magnitude_before_the_band_mean(self):
-        from dirconn.evaluation import convention_scores, score_result
+        from dirconn.validation.evaluation import convention_scores, score_result
 
         freqs = np.array([5.0, 10.0])
         values = np.zeros((2, 2, 2))
@@ -240,7 +246,7 @@ class TestConventions:
         assert np.isnan(card["direction_accuracy"])
 
     def test_a_signed_measure_is_scored_on_its_magnitude(self):
-        from dirconn.evaluation import score_result
+        from dirconn.validation.evaluation import score_result
 
         truth = np.array([[np.nan, 1, 0], [0, np.nan, 0], [0, 0, np.nan]])
         values = np.array([[np.nan, -0.6, 0.1], [0.05, np.nan, 0.0], [0.1, 0.0, np.nan]])
@@ -250,7 +256,7 @@ class TestConventions:
         assert card["auroc"] == 1.0 and card["separation"] == pytest.approx(6.0)
 
     def test_an_ordinary_measure_is_scored_as_before(self):
-        from dirconn.evaluation import score_result
+        from dirconn.validation.evaluation import score_result
 
         truth = np.array([[np.nan, 1], [0, np.nan]])
         values = np.array([[np.nan, 0.3], [0.1, np.nan]])

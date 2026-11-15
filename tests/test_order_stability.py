@@ -5,9 +5,9 @@ import pytest
 
 import dirconn.diagnostics.order_stability as order_stability
 from dirconn import DTF, GC, GPDC, PDC, DirconnWarning, TimeSeries, surrogate_test
-from dirconn.benchmark import constructed_pair, evaluate_pair
 from dirconn.diagnostics.order_stability import candidate_orders, order_stability_check
 from dirconn.stats.surrogates import PhaseRandomize
+from dirconn.validation.benchmark import constructed_pair, evaluate_pair
 from helpers import SFREQ, fake_recording
 
 

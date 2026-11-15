@@ -2,7 +2,8 @@
 
 Every scenario is a known network of oscillating regions, simulated at the region level (no
 forward model, no mixing). The methods are scored on the estimated matrix against the network's
-ground truth with :mod:`dirconn.evaluation`. The scenarios include cases the methods are expected
+ground truth with :mod:`dirconn.validation.evaluation`. The scenarios include cases the methods are
+expected
 to get right (chain, common driver, collider, bidirectional pair, feedback loop) and cases that
 break their assumptions on purpose (instantaneous coupling, a hidden common driver, observation
 noise), so that the limits are measured rather than assumed.
@@ -28,11 +29,6 @@ from dirconn.data.exceptions import DirconnWarning
 from dirconn.data.network import Edge, Network, dk_node
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
-from dirconn.evaluation import (
-    chance_auprc,
-    convention_metrics,
-    edge_density,
-)
 from dirconn.methods.base import Estimator
 from dirconn.methods.coherency import PSI, ImCoh
 from dirconn.methods.granger import GC
@@ -42,6 +38,11 @@ from dirconn.methods.spectral_estimators import DTF, GPDC, PDC, RPDC
 from dirconn.methods.time_reversal import TRGC
 from dirconn.methods.transfer_entropy import TE
 from dirconn.simulation import NodeDynamics, simulate
+from dirconn.validation.evaluation import (
+    chance_auprc,
+    convention_metrics,
+    edge_density,
+)
 
 SFREQ = 250.0
 SPECTRAL_BAND = (1.0, 80.0)

@@ -3,7 +3,7 @@
 Four three-region scenarios (``switch_on``, ``switch_off``, ``direction_flip``, ``burst``;
 shipped as scenario files) switch a coupling on, off, around or briefly on in the middle of a 60 s
 recording. Region-level series with independent white observation noise at a given SNR (no
-forward model) are scored with the time-resolved metrics of :mod:`dirconn.evaluation`:
+forward model) are scored with the time-resolved metrics of :mod:`dirconn.validation.evaluation`:
 
 * the ranking of the edges inside the *stable* segments, outside a guard band after each switch;
 * the *tracking latency*, how long the score of a switching edge takes to follow the switch. One
@@ -36,20 +36,20 @@ import numpy as np
 from dirconn.data.exceptions import DirconnWarning
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
-from dirconn.evaluation import (
+from dirconn.methods.base import Estimator
+from dirconn.methods.timevarying.timevarying import ADTF, TPDC
+from dirconn.methods.timevarying.tvmvar import TvarFit, fit_tvar_grid
+from dirconn.methods.timevarying.windowed import WDTF
+from dirconn.simulation import simulate
+from dirconn.simulation.scenario import ScenarioSpec, load_scenario
+from dirconn.validation.evaluation import (
     auroc,
     guard_seconds,
     latency_from_course,
     score_stable,
     switch_times,
 )
-from dirconn.methods.base import Estimator
-from dirconn.methods.timevarying.timevarying import ADTF, TPDC
-from dirconn.methods.timevarying.tvmvar import TvarFit, fit_tvar_grid
-from dirconn.methods.timevarying.windowed import WDTF
-from dirconn.scenario import ScenarioSpec, load_scenario
-from dirconn.simulation import simulate
-from dirconn.validation import add_observation_noise, environment
+from dirconn.validation.method_validation import add_observation_noise, environment
 
 SCENARIOS: tuple[str, ...] = ("switch_on", "switch_off", "direction_flip", "burst")
 FORGETTING: tuple[float, ...] = (
@@ -299,7 +299,8 @@ def aggregate_courses(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
 def latency_of_cell(cell: dict[str, Any], *, hold_s: float = HOLD_S) -> list[dict[str, Any]]:
     """Return the tracking latency of the mean course of a cell, per switching pair and switch.
 
-    The mean course of the pair is analysed by :func:`~dirconn.evaluation.latency_from_course`: the
+    The mean course of the pair is analysed by
+    :func:`~dirconn.validation.evaluation.latency_from_course`: the
     time the mean takes to cover half the way between its levels before and after each switch,
     holding for ``hold_s`` seconds.
     """

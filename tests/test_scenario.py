@@ -5,7 +5,8 @@ import pytest
 import yaml
 
 from dirconn.data.network import Edge, Network, dk_node
-from dirconn.scenario import (
+from dirconn.simulation import NodeDynamics
+from dirconn.simulation.scenario import (
     SCENARIO_DIR,
     SCENARIO_VERSION,
     ArtifactSpec,
@@ -16,7 +17,6 @@ from dirconn.scenario import (
     load_scenario,
     stimulation_artifact,
 )
-from dirconn.simulation import NodeDynamics
 
 A, B, C = "bankssts-lh", "superiorparietal-lh", "precuneus-rh"
 

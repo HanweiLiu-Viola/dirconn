@@ -31,7 +31,7 @@ import pandas as pd
 
 import dirconn
 from dirconn import GC, Connectivity
-from dirconn.scenario import load_scenario
+from dirconn.simulation.scenario import load_scenario
 
 QUICK = os.environ.get("DIRCONN_QUICK") == "1"  # the tests set this; readers get the full version
 SEED = 0

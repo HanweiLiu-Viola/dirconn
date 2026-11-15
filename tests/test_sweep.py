@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 
 from dirconn import DTF, GC, GPDC, PDC, RPDC
-from dirconn.protocol import (
+from dirconn.validation.protocol import (
     CALIBRATION_ESTIMATOR_NAMES,
     EXTENDED_ESTIMATOR_NAMES,
     VAR_ESTIMATOR_NAMES,
     Protocol,
     expand,
 )
-from dirconn.sweep import (
+from dirconn.validation.sweep import (
     DEFAULT_SETTINGS,
     estimator_for,
     jsonable,
@@ -113,7 +113,7 @@ class TestEstimatorFor:
 
     def test_the_further_labels_build_their_estimators(self):
         from dirconn import MTGC, PCMCI, PSI, TE, TRGC, ImCoh
-        from dirconn.sweep import MULTITAPER_SEGMENT_SECONDS
+        from dirconn.validation.sweep import MULTITAPER_SEGMENT_SECONDS
 
         expected = {
             "trgc/bic": TRGC,
@@ -165,7 +165,7 @@ class TestJsonable:
 
 class TestGateWarmUp:
     def test_every_head_is_loaded_before_the_first_task_is_timed(self, monkeypatch):
-        from dirconn import sweep
+        from dirconn.validation import sweep
 
         events = []
         monkeypatch.setattr(sweep, "_head", lambda modality: events.append(("load", modality)))
@@ -179,7 +179,7 @@ class TestGateWarmUp:
         assert loaded == {"eeg", "grad"}
 
     def test_one_task_is_timed_per_network_size_and_modality(self, monkeypatch):
-        from dirconn import sweep
+        from dirconn.validation import sweep
 
         timed = []
         monkeypatch.setattr(sweep, "_head", lambda modality: None)
@@ -212,7 +212,7 @@ class TestGateCalibration:
         """
         import types
 
-        from dirconn import sweep
+        from dirconn.validation import sweep
 
         clock = [0.0]
         monkeypatch.setattr(sweep, "time", types.SimpleNamespace(perf_counter=lambda: clock[0]))
@@ -284,7 +284,7 @@ class TestOnTheSampleHead:
         )
 
     def test_one_task_gives_a_json_safe_card_per_estimator_and_stage(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = self.tiny()
         (task,) = expand(proto)
@@ -296,14 +296,14 @@ class TestOnTheSampleHead:
         json.loads(json.dumps(payload))
 
     def test_a_task_is_reproducible(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = self.tiny()
         (task,) = expand(proto)
         assert run_task(task, proto) == run_task(task, proto)
 
     def test_a_zero_network_gives_cards_without_a_crash(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = self.tiny(coupling=[0])
         (task,) = expand(proto)
@@ -315,7 +315,7 @@ class TestOnTheSampleHead:
         import warnings
 
         from dirconn import DirconnWarning
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = self.tiny(coupling=[0])
         (task,) = expand(proto)
@@ -325,7 +325,7 @@ class TestOnTheSampleHead:
         assert not [w for w in caught if issubclass(w.category, DirconnWarning)]
 
     def test_a_scenario_with_hidden_nodes_is_run_with_them_hidden(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = protocol(scenarios=["hidden_common_input"], duration_s=[30], snr_db=[10])
         (task,) = expand(proto)
@@ -339,8 +339,8 @@ class TestOnTheSampleHead:
     def test_a_scenario_with_an_artifact_is_run_with_it_at_the_sensors_only(self):
         import dataclasses
 
-        from dirconn.scenario import load_scenario
-        from dirconn.sweep import run_task
+        from dirconn.simulation.scenario import load_scenario
+        from dirconn.validation.sweep import run_task
 
         proto = protocol(scenarios=["stimulation_artifact"], duration_s=[30], snr_db=[10])
         clean = dataclasses.replace(load_scenario("stimulation_artifact"), artifact=None)
@@ -353,7 +353,7 @@ class TestOnTheSampleHead:
         json.dumps(a)
 
     def test_spectral_cards_carry_the_curve_over_frequency(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = protocol(estimators=["gpdc/bic", "gc/bic"], duration_s=[30], snr_db=[10])
         (task,) = expand(proto)
@@ -364,7 +364,7 @@ class TestOnTheSampleHead:
             assert "auroc_by_frequency" not in payload["gc/bic"][stage]
 
     def test_several_inverse_methods_give_one_entry_each(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = self.tiny(inverse=["mne", "lcmv"])
         (task,) = expand(proto)
@@ -372,7 +372,7 @@ class TestOnTheSampleHead:
         assert set(payload) == {"gc/bic@mne", "gc/bic@lcmv", "dtf/fixed@mne", "dtf/fixed@lcmv"}
 
     def test_the_gate_times_one_task_per_network_size(self):
-        from dirconn.sweep import measure_gate
+        from dirconn.validation.sweep import measure_gate
 
         proto = self.tiny(scenarios=["chain", "random_5"])
         gate = measure_gate(proto, workers=1)
@@ -407,7 +407,7 @@ def sig_protocol(**overrides):
 class TestSignificanceRunner:
     @pytest.fixture(autouse=True)
     def no_head(self, monkeypatch):
-        from dirconn import sweep
+        from dirconn.validation import sweep
 
         def boom(modality):
             raise AssertionError(f"a region-level study loaded the head model {modality!r}")
@@ -415,7 +415,7 @@ class TestSignificanceRunner:
         monkeypatch.setattr(sweep, "_head", boom)
 
     def test_it_returns_the_p_value_matrix_of_every_test(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol()
         (task,) = expand(proto)
@@ -433,7 +433,7 @@ class TestSignificanceRunner:
         json.dumps(payload)
 
     def test_a_spectral_estimator_keeps_the_p_values_of_every_frequency(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol(estimators=["pdc/fixed"], settings={"n_surrogates": 9, "n_freqs": 11})
         (task,) = expand(proto)
@@ -447,7 +447,7 @@ class TestSignificanceRunner:
             assert ((off >= 0) & (off <= 1)).all()
 
     def test_rpdc_finds_a_strong_edge_at_every_frequency_with_both_tests(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol(
             estimators=["rpdc/low"], duration_s=[30], settings={"n_surrogates": 9, "n_freqs": 11}
@@ -458,7 +458,7 @@ class TestSignificanceRunner:
         assert (np.array(card["surrogate:phase_randomize"]["pvalues"])[0, 1] <= 0.1).all()
 
     def test_a_strong_edge_is_found_by_both_tests(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol(duration_s=[30])
         (task,) = expand(proto)
@@ -467,7 +467,7 @@ class TestSignificanceRunner:
         assert card["surrogate:phase_randomize"]["pvalues"][0][1] <= 0.1  # the smallest of 9 + 1
 
     def test_the_surrogate_p_values_are_multiples_of_one_over_n_plus_one(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         for n in (9, 19):
             proto = sig_protocol(settings={"n_surrogates": n})
@@ -480,7 +480,7 @@ class TestSignificanceRunner:
             assert off.min() >= 1 - 1e-4
 
     def test_it_is_reproducible_and_another_task_gives_other_data(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol(n_seeds=2)
         a, b = expand(proto)
@@ -493,7 +493,7 @@ class TestSignificanceRunner:
         assert dump(a) != dump(b)
 
     def test_it_runs_the_null_world_and_keeps_the_estimator_label(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol(coupling=[0], estimators=["gc/fixed", "gc_pairwise/fixed"])
         (task,) = expand(proto)
@@ -503,7 +503,7 @@ class TestSignificanceRunner:
         import warnings
 
         from dirconn import DirconnWarning
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = sig_protocol(duration_s=[5])  # short enough for the sampling check to warn
         (task,) = expand(proto)
@@ -513,7 +513,7 @@ class TestSignificanceRunner:
         assert not [w for w in caught if issubclass(w.category, DirconnWarning)]
 
     def test_the_gate_of_a_region_level_study_loads_no_head_model(self, monkeypatch):
-        from dirconn import sweep
+        from dirconn.validation import sweep
 
         monkeypatch.setattr(sweep, "run_task", lambda task, proto: {})
         gate = sweep.measure_gate(sig_protocol(), workers=1)
@@ -521,8 +521,8 @@ class TestSignificanceRunner:
 
 
 def test_the_surrogate_names_of_the_protocol_are_those_of_significance_test():
-    from dirconn.protocol import SURROGATE_NAMES
     from dirconn.stats.significance import _NAMED_SURROGATES
+    from dirconn.validation.protocol import SURROGATE_NAMES
 
     assert sorted(SURROGATE_NAMES) == sorted(_NAMED_SURROGATES)
 
@@ -547,7 +547,7 @@ def noise_protocol(**overrides):
 class TestNoiseArmsOnTheSampleHead:
     def spy(self, monkeypatch):
         """Record what run_task hands to the simulation, then simulate as usual."""
-        from dirconn import sweep
+        from dirconn.validation import sweep
 
         calls = []
         real = sweep.simulate_on_head
@@ -560,9 +560,9 @@ class TestNoiseArmsOnTheSampleHead:
         return calls
 
     def test_each_arm_hands_the_simulation_its_own_noise_settings(self, monkeypatch):
-        from dirconn.emptyroom import empty_room_window
-        from dirconn.headmodel import load_head_model
-        from dirconn.sweep import run_task
+        from dirconn.simulation.emptyroom import empty_room_window
+        from dirconn.simulation.headmodel import load_head_model
+        from dirconn.validation.sweep import run_task
 
         calls = self.spy(monkeypatch)
         proto = noise_protocol()
@@ -578,7 +578,7 @@ class TestNoiseArmsOnTheSampleHead:
         np.testing.assert_array_equal(by_noise["empty_room"]["noise_series"], window)
 
     def test_the_arms_of_a_seed_have_the_same_region_level_result_and_different_sensor_ones(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = noise_protocol()
         cards = {t.noise: run_task(t, proto)["gc/bic"] for t in expand(proto)}
@@ -590,7 +590,7 @@ class TestNoiseArmsOnTheSampleHead:
     def test_the_window_follows_the_seed_index_and_wraps_around_the_three_windows(
         self, monkeypatch
     ):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         calls = self.spy(monkeypatch)
         proto = noise_protocol(noise=["empty_room"], n_seeds=4)
@@ -602,7 +602,7 @@ class TestNoiseArmsOnTheSampleHead:
         assert not np.array_equal(windows[1], windows[2])
 
     def test_a_duration_longer_than_the_recording_is_an_error_not_a_short_noise(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = noise_protocol(noise=["empty_room"], duration_s=[120])
         (task,) = expand(proto)
@@ -631,7 +631,7 @@ def pair_protocol(**overrides):
 @pytest.mark.sample_data
 class TestScoresAndPairsOnTheSampleHead:
     def test_the_setting_puts_the_score_matrices_into_every_stage_card(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = pair_protocol()
         (task,) = expand(proto)
@@ -643,7 +643,7 @@ class TestScoresAndPairsOnTheSampleHead:
         json.dumps(card)
 
     def test_without_the_setting_there_are_no_matrices(self):
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = pair_protocol(settings={})
         (task,) = expand(proto)
@@ -653,7 +653,7 @@ class TestScoresAndPairsOnTheSampleHead:
         import warnings
 
         from dirconn import DirconnWarning
-        from dirconn.sweep import run_task
+        from dirconn.validation.sweep import run_task
 
         proto = pair_protocol()
         (task,) = expand(proto)
@@ -663,8 +663,8 @@ class TestScoresAndPairsOnTheSampleHead:
         assert not [w for w in caught if issubclass(w.category, DirconnWarning)]
 
     def test_the_crosstalk_matrices_are_by_modality_with_the_names_of_the_head(self):
-        from dirconn.headmodel import load_head_model
-        from dirconn.sweep import crosstalk_matrices
+        from dirconn.simulation.headmodel import load_head_model
+        from dirconn.validation.sweep import crosstalk_matrices
 
         out = crosstalk_matrices(["eeg"])
         head = load_head_model("eeg")

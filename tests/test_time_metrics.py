@@ -7,7 +7,7 @@ import pytest
 
 from dirconn import ADTF, DTF, WDTF, Connectivity, DirconnWarning, Provenance, TimeSeries
 from dirconn.data.network import Edge, Network, dk_node
-from dirconn.evaluation import (
+from dirconn.validation.evaluation import (
     auroc_by_time,
     guard_seconds,
     score_stable,
@@ -450,7 +450,7 @@ def test_unknown_edges_and_bad_parameters_are_rejected():
 
 
 def test_latency_from_course_equals_tracking_latency_on_the_same_course():
-    from dirconn.evaluation import latency_from_course
+    from dirconn.validation.evaluation import latency_from_course
 
     times = np.arange(0.0, 30.0, 0.1)
     scores = np.where(times < 10.0, 0.2, 0.8 - 0.6 * np.exp(-(times - 10.0) / 1.0))
@@ -462,7 +462,7 @@ def test_latency_from_course_equals_tracking_latency_on_the_same_course():
 
 
 def test_latency_from_course_checks_its_arguments():
-    from dirconn.evaluation import latency_from_course
+    from dirconn.validation.evaluation import latency_from_course
 
     times = np.arange(0.0, 30.0, 0.1)
     with pytest.raises(ValueError, match="same length"):
@@ -473,7 +473,7 @@ def test_latency_from_course_checks_its_arguments():
 
 def test_averaging_many_noisy_courses_gives_a_latency_the_single_ones_cannot():
     """Single noisy courses cross half way by chance at once; their mean follows the step."""
-    from dirconn.evaluation import latency_from_course
+    from dirconn.validation.evaluation import latency_from_course
 
     times = np.arange(0.0, 40.0, 0.1)
     truth = np.where(times < 20.0, 0.1, 0.1 + 0.2 * (1 - np.exp(-(times - 20.0) / 3.0)))

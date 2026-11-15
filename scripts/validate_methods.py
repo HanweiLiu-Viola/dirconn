@@ -1,6 +1,7 @@
 """Regenerate ``docs/method_validation.md``: what each method can and cannot see.
 
-Runs every method of ``dirconn.validation.METHODS`` on every scenario of ``SCENARIOS`` for several
+Runs every method of ``dirconn.validation.method_validation.METHODS`` on every scenario of
+``SCENARIOS`` for several
 seeds, scores the estimates against the known networks and writes the tables. The raw rows are kept
 next to the report so that the text can be rendered again without simulating anything::
 
@@ -19,7 +20,7 @@ import sys
 import time
 from pathlib import Path
 
-from dirconn.validation import load_rows, render_report, run_all, save_rows
+from dirconn.validation.method_validation import load_rows, render_report, run_all, save_rows
 
 ROOT = Path(__file__).resolve().parents[1]
 

@@ -3,12 +3,12 @@
 import numpy as np
 import pytest
 
-from dirconn.scenario import (
+from dirconn.simulation import simulate
+from dirconn.simulation.scenario import (
     artifact_pattern,
     load_scenario,
     stimulation_artifact,
 )
-from dirconn.simulation import simulate
 
 Z, X, Y = "transversetemporal-rh", "cuneus-lh", "pericalcarine-lh"
 R1, R2, R3 = "transversetemporal-rh", "cuneus-rh", "transversetemporal-lh"
@@ -122,7 +122,7 @@ class TestStimulationArtifact:
 class TestOnTheSampleHead:
     @pytest.fixture(scope="module")
     def heads(self):
-        from dirconn.headmodel import load_head_model
+        from dirconn.simulation.headmodel import load_head_model
 
         return {m: load_head_model(m) for m in ("eeg", "mag", "grad")}
 
@@ -134,7 +134,7 @@ class TestOnTheSampleHead:
 
     def test_the_leakage_scenario_is_what_the_rules_give(self, heads, geometry):
         from dirconn.diagnostics.regions import distant_region, leakage_pairs
-        from dirconn.inverse import crosstalk
+        from dirconn.simulation.inverse import crosstalk
 
         visibility, distances = geometry
         names = heads["eeg"].roi_names

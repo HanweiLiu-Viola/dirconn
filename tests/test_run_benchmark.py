@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from dirconn.protocol import expand, load_protocol, read_results, task_seed
+from dirconn.validation.protocol import expand, load_protocol, read_results, task_seed
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,7 +43,7 @@ class Gate:
         self.seconds = seconds
 
     def __call__(self, protocol, *, workers, **kwargs):
-        from dirconn.protocol import estimate_hours
+        from dirconn.validation.protocol import estimate_hours
 
         self.calls += 1
         tasks = expand(protocol)

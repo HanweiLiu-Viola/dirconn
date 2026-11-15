@@ -6,7 +6,8 @@ import math
 import pytest
 import yaml
 
-from dirconn.protocol import (
+from dirconn.simulation.scenario import ScenarioSpec, list_scenarios, load_scenario
+from dirconn.validation.protocol import (
     CALIBRATION_ESTIMATOR_NAMES,
     ESTIMATOR_NAMES,
     EXTENDED_ESTIMATOR_NAMES,
@@ -28,7 +29,6 @@ from dirconn.protocol import (
     select_pairs,
     task_seed,
 )
-from dirconn.scenario import ScenarioSpec, list_scenarios, load_scenario
 
 
 def minimal(**overrides) -> dict:
@@ -1285,7 +1285,7 @@ class TestNoiseAxis:
         assert not [t for t in tasks if t.noise == "white" and t.modality == "mag"]
 
     def test_noise_is_an_axis_of_the_protocol(self):
-        from dirconn.protocol import AXES
+        from dirconn.validation.protocol import AXES
 
         assert "noise" in AXES
 
@@ -1298,7 +1298,7 @@ class TestCodeVersion:
         assert isinstance(info["git_dirty"], bool)
 
     def test_an_installed_copy_falls_back_to_the_commit_the_image_was_built_from(self, monkeypatch):
-        import dirconn.protocol as protocol
+        import dirconn.validation.protocol as protocol
 
         monkeypatch.setattr(
             protocol.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(OSError)
@@ -1310,7 +1310,7 @@ class TestCodeVersion:
         assert code_version() is None
 
     def test_the_image_commit_is_not_used_for_another_directory(self, monkeypatch, tmp_path):
-        import dirconn.protocol as protocol
+        import dirconn.validation.protocol as protocol
 
         monkeypatch.setattr(
             protocol.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(OSError)

@@ -5,14 +5,15 @@ Two studies use the score matrices that a protocol with ``store_scores`` keeps i
 * **Region pairs** (:func:`leakage_correlation`): for many pairs of regions without any edge, the
   score of the false edge ``x -> y`` is compared with how much of region ``x`` the inverse method
   puts into the series of region ``y`` (the crosstalk matrix of
-  :func:`dirconn.inverse.crosstalk`, stored in the results header). The region-level stage has no
+  :func:`dirconn.simulation.inverse.crosstalk`, stored in the results header). The region-level
+  stage has no
   leakage and is the control.
 * **The neighbour** (:func:`adjacent_report`): in ``leakage_adjacent`` the only true edge is
   ``Z -> X`` and ``Y`` is the neighbour into which ``X`` leaks; every edge into ``Y`` is a false
   edge. Its score is divided by the score of the true edge, so estimators with different units
   can be read side by side.
 
-Both work on the records of :func:`dirconn.protocol.read_results` and need no head model.
+Both work on the records of :func:`dirconn.validation.protocol.read_results` and need no head model.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from typing import Any
 import numpy as np
 from scipy.stats import rankdata
 
-from dirconn.scenario import load_scenario
+from dirconn.simulation.scenario import load_scenario
 
 STAGES: tuple[str, ...] = ("roi", "sensor", "source")
 PAIR_PREFIX = "pair:"

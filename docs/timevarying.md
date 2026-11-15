@@ -18,7 +18,7 @@ the settings mean and what was changed from the old package.
 | `Connectivity.reduce_time(segments, how)` | reduce the time axis over segments, like `reduce_freq` |
 | `contrast_test(..., paired=True)` | permutation test for two segments of the same trials |
 | `Edge(..., active=[(start, stop), ...])` | an edge that acts only in time intervals; `network.truth(times=...)`, `simulate` |
-| `dirconn.evaluation` (time-resolved part) | `auroc_by_time`, `score_stable`, `tracking_latency`, `switch_times`, ... |
+| `dirconn.validation.evaluation` (time-resolved part) | `auroc_by_time`, `score_stable`, `tracking_latency`, `switch_times`, ... |
 
 All of them share the layout `values[source, target, freq, time]`, the direction convention
 `source -> target`, and the provenance and assumption checklist of the rest of the package.
@@ -47,7 +47,7 @@ would make the filter remember `1 / (1 - lambda)` samples. In this recursion it 
 noise `1 / lambda - 1`** (and the speed of the innovation-variance recursion), and the filter's real
 memory is much shorter. `TvarFit.memory_samples` measures it: the reciprocal of the mean gain along the
 regressor over the samples after the burn-in. It is recorded in the provenance (`memory_samples`) and
-used for the sampling check and for the default guard band of `dirconn.evaluation.guard_seconds`.
+used for the sampling check and for the default guard band of `dirconn.validation.evaluation.guard_seconds`.
 
 Measured values:
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from dirconn.report import PUBLISHED, load_add_ons
+from dirconn.validation.benchmark_report import PUBLISHED, load_add_ons
 
 ROOT = Path(__file__).resolve().parents[1]
 

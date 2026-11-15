@@ -24,7 +24,7 @@ from dirconn.data.network import ROUNDING_MODES, Edge, Network
 from dirconn.data.provenance import Provenance
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
-from dirconn.headmodel import HeadModel
+from dirconn.simulation.headmodel import HeadModel
 
 NODE_SCALES: tuple[str, ...] = ("none", "unit")
 SOURCE_MODELS: tuple[str, ...] = ("partial", "focal", "patch")
@@ -837,7 +837,7 @@ def simulate_on_head(
     network : Network
         Cortical nodes named like the head model's regions.
     head : HeadModel
-        See :func:`dirconn.headmodel.load_head_model`.
+        See :func:`dirconn.simulation.headmodel.load_head_model`.
     source_model : {"partial", "focal", "patch"}
         How a region's activity reaches the sensors. ``"partial"`` (the default): every source of
         the region carries ``c * node + sqrt(1 - c**2) * its own 1/f activity`` with unit-variance

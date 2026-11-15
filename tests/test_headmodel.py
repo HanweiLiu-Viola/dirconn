@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dirconn.headmodel import (
+from dirconn.simulation.headmodel import (
     MODALITIES,
     HeadModel,
     aggregate_rois,
@@ -176,7 +176,6 @@ class TestSampleHeadModel:
 
     def test_the_roi_leadfield_is_the_mean_vertex_gain_computed_another_way(self, models):
         import mne
-
         from dirconn.datasets import require_sample
 
         root = require_sample()
@@ -243,7 +242,6 @@ class TestSampleHeadModel:
 
     def test_the_flips_are_mnes_label_sign_flips(self, models):
         import mne
-
         from dirconn.datasets import require_sample
 
         model = models["grad"]

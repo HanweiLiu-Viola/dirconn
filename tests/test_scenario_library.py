@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from dirconn.data.bands import BANDS
-from dirconn.scenario import list_scenarios, load_scenario
 from dirconn.simulation import simulate
+from dirconn.simulation.scenario import list_scenarios, load_scenario
 
 # The region pool of the hand-written scenarios, chosen by scripts/pick_regions.py: visibility
 # of at least 1.0 times the median region on EEG, magnetometers and gradiometers, the smallest of
@@ -143,7 +143,7 @@ class TestStructure:
 class TestPoolOnTheSampleHead:
     @pytest.fixture(scope="module")
     def heads(self):
-        from dirconn.headmodel import load_head_model
+        from dirconn.simulation.headmodel import load_head_model
 
         return {m: load_head_model(m) for m in ("eeg", "mag", "grad")}
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from dirconn.report import (
+from dirconn.validation.benchmark_report import (
     ADDONS,
     PUBLISHED,
     build_report,

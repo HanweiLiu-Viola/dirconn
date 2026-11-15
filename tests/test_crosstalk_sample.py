@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from scipy.stats import spearmanr
 
-from dirconn.headmodel import load_head_model
-from dirconn.inverse import crosstalk
+from dirconn.simulation.headmodel import load_head_model
+from dirconn.simulation.inverse import crosstalk
 
 pytestmark = pytest.mark.sample_data
 

@@ -188,7 +188,7 @@ python scripts/validate_methods.py --from-results   # re-render the saved rows o
 
 after a change that can move the numbers (a new method, a new default, a change in the VAR core,
 a new numpy or scipy), and commit the report together with the saved rows. The scenarios and the
-runner live in `dirconn.validation`; the metrics are in `dirconn.evaluation`. Add a method to
+runner live in `dirconn.validation.method_validation`; the metrics are in `dirconn.validation.evaluation`. Add a method to
 `METHODS` and it appears in every table; add a scenario to `SCENARIOS` and it appears in the report.
 
 ## Adding a method
@@ -201,7 +201,7 @@ runner live in `dirconn.validation`; the metrics are in `dirconn.evaluation`. Ad
    `_extra_checks` for method-specific diagnostics.
 4. If the method is stochastic or iterative, expose `seed` and the order or tuning parameters, and
    record them.
-5. Add it to `dirconn.validation.METHODS` and regenerate the validation report, so that it is
+5. Add it to `dirconn.validation.method_validation.METHODS` and regenerate the validation report, so that it is
    evaluated against known truth from the day it exists (the simulation benchmark builds on the
    same scenarios).
 

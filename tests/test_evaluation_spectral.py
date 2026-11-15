@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from dirconn import Connectivity, DirconnWarning, Edge, Network, Provenance, dk_node
-from dirconn.evaluation import (
+from dirconn.validation.evaluation import (
     auprc,
     auroc,
     auroc_by_frequency,

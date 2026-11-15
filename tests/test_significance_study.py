@@ -5,8 +5,8 @@ import math
 import numpy as np
 import pytest
 
-from dirconn.protocol import render_summary
-from dirconn.significance_study import frequency_report, significance_report
+from dirconn.validation.protocol import render_summary
+from dirconn.validation.significance_study import frequency_report, significance_report
 
 NAN = math.nan
 NODES = ["transversetemporal-rh", "cuneus-rh", "transversetemporal-lh"]  # the chain

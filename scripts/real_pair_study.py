@@ -2,7 +2,8 @@
 
 Takes random pairs of channels of the MNE sample EEG recording and non-overlapping 40 s windows,
 builds ``source -> target`` pairs with a 20 ms delay and an 8 to 12 Hz influence
-(:func:`dirconn.benchmark.constructed_pair`) and prints, for several estimators and model orders,
+(:func:`dirconn.validation.benchmark.constructed_pair`) and prints, for several estimators and
+model orders,
 how often the known direction is recovered. Needs the sample dataset (see
 ``dirconn.datasets.require_sample``). Takes about two minutes.
 """
@@ -16,8 +17,8 @@ from typing import Any
 import numpy as np
 
 from dirconn import DTF, GC, GPDC, Estimator
-from dirconn.benchmark import constructed_pair, evaluate_pair, real_eeg_series
 from dirconn.data.timeseries import TimeSeries
+from dirconn.validation.benchmark import constructed_pair, evaluate_pair, real_eeg_series
 
 DURATION = 40.0  # seconds; six non-overlapping slots fit into the 278 s recording
 N_SLOTS = 6

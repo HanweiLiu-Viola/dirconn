@@ -2,7 +2,7 @@ version: 1
 name: delay_zero_osc
 description: >-
   A -> B with coupling 0.4 and a delay of no delay at all, between two oscillators; C is unconnected and gives the
-  null edges. Influence through the sources' own autocorrelation can still be found at zero delay; the memoryless version of this limit is in the validation scenarios of dirconn.validation.
+  null edges. Influence through the sources' own autocorrelation can still be found at zero delay; the memoryless version of this limit is in the validation scenarios of dirconn.validation.method_validation.
 network:
   nodes:
     - name: transversetemporal-rh

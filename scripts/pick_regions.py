@@ -25,8 +25,8 @@ from dirconn.diagnostics.regions import (
     min_visibility,
     pool,
 )
-from dirconn.headmodel import load_head_model
-from dirconn.inverse import crosstalk
+from dirconn.simulation.headmodel import load_head_model
+from dirconn.simulation.inverse import crosstalk
 
 
 def show_pool(heads: dict, args: argparse.Namespace) -> None:

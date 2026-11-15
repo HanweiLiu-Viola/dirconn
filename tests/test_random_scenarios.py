@@ -3,14 +3,14 @@
 import numpy as np
 import pytest
 
-from dirconn.scenario import (
+from dirconn.simulation import network_var, simulate
+from dirconn.simulation.scenario import (
     RandomScenario,
     ScenarioSpec,
     list_scenarios,
     load_scenario,
     random_scenario,
 )
-from dirconn.simulation import network_var, simulate
 
 REGIONS = tuple(f"region{i:02d}-{'lh' if i % 2 else 'rh'}" for i in range(40))
 SHIPPED = {"random_5": 5, "random_10": 10, "random_20": 20}
@@ -181,7 +181,7 @@ class TestShippedFiles:
 class TestShippedFilesOnTheSampleHead:
     @pytest.fixture(scope="module")
     def candidates(self):
-        from dirconn.headmodel import load_head_model
+        from dirconn.simulation.headmodel import load_head_model
 
         heads = [load_head_model(m) for m in ("eeg", "mag", "grad")]
         visibility = np.min([h.visibility for h in heads], axis=0)
@@ -192,7 +192,7 @@ class TestShippedFilesOnTheSampleHead:
 
     @pytest.mark.parametrize("name", sorted(SHIPPED))
     def test_the_file_is_what_the_generator_gives_for_its_seed(self, name, candidates):
-        from dirconn.scenario import RANDOM_SEEDS
+        from dirconn.simulation.scenario import RANDOM_SEEDS
 
         regenerated = random_scenario(SHIPPED[name], seed=RANDOM_SEEDS[name], regions=candidates)
         assert regenerated.spec == load_scenario(name)

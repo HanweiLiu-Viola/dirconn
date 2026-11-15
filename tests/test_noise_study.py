@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from dirconn.noise_study import noise_report
-from dirconn.protocol import render_summary
+from dirconn.validation.noise_study import noise_report
+from dirconn.validation.protocol import render_summary
 
 ENV = {"python": "3.11", "numpy": "2.4.6"}
 

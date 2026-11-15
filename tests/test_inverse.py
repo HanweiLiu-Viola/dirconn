@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dirconn.inverse import INVERSE_METHODS, ROI_MODES, extract_roi
+from dirconn.simulation.inverse import INVERSE_METHODS, ROI_MODES, extract_roi
 
 
 def sources(n_trials=1, n_idx=7, n_times=300, seed=0):

@@ -1,7 +1,8 @@
 """Run the non-stationary sweep, or re-render the report of one that has run.
 
 Four three-region scenarios switch a coupling on, off, around or briefly on; ADTF, TPDC and WDTF
-are scored with the time-resolved metrics of ``dirconn.evaluation``. A dataset (scenario, SNR,
+are scored with the time-resolved metrics of ``dirconn.validation.evaluation``. A dataset
+(scenario, SNR,
 seed) is one unit of work; the methods all see the same series::
 
     python scripts/run_nonstationary.py --gate-only      # time one dataset, measure the efficiency

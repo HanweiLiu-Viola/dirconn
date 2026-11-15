@@ -5,13 +5,13 @@ import pytest
 import yaml
 
 from dirconn.data.network import Edge, Network, dk_node
-from dirconn.scenario import ScenarioSpec, load_scenario
 from dirconn.simulation import (
     NodeDynamics,
     network_var,
     network_var_schedule,
     simulate,
 )
+from dirconn.simulation.scenario import ScenarioSpec, load_scenario
 
 A, B, C = "bankssts-lh", "superiorparietal-lh", "precuneus-rh"
 WHITE = NodeDynamics(kind="white")

@@ -27,14 +27,14 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from dirconn.datasets import require_sample
 from matplotlib.patches import Rectangle
 
 import dirconn
-from dirconn.datasets import require_sample
-from dirconn.headmodel import load_head_model
-from dirconn.inverse import roi_series
-from dirconn.scenario import load_scenario
 from dirconn.simulation import simulate_on_head
+from dirconn.simulation.headmodel import load_head_model
+from dirconn.simulation.inverse import roi_series
+from dirconn.simulation.scenario import load_scenario
 
 QUICK = os.environ.get("DIRCONN_QUICK") == "1"  # the tests set this; readers get the full version
 SEED = 0

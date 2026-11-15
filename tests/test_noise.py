@@ -97,7 +97,7 @@ class TestNoiseSeries:
 
 @pytest.fixture(scope="module")
 def heads():
-    from dirconn.headmodel import load_head_model
+    from dirconn.simulation.headmodel import load_head_model
 
     return {m: load_head_model(m) for m in ("mag", "grad", "eeg")}
 
@@ -107,7 +107,6 @@ class TestEmptyRoom:
     def reference(self, head, sfreq=100.0):
         """The recording read and resampled by MNE directly, in the order of the head's channels."""
         import mne
-
         from dirconn.datasets import require_sample
 
         raw = mne.io.read_raw_fif(
@@ -120,7 +119,7 @@ class TestEmptyRoom:
     def test_it_is_the_whole_recording_of_the_channels_of_the_head_at_100_hz(
         self, heads, modality, n_channels
     ):
-        from dirconn.emptyroom import empty_room_series
+        from dirconn.simulation.emptyroom import empty_room_series
 
         data = empty_room_series(heads[modality])
         assert data.shape[0] == n_channels
@@ -129,7 +128,7 @@ class TestEmptyRoom:
 
     @pytest.mark.parametrize("modality", ["mag", "grad"])
     def test_channel_order_and_resampling_are_those_of_mne(self, heads, modality):
-        from dirconn.emptyroom import empty_room_series
+        from dirconn.simulation.emptyroom import empty_room_series
 
         data = empty_room_series(heads[modality])
         np.testing.assert_allclose(data, self.reference(heads[modality]), rtol=1e-9, atol=1e-25)
@@ -137,7 +136,7 @@ class TestEmptyRoom:
     def test_the_order_is_the_one_of_the_head_even_when_it_differs_from_the_file(self, heads):
         import dataclasses
 
-        from dirconn.emptyroom import empty_room_series
+        from dirconn.simulation.emptyroom import empty_room_series
 
         # the head's channels happen to be in the file's order; reverse them so the order matters
         reversed_head = dataclasses.replace(
@@ -148,20 +147,20 @@ class TestEmptyRoom:
         np.testing.assert_array_equal(data, empty_room_series(heads["grad"])[::-1])
 
     def test_the_recording_is_not_projected_or_rescaled(self, heads):
-        from dirconn.emptyroom import empty_room_series
+        from dirconn.simulation.emptyroom import empty_room_series
 
         data = empty_room_series(heads["grad"])
         # grad noise of this recording is of the order of 1e-12 T/m; a scaled copy would not be
         assert 1e-13 < np.median(np.sqrt((data**2).mean(axis=1))) < 1e-10
 
     def test_only_meg_has_an_empty_room(self, heads):
-        from dirconn.emptyroom import empty_room_series
+        from dirconn.simulation.emptyroom import empty_room_series
 
         with pytest.raises(ValueError, match="MEG"):
             empty_room_series(heads["eeg"])
 
     def test_windows_are_consecutive_blocks_that_do_not_overlap(self, heads):
-        from dirconn.emptyroom import empty_room_series, empty_room_window, n_windows
+        from dirconn.simulation.emptyroom import empty_room_series, empty_room_window, n_windows
 
         head_ = heads["grad"]
         full = empty_room_series(head_)
@@ -172,7 +171,7 @@ class TestEmptyRoom:
             np.testing.assert_array_equal(window[0], full[:, k * 3000 : (k + 1) * 3000])
 
     def test_a_window_past_the_recording_and_a_duration_longer_than_it_are_errors(self, heads):
-        from dirconn.emptyroom import empty_room_window, n_windows
+        from dirconn.simulation.emptyroom import empty_room_window, n_windows
 
         with pytest.raises(ValueError, match="window"):
             empty_room_window(heads["grad"], 3, 3000)
@@ -181,7 +180,7 @@ class TestEmptyRoom:
             empty_room_window(heads["grad"], 0, 20000)
 
     def test_the_array_is_cached_and_read_only(self, heads):
-        from dirconn.emptyroom import empty_room_series
+        from dirconn.simulation.emptyroom import empty_room_series
 
         a = empty_room_series(heads["mag"])
         assert empty_room_series(heads["mag"]) is a

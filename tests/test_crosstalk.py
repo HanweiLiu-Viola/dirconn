@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from dirconn.inverse import crosstalk_from_series
+from dirconn.simulation.inverse import crosstalk_from_series
 
 
 def probe(n_sources=5, n_times=20000, seed=0):

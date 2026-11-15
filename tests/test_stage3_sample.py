@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 
 from dirconn import GC, Edge, Network, direct_node, dk_node
-from dirconn.benchmark import evaluate_stages, source_series
-from dirconn.headmodel import load_head_model
 from dirconn.simulation import simulate_on_head
+from dirconn.simulation.headmodel import load_head_model
+from dirconn.validation.benchmark import evaluate_stages, source_series
 from helpers import chain
 
 pytestmark = pytest.mark.sample_data

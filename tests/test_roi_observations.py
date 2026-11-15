@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 
 from dirconn import Edge, Network, dk_node
-from dirconn.benchmark import roi_observations
-from dirconn.scenario import load_scenario
 from dirconn.simulation import NodeDynamics, simulate
+from dirconn.simulation.scenario import load_scenario
+from dirconn.validation.benchmark import roi_observations
 
 A, B, C = "bankssts-lh", "superiorparietal-lh", "precuneus-rh"
 
