@@ -58,6 +58,7 @@ MOVED = {
     "dirconn.noise_study": "dirconn.validation.noise_study",
     "dirconn.significance_study": "dirconn.validation.significance_study",
     "dirconn.report": "dirconn.validation.benchmark_report",
+    "dirconn.plotting": "dirconn.viz",
 }
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "dirconn"
@@ -179,6 +180,9 @@ def test_viz_public_names_unchanged():
         assert callable(getattr(viz, name)), name
         assert name in viz.__all__
     assert isinstance(viz.PLOT_KINDS, tuple)
+    for name in ["GUARD_CAPTION", "YEO_NETWORKS", "MIN_DOMINANT_SHARE"]:
+        assert hasattr(viz, name), name
+        assert not callable(getattr(viz, name)), name
 
 
 def test_plot_dispatch_kinds():
