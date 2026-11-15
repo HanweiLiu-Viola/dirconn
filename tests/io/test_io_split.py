@@ -122,3 +122,34 @@ def test_simulation_bids_reimport_after_bids_is_loaded():
         "from dirconn.io.bids import SimulationRecord\n"
     )
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_io_bids_forwards_every_simulation_name():
+    import dirconn.io.bids as bids
+    import dirconn.io.simulation_bids as sb
+    from dirconn.io.bids import SENSOR_UNIT, SIMULATION_PIPELINE
+
+    assert SIMULATION_PIPELINE == sb.SIMULATION_PIPELINE
+    assert SENSOR_UNIT == sb.SENSOR_UNIT
+    names = dir(bids)
+    assert "write_simulation_bids" in names and "SIMULATION_PIPELINE" in names
+    assert "read_bids" in names
+
+
+def test_from_netcdf_keeps_the_subclass(tmp_path):
+    class Sub(Connectivity):
+        pass
+
+    path = tmp_path / "sub.nc"
+    _conn().to_netcdf(path)
+    assert type(Sub.from_netcdf(path)) is Sub
+    assert type(Connectivity.from_netcdf(path)) is Connectivity
+
+
+def test_from_mne_keeps_the_subclass():
+    class Sub(TimeSeries):
+        pass
+
+    raw = mne.io.RawArray(np.zeros((3, 50)), _located_info(), verbose="error")
+    assert type(Sub.from_mne(raw)) is Sub
+    assert type(TimeSeries.from_mne(raw)) is TimeSeries

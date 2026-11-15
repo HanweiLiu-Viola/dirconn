@@ -208,3 +208,49 @@ def test_plot_dispatch_kinds():
             plot(conn, "no_such_kind")
     finally:
         plt.close("all")
+
+
+def test_package_attribute_reaches_moved_module():
+    # 0.1.0 bound every submodule during package init: ``import dirconn; dirconn.mvar.fit_var``.
+    import dirconn
+    import dirconn.methods.mvar
+
+    sys.modules.pop("dirconn.mvar", None)
+    dirconn.__dict__.pop("mvar", None)
+    with pytest.warns(DeprecationWarning, match="moved to"):
+        fit_var = dirconn.mvar.fit_var
+    assert fit_var is dirconn.methods.mvar.fit_var
+    with pytest.raises(AttributeError, match="no_such_thing"):
+        dirconn.no_such_thing  # noqa: B018
+
+
+def test_deprecated_module_names_match_moved():
+    import dirconn
+
+    assert set(dirconn._DEPRECATED_MODULES) == {k.split(".")[1] for k in MOVED}
+    assert len(dirconn._DEPRECATED_MODULES) == len(set(dirconn._DEPRECATED_MODULES))
+
+
+def test_shim_dir_lists_the_new_module_names():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        granger = importlib.import_module("dirconn.granger")
+    assert "GC" in dir(granger)
+    assert set(dir(importlib.import_module("dirconn.methods.granger"))) <= set(dir(granger))
+
+
+def test_old_bids_path_forwards_simulation_constants():
+    # Public module-level names of the 0.1.0 ``bids`` module that moved to io.simulation_bids.
+    import dirconn.io.simulation_bids as sb
+
+    sys.modules.pop("dirconn.bids", None)
+    with pytest.warns(DeprecationWarning, match="moved to"):
+        from dirconn.bids import SENSOR_UNIT, SIMULATION_PIPELINE
+    assert SIMULATION_PIPELINE == sb.SIMULATION_PIPELINE
+    assert SENSOR_UNIT == sb.SENSOR_UNIT
+
+
+def test_validation_star_import_brings_nothing():
+    ns: dict = {}
+    exec("from dirconn.validation import *", ns)
+    assert {k for k in ns if not k.startswith("__")} == set()

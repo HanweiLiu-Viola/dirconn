@@ -7,6 +7,10 @@ import pkgutil
 import warnings
 from typing import Any
 
+# The public surface of this package is its submodules; the names of the old module are
+# forwarded by ``__getattr__`` (deprecated), so a star import brings nothing.
+__all__: list[str] = []
+
 _SUBMODULES = frozenset(m.name for m in pkgutil.iter_modules(__path__))
 
 

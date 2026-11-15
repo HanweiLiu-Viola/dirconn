@@ -511,7 +511,7 @@ class TimeSeries:
         """
         from dirconn.io.mne import timeseries_from_mne
 
-        return timeseries_from_mne(inst, picks, nan=nan)
+        return timeseries_from_mne(inst, picks, nan=nan, cls=cls)
 
 
 def _check_mask(mask: Any, name: str, shape: tuple[int, ...]) -> np.ndarray | None:

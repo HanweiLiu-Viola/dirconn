@@ -71,6 +71,9 @@ filterwarnings = [
     "error::RuntimeWarning",
     # Benign ABI notice emitted by Cython extensions (netCDF4) built against an older numpy.
     "ignore:numpy.ndarray size changed:RuntimeWarning",
+    # No library code or test may import a deprecated old module path; the shim tests expect the
+    # warning with pytest.warns or catch_warnings, which override this filter.
+    "error:.*moved to:DeprecationWarning",
 ]
 markers = [
     "sample_data: needs the MNE sample dataset (~1.5 GB); never run by default",
@@ -133,5 +136,5 @@ ignore_imports = [
 [[tool.importlinter.contracts]]
 name = "library does not import validation"
 type = "forbidden"
-source_modules = ["dirconn.data", "dirconn.io", "dirconn.methods", "dirconn.stats", "dirconn.diagnostics", "dirconn.viz"]
+source_modules = ["dirconn.data", "dirconn.io", "dirconn.methods", "dirconn.stats", "dirconn.diagnostics", "dirconn.simulation", "dirconn.viz"]
 forbidden_modules = ["dirconn.validation"]

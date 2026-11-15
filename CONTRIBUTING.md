@@ -70,7 +70,8 @@ The package has eight subpackages ([decision 0002](docs/decisions/0002-package-l
 - `dirconn.viz`: figures, and the `plot()` dispatcher behind `Connectivity.plot`.
 
 Dependencies point one way: `data` imports no other subpackage, `methods` does not import `io`,
-`viz`, `simulation` or `validation`, and no library subpackage imports `validation`. `lint-imports`
+`viz`, `simulation` or `validation`, and no library subpackage (`data`, `io`, `methods`, `stats`,
+`diagnostics`, `simulation`, `viz`) imports `validation`. `lint-imports`
 enforces it; the few accepted exceptions are listed in `[tool.importlinter]` in `pyproject.toml` and in
 decision 0002. The old top-level module paths (`dirconn.granger`, `dirconn.plotting`, ...) are
 deprecated shims that are removed in 0.4.0; new code and tests import the new paths.

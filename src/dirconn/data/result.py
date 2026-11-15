@@ -524,7 +524,7 @@ class Connectivity:
         """Read a result written by :meth:`to_netcdf`."""
         from dirconn.io.netcdf import read_connectivity
 
-        return read_connectivity(path)
+        return read_connectivity(path, cls=cls)
 
 
 def _reduce(sub: np.ndarray, coord: np.ndarray, how: str, axis: int = 2) -> np.ndarray:

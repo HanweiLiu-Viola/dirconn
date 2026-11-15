@@ -18,7 +18,7 @@ _private = 1
 _OLD = """\
 from dirconn._compat import redirect
 
-__getattr__, __all__ = redirect(__name__, "pkg.new")
+__getattr__, __all__, __dir__ = redirect(__name__, "pkg.new")
 """
 
 _NEW_NO_ALL = """\
@@ -87,3 +87,12 @@ def test_all_defaults_to_public_names(shim):
         warnings.simplefilter("ignore")
         old = importlib.import_module("pkg.old")
     assert old.__all__ == ["func"]
+
+
+def test_dir_lists_new_module_names(shim):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        old = importlib.import_module("pkg.old")
+    names = dir(old)
+    assert "func" in names and "_private" in names
+    assert names == sorted(names)

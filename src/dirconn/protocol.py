@@ -2,4 +2,4 @@
 
 from dirconn._compat import redirect
 
-__getattr__, __all__ = redirect(__name__, "dirconn.validation.protocol")
+__getattr__, __all__, __dir__ = redirect(__name__, "dirconn.validation.protocol")

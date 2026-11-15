@@ -45,8 +45,14 @@ def write_connectivity(conn: Connectivity, path: str | os.PathLike[str]) -> None
     dataset.to_netcdf(os.fspath(path), engine="netcdf4")
 
 
-def read_connectivity(path: str | os.PathLike[str]) -> Connectivity:
-    """Read a result written by :func:`write_connectivity`."""
+def read_connectivity(
+    path: str | os.PathLike[str], *, cls: type[Connectivity] = Connectivity
+) -> Connectivity:
+    """Read a result written by :func:`write_connectivity`.
+
+    ``cls`` is the class to build, so that :meth:`Connectivity.from_netcdf` called on a
+    subclass returns an instance of that subclass.
+    """
     file = os.fspath(path)
     if not os.path.exists(file):
         raise FileNotFoundError(file)
@@ -63,7 +69,7 @@ def read_connectivity(path: str | os.PathLike[str]) -> Connectivity:
             values = ds["values_real"].values + 1j * ds["values_imag"].values
         else:
             values = ds["values"].values
-        return Connectivity(
+        return cls(
             values=np.array(values),
             source=tuple(str(s) for s in ds["source"].values),
             target=tuple(str(t) for t in ds["target"].values),

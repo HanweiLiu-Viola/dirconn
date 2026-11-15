@@ -38,8 +38,8 @@ Taken from the 0.2.0 design:
 
 - `dirconn.data` imports no other subpackage.
 - `dirconn.methods` does not import `io`, `viz`, `simulation` or `validation`.
-- No library subpackage (`data`, `io`, `methods`, `stats`, `diagnostics`, `viz`) imports
-  `dirconn.validation`.
+- No library subpackage (`data`, `io`, `methods`, `stats`, `diagnostics`, `simulation`, `viz`)
+  imports `dirconn.validation`.
 
 `import-linter` enforces these rules (`[tool.importlinter]` in `pyproject.toml`; `lint-imports` runs in
 CI next to `ruff` and `mypy`).
@@ -62,11 +62,19 @@ They are repeated in the `methods` contract because `methods` reaches them trans
 - Each of the 47 old top-level module paths (`dirconn.granger`, `dirconn.bids`, `dirconn.plotting`, …;
   the full map is `MOVED` in `tests/test_shims.py`) is a shim built with `dirconn._compat.redirect`. On
   first import it emits one `DeprecationWarning`, "`<old>` moved to `<new>`; the old path is removed in
-  dirconn 0.4.0", and forwards every attribute to the new module.
+  dirconn 0.4.0", and forwards every attribute to the new module; `dir()` on the shim lists the
+  new module's names. `import dirconn; dirconn.mvar` still reaches the shim through the package
+  `__getattr__`, and `dirconn.io.bids` forwards every name that moved to `dirconn.io.simulation_bids`
+  (`SIMULATION_PIPELINE`, `SENSOR_UNIT`, ...), so `from dirconn.bids import SENSOR_UNIT` keeps working.
+  CI turns the shim warning into an error (`filterwarnings` in `pyproject.toml`), so no library code or
+  test imports an old path by accident.
 - **The shims are removed in dirconn 0.4.0**, which leaves 0.2.x and 0.3.x for users to move.
-- Private modules (`_csd`, `_ksg`, `_greedy`, `_resampling`) get no shim. `dirconn.plotting` forwards to
-  `dirconn.viz`; its private helpers (such as `_select`) now live in `dirconn.viz.matrices` and are no
-  longer reachable through the old path.
+- Private modules (`_csd`, `_ksg`, `_greedy`, `_resampling`) get no shim. A shim forwards to the module
+  its old path names, so private helpers that moved to a different module are reachable only at their
+  new homes: `dirconn.plotting._select` (now `dirconn.viz.matrices`), `dirconn.viz._yeo_table` (now
+  `dirconn.viz.brain`),
+  `dirconn.simulation._pink_noise` (now in `dirconn.simulation.simulation`),
+  `dirconn.timeseries._channel_index` (now `dirconn.io.mne`), and similar.
 - `dirconn.simulation`, `dirconn.validation` and `dirconn.viz` are packages now. `dirconn.simulation`
   re-exports the public names of `simulation.simulation`; `dirconn.validation` forwards the names of
   the old module (now `validation.method_validation`) through a module `__getattr__`, with the same

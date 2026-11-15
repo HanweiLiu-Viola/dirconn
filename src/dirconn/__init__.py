@@ -5,6 +5,7 @@ imported lazily by the modules that need it; tigramite, statsmodels, mne-connect
 plotting libraries are optional extras.
 """
 
+import importlib
 import sys
 import types
 from importlib import metadata
@@ -163,6 +164,68 @@ class _Package(types.ModuleType):
         if isinstance(value, types.ModuleType) and name in __all__ and callable(current):
             return
         super().__setattr__(name, value)
+
+
+# The old top-level module paths, all deprecated shims (``tests/test_shims.py::MOVED`` holds the
+# full old -> new map and checks this list against it). 0.1.0 bound them as attributes during
+# package initialisation, so attribute access to them after ``import dirconn`` keeps working
+# through ``__getattr__`` below, with the shim's warning.
+_DEPRECATED_MODULES = (
+    "analytic",
+    "bands",
+    "baseline",
+    "benchmark",
+    "bids",
+    "bootstrap",
+    "channels",
+    "coherency",
+    "contrast",
+    "correction",
+    "emptyroom",
+    "estimator",
+    "evaluation",
+    "exceptions",
+    "granger",
+    "headmodel",
+    "inverse",
+    "leakage",
+    "multitaper_granger",
+    "mvar",
+    "network",
+    "noise_study",
+    "nonstationary",
+    "order_stability",
+    "pcmci",
+    "plotting",
+    "protocol",
+    "provenance",
+    "regions",
+    "report",
+    "result",
+    "rng",
+    "scenario",
+    "significance",
+    "significance_study",
+    "spectral",
+    "spectral_estimators",
+    "statespace",
+    "surrogate_test",
+    "surrogates",
+    "sweep",
+    "time_reversal",
+    "timeseries",
+    "timevarying",
+    "transfer_entropy",
+    "tvmvar",
+    "windowed",
+)
+
+
+def __getattr__(name: str) -> Any:
+    """Import a deprecated old module path on attribute access; the shim emits the warning."""
+    if name in _DEPRECATED_MODULES:
+        return importlib.import_module(f"dirconn.{name}")
+    raise AttributeError(f"module 'dirconn' has no attribute {name!r}")
 
 
 sys.modules[__name__].__class__ = _Package

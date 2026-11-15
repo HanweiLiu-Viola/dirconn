@@ -58,8 +58,11 @@ All notable changes to dirconn are listed here. The format follows
   packages now; the names of the former `dirconn.validation` module moved to
   `dirconn.validation.method_validation` and are forwarded with the same warning.
   `dirconn.datasets` stays available without a warning.
-- The private helpers of `dirconn.plotting` (such as `_select`) can no longer be imported through
-  the old path; they live in `dirconn.viz.matrices`.
+- Every public name of an old module stays reachable through its old path, attribute access
+  (`import dirconn; dirconn.mvar.fit_var`) included. Private helpers that moved to another module
+  (`dirconn.plotting._select`, `dirconn.simulation._pink_noise`, `dirconn.viz._yeo_table`,
+  `dirconn.timeseries._channel_index`, ...) are reachable only at their new homes (for example
+  `dirconn.viz.matrices._select`).
 - Repository directories: `scripts/` is now `tools/`, `protocols/` is now `validation/protocols/`,
   and `benchmark_results/` is now `validation/results/`. `tests/` mirrors the subpackages.
 

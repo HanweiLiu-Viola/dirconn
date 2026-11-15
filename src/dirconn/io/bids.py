@@ -21,9 +21,6 @@ import pandas as pd
 from dirconn.data.channels import NODE_KINDS, ChannelMeta
 from dirconn.data.timeseries import TimeSeries
 
-if TYPE_CHECKING:
-    pass
-
 CONVENTION = "0"
 DATATYPES: tuple[str, ...] = ("eeg", "meg", "ieeg")
 LEVELS: tuple[str, ...] = ("sensor", "roi")
@@ -424,16 +421,27 @@ def _read_roi(
 
 # The simulation layout lives in dirconn.io.simulation_bids, which imports helpers from this
 # module. A module-level re-export would therefore depend on which of the two is imported first,
-# so the old names are resolved lazily (PEP 562).
-_SIMULATION_NAMES = ("SimulationRecord", "read_simulation_bids", "write_simulation_bids")
+# so every name of the 0.1.0 module that moved there (SimulationRecord, write_simulation_bids,
+# read_simulation_bids, SIMULATION_PIPELINE, SENSOR_UNIT, the private helpers) is resolved
+# lazily (PEP 562).
 
 
 def __getattr__(name: str) -> Any:
-    if name in _SIMULATION_NAMES:
+    if not name.startswith("__"):
         from dirconn.io import simulation_bids
 
-        return getattr(simulation_bids, name)
+        try:
+            return getattr(simulation_bids, name)
+        except AttributeError:
+            pass
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+def __dir__() -> list[str]:
+    from dirconn.io import simulation_bids
+
+    forwarded = {n for n in dir(simulation_bids) if not n.startswith("__")}
+    return sorted(set(globals()) | forwarded)
 
 
 if TYPE_CHECKING:

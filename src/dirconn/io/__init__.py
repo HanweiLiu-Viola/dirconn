@@ -1,1 +1,6 @@
-"""Reading and writing data: BIDS I/O and bundled example datasets."""
+"""Reading and writing data.
+
+BIDS input and output (sensor recordings, region-level series and simulations with their
+ground truth), NetCDF files of :class:`~dirconn.Connectivity`, conversion of MNE ``Raw`` and
+``Epochs`` objects, and the bundled example datasets.
+"""

@@ -12,11 +12,16 @@ from dirconn.data.timeseries import TimeSeries
 
 
 def timeseries_from_mne(
-    inst: Any, picks: Sequence[str | int] | None = None, *, nan: str = "raise"
+    inst: Any,
+    picks: Sequence[str | int] | None = None,
+    *,
+    nan: str = "raise",
+    cls: type[TimeSeries] = TimeSeries,
 ) -> TimeSeries:
     """Build a time series from an MNE ``Raw`` or ``Epochs`` object.
 
-    See :meth:`dirconn.TimeSeries.from_mne` for the parameters.
+    See :meth:`dirconn.TimeSeries.from_mne` for the parameters. ``cls`` is the class to build,
+    so that :meth:`TimeSeries.from_mne` called on a subclass returns an instance of it.
     """
     import mne
     from mne.io import BaseRaw
@@ -59,7 +64,7 @@ def timeseries_from_mne(
         )
         for i in idx
     )
-    return TimeSeries.from_array(
+    return cls.from_array(
         data,
         float(info["sfreq"]),
         channels=channels,

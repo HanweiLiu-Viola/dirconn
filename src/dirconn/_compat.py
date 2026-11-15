@@ -10,7 +10,9 @@ from typing import Any
 __all__: list[str] = []
 
 
-def redirect(old_name: str, new_name: str) -> tuple[Callable[[str], Any], list[str]]:
+def redirect(
+    old_name: str, new_name: str
+) -> tuple[Callable[[str], Any], list[str], Callable[[], list[str]]]:
     """Redirect a moved module to its new location.
 
     Imports ``new_name``, emits one ``DeprecationWarning`` (when called, i.e. when the shim
@@ -30,6 +32,9 @@ def redirect(old_name: str, new_name: str) -> tuple[Callable[[str], Any], list[s
         to the new module; raises ``AttributeError`` when the new module lacks it.
     all_names : list of str
         The new module's ``__all__``, or its public (non-underscore) names if it has none.
+    dir_func : callable
+        Module-level ``__dir__`` listing the names of the new module, so that ``dir()`` and
+        tab completion on the old path show what ``__getattr__`` forwards.
     """
     warnings.warn(
         f"{old_name} moved to {new_name}; the old path is removed in dirconn 0.4.0",
@@ -49,4 +54,8 @@ def redirect(old_name: str, new_name: str) -> tuple[Callable[[str], Any], list[s
         all_names = [n for n in vars(module) if not n.startswith("_")]
     else:
         all_names = list(declared)
-    return __getattr__, all_names
+
+    def __dir__() -> list[str]:
+        return sorted(set(dir(module)))
+
+    return __getattr__, all_names, __dir__
