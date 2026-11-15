@@ -22,6 +22,7 @@ MOVED = {
 }
 
 SRC = Path(__file__).resolve().parents[1] / "src" / "dirconn"
+TESTS = Path(__file__).resolve().parent
 
 
 @pytest.mark.parametrize(("old", "new"), MOVED.items())
@@ -39,14 +40,16 @@ def test_old_path_warns_and_forwards(old, new):
 
 
 def test_no_internal_module_imports_a_shim():
-    old_names = [old.rsplit(".", 1)[-1] for old in MOVED]
-    pattern = re.compile(r"\bdirconn\.(" + "|".join(old_names) + r")\b")
-    skip = {SRC / f"{old.rsplit('.', 1)[-1]}.py" for old in MOVED} | {SRC / "_compat.py"}
+    names = "|".join(old.rsplit(".", 1)[-1] for old in MOVED)
+    dotted = re.compile(r"\bdirconn\.(" + names + r")\b")
+    from_import = re.compile(r"^\s*from dirconn import [^\n]*\b(" + names + r")\b")
+    skip = {SRC / f"{old.rsplit('.', 1)[-1]}.py" for old in MOVED}
+    skip |= {SRC / "_compat.py", Path(__file__).resolve()}
     offenders = []
-    for path in SRC.rglob("*.py"):
+    for path in [*SRC.rglob("*.py"), *TESTS.rglob("*.py")]:
         if path in skip:
             continue
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-            if pattern.search(line):
-                offenders.append(f"{path.relative_to(SRC)}:{lineno}: {line.strip()}")
+            if dotted.search(line) or from_import.search(line):
+                offenders.append(f"{path}:{lineno}: {line.strip()}")
     assert not offenders, "\n".join(offenders)

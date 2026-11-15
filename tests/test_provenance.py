@@ -222,7 +222,7 @@ def test_collected_versions_are_a_private_copy_each_time():
 
 
 def test_inside_the_docker_image_the_image_is_recorded(monkeypatch):
-    from dirconn import provenance
+    from dirconn.data import provenance
 
     monkeypatch.setenv("DIRCONN_IMAGE", "ghcr.io/x/dirconn:0.1-abcdef0")
     provenance._installed_versions.cache_clear()
