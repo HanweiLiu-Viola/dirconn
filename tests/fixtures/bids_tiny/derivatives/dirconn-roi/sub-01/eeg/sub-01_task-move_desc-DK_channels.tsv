@@ -1,0 +1,5 @@
+name	type	units	region	hemisphere	atlas	node_kind
+precuneus-lh	MISC	n/a	precuneus	lh	DK	cortical
+postcentral-lh	MISC	n/a	postcentral	lh	DK	cortical
+superiorfrontal-lh	MISC	n/a	superiorfrontal	lh	DK	cortical
+STN-L	MISC	n/a	STN	lh	n/a	direct
