@@ -64,6 +64,7 @@ def test_band_above_nyquist_is_rejected():
             estimation=EstimationConfig(bands={"gamma": (80.0, 200.0)}),
         )
     assert "gamma" in str(exc.value)
+    assert "200" in str(exc.value)
     assert "125" in str(exc.value)
 
 
@@ -179,3 +180,44 @@ def test_null_sentinel_is_accepted_in_toml(tmp_path):
     cfg = load_config(path)
     assert cfg.prepare.resample_hz is None
     assert cfg.input.description is None
+
+
+def test_keys_with_spaces_and_dots_round_trip(tmp_path):
+    cfg = PipelineConfig(
+        prepare=PrepareConfig(resample_hz=250.0),
+        estimation=EstimationConfig(
+            bands={"beta low": (13.0, 20.0), "beta.low": (20.0, 30.0), "muμ": (8.0, 12.0)},
+            params={"gc": {"odd.key": 1, "with space": "x"}},
+        ),
+    )
+    path = tmp_path / "out.toml"
+    dump_config(cfg, path)
+    loaded = load_config(path)
+    assert loaded == cfg
+    assert config_hash(loaded) == config_hash(cfg)
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        "statistics.alpha=0",
+        "statistics.alpha=1",
+        "statistics.n_surrogates=0",
+        "estimation.order=0",
+        "estimation.order_max=0",
+        "prepare.lock.tmin=2",
+        "prepare.pad_bad_seconds=-1",
+        "prepare.resample_hz=0",
+        "prepare.resample_hz=-5",
+    ],
+)
+def test_out_of_range_values_are_rejected(override):
+    with pytest.raises(pydantic.ValidationError):
+        apply_overrides(PipelineConfig(), [override])
+
+
+def test_bad_exclude_freqs_are_rejected():
+    for ranges in (((50.0, 40.0),), ((-1.0, 5.0),), ((5.0, 5.0),)):
+        with pytest.raises(pydantic.ValidationError):
+            EstimationConfig(exclude_freqs=ranges)
+    EstimationConfig(exclude_freqs=((49.0, 51.0),))

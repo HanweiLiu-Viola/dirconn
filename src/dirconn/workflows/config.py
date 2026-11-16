@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Mapping, Sequence
 from importlib import resources
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from dirconn.methods.registry import REGISTRY
 
@@ -109,6 +110,12 @@ class LockConfig(_Section):
     tmin: float = -1.0
     tmax: float = 1.0
 
+    @model_validator(mode="after")
+    def _check(self) -> LockConfig:
+        if not self.tmin < self.tmax:
+            raise ValueError(f"tmin must be below tmax, got ({self.tmin}, {self.tmax}).")
+        return self
+
 
 class PrepareConfig(_Section):
     """Preprocessing applied before estimation.
@@ -127,10 +134,10 @@ class PrepareConfig(_Section):
         Event-locked epoching.
     """
 
-    resample_hz: float | None = 250.0
+    resample_hz: float | None = Field(default=250.0, gt=0)
     zscore: bool = True
     bad_segments: Literal["mask", "ignore"] = "mask"
-    pad_bad_seconds: float = 0.0
+    pad_bad_seconds: float = Field(default=0.0, ge=0)
     lock: LockConfig = LockConfig()
 
     _resample_null = field_validator("resample_hz", mode="before")(_null_sentinel)
@@ -163,7 +170,7 @@ class EstimationConfig(_Section):
 
     methods: tuple[str, ...] = ("gc",)
     order: int | Literal["aic", "bic", "hqc", "cv"] = "bic"
-    order_max: int = 30
+    order_max: int = Field(default=30, ge=1)
     bands: dict[str, tuple[float, float]] = _default_bands()
     reduce: Literal["mean", "median", "max", "peak_freq"] = "mean"
     exclude_freqs: tuple[tuple[float, float], ...] = ()
@@ -182,6 +189,13 @@ class EstimationConfig(_Section):
         out["params"] = {**dict(out.get("params") or {}), **moved}
         return out
 
+    @field_validator("order")
+    @classmethod
+    def _order_positive(cls, value: int | str) -> int | str:
+        if isinstance(value, int) and value < 1:
+            raise ValueError(f"order must be at least 1, got {value}.")
+        return value
+
     @model_validator(mode="after")
     def _check(self) -> EstimationConfig:
         unknown = [m for m in self.methods if m not in REGISTRY]
@@ -194,6 +208,11 @@ class EstimationConfig(_Section):
         for name, (lo, hi) in self.bands.items():
             if lo < 0 or not lo < hi:
                 raise ValueError(f"band {name!r} must satisfy 0 <= lo < hi, got ({lo}, {hi}).")
+        for lo, hi in self.exclude_freqs:
+            if lo < 0 or not lo < hi:
+                raise ValueError(
+                    f"exclude_freqs range must satisfy 0 <= lo < hi, got ({lo}, {hi})."
+                )
         stray = [m for m in self.params if m not in self.methods]
         if stray:
             raise ValueError(f"params given for method(s) {stray} that are not in methods.")
@@ -219,8 +238,8 @@ class StatisticsConfig(_Section):
 
     test: Literal["surrogate", "analytic", "none"] = "surrogate"
     surrogate: str = "trial_shuffle"
-    n_surrogates: int = 200
-    alpha: float = 0.05
+    n_surrogates: int = Field(default=200, ge=1)
+    alpha: float = Field(default=0.05, gt=0, lt=1)
     correction: str = "fdr_bh"
 
     @model_validator(mode="after")
@@ -462,14 +481,21 @@ def _scalar(value: Any) -> str:
     raise TypeError(f"cannot write {type(value).__name__} value {value!r} as TOML.")
 
 
+_BARE_KEY = re.compile(r"^[A-Za-z0-9_-]+$")
+
+
+def _key(name: str) -> str:
+    return name if _BARE_KEY.match(name) else json.dumps(name)
+
+
 def _to_toml(mapping: Mapping[str, Any], _prefix: tuple[str, ...] = ()) -> str:
     """Serialise nested mappings as TOML: scalars first, then ``[a.b]`` sub-tables depth-first."""
     scalars = [(k, v) for k, v in mapping.items() if not isinstance(v, Mapping)]
     tables = [(k, v) for k, v in mapping.items() if isinstance(v, Mapping)]
     lines: list[str] = []
     if _prefix and (scalars or not tables):
-        lines.append("[" + ".".join(_prefix) + "]")
-    lines.extend(f"{k} = {_scalar(v)}" for k, v in scalars)
+        lines.append("[" + ".".join(_key(p) for p in _prefix) + "]")
+    lines.extend(f"{_key(k)} = {_scalar(v)}" for k, v in scalars)
     out = "\n".join(lines) + "\n" if lines else ""
     for k, v in tables:
         sub = _to_toml(v, (*_prefix, k))
