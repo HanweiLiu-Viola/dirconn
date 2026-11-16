@@ -57,9 +57,13 @@ gpu = ["torch>=2.3"]
 plot = ["matplotlib>=3.7", "pycirclize>=1.10"]
 # 3D only: tested with pyvistaqt 0.13; MNE's 3D plot also needs a Qt binding
 plot-extra = ["pyvistaqt>=0.13"]
-all = ["dirconn[connectivity,pcmci,stats,parallel,speed,gpu,plot,plot-extra]"]
+app = ["pydantic>=2.5", "tomli>=2.0; python_version < '3.11'", "joblib>=1.3"]
+all = ["dirconn[connectivity,pcmci,stats,parallel,speed,gpu,plot,plot-extra,app]"]
 docs = ["sphinx>=7", "sphinx-gallery>=0.16", "myst-parser>=3", "pydata-sphinx-theme>=0.15"]
-dev = ["pytest>=8", "packaging", "ruff>=0.5", "mypy>=1.10", "nbformat>=5", "sphinx>=7", "sphinx-gallery>=0.16", "myst-parser>=3", "pydata-sphinx-theme>=0.15", "tigramite>=5.2", "joblib>=1.3", "import-linter>=2.0"]
+dev = ["pytest>=8", "packaging", "ruff>=0.5", "mypy>=1.10", "nbformat>=5", "sphinx>=7", "sphinx-gallery>=0.16", "myst-parser>=3", "pydata-sphinx-theme>=0.15", "tigramite>=5.2", "joblib>=1.3", "import-linter>=2.0", "pydantic>=2.5", "tomli>=2.0; python_version < '3.11'"]
+
+[project.scripts]
+dirconn-bids = "dirconn.cli.run:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dirconn"]
@@ -138,3 +142,15 @@ name = "library does not import validation"
 type = "forbidden"
 source_modules = ["dirconn.data", "dirconn.io", "dirconn.methods", "dirconn.stats", "dirconn.diagnostics", "dirconn.simulation", "dirconn.viz"]
 forbidden_modules = ["dirconn.validation"]
+
+[[tool.importlinter.contracts]]
+name = "library does not import the app layer"
+type = "forbidden"
+source_modules = ["dirconn.data", "dirconn.io", "dirconn.methods", "dirconn.stats", "dirconn.diagnostics", "dirconn.simulation", "dirconn.validation", "dirconn.viz"]
+forbidden_modules = ["dirconn.workflows", "dirconn.cli"]
+
+[[tool.importlinter.contracts]]
+name = "workflows do not import simulation, validation, viz or cli"
+type = "forbidden"
+source_modules = ["dirconn.workflows"]
+forbidden_modules = ["dirconn.simulation", "dirconn.validation", "dirconn.viz", "dirconn.cli"]
