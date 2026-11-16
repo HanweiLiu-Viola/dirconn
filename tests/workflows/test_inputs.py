@@ -106,6 +106,17 @@ def test_sha256_changes_when_data_changes(bids_tiny_copy: Path) -> None:
     }
 
 
+def test_sensor_hash_covers_brainvision_companions(bids_tiny_copy: Path) -> None:
+    (unit,) = discover(bids_tiny_copy, level="sensor", datatypes=["eeg"])
+    assert [f.suffix for f in unit.files[:3]] == [".vhdr", ".eeg", ".vmrk"]
+    eeg = next(f for f in unit.files if f.suffix == ".eeg")
+    raw = bytearray(eeg.read_bytes())
+    raw[-1] ^= 0x01
+    eeg.write_bytes(bytes(raw))
+    (changed,) = discover(bids_tiny_copy, level="sensor", datatypes=["eeg"])
+    assert changed.sha256 != unit.sha256
+
+
 def test_two_dirconn_derivatives_is_an_error(bids_tiny_copy: Path) -> None:
     deriv = bids_tiny_copy / "derivatives"
     shutil.copytree(deriv / "dirconn-roi", deriv / "dirconn-roi-2")

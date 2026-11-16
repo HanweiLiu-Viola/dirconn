@@ -165,7 +165,9 @@ def _combine_filters(
 def _sha256(files: Sequence[Path]) -> str:
     digest = hashlib.sha256()
     for file in files:
-        digest.update(file.read_bytes())
+        content = file.read_bytes()
+        digest.update(f"{file.name}\0{len(content)}\0".encode())
+        digest.update(content)
     return digest.hexdigest()
 
 
@@ -173,6 +175,15 @@ def _unit_files(data_file: Path) -> tuple[Path, ...]:
     stem = data_file.stem
     base, _, _ = stem.rpartition("_")
     files = [data_file]
+    data_companions: tuple[str, ...] = ()
+    if data_file.suffix == ".vhdr":
+        data_companions = (".eeg", ".vmrk")
+    elif data_file.suffix == ".set":
+        data_companions = (".fdt",)
+    for ext in data_companions:
+        data_part = data_file.with_suffix(ext)
+        if data_part.is_file():
+            files.append(data_part)
     for companion in (data_file.with_suffix(".json"), data_file.with_name(f"{base}_channels.tsv")):
         if companion.is_file():
             files.append(companion)
