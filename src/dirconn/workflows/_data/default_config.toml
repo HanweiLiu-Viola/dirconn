@@ -1,0 +1,57 @@
+# dirconn participant pipeline: default configuration.
+# Every key is optional in a user file; omitted keys take the values below.
+# TOML has no null: write the string "null" (or `--set key=null`) to turn a nullable option
+# (prepare.resample_hz, input.description) off.
+
+schema_version = 1
+
+[input]
+level = "roi"                          # "roi" (parcellated sources) or "sensor"
+datatypes = ["meg", "eeg", "ieeg"]     # BIDS data types to include
+node_kinds = ["cortical", "direct"]    # kinds of nodes to keep
+description = "DK"                     # parcellation (BIDS desc entity)
+
+[prepare]
+resample_hz = 250.0                    # target sampling rate; every band edge must be < half of it
+zscore = true                          # standardise each channel
+bad_segments = "mask"                  # "mask" bad annotations out of the estimate, or "ignore"
+pad_bad_seconds = 0.0                  # extra seconds masked around each bad segment
+
+[prepare.lock]
+events = []                            # event names to lock to; empty = continuous data
+tmin = -1.0                            # window start relative to the event, seconds
+tmax = 1.0                             # window end relative to the event, seconds
+
+[estimation]
+methods = ["gc"]                       # names from the method registry
+order = "bic"                          # integer, or "aic" / "bic" / "hqc" / "cv"
+order_max = 30                         # upper bound for criterion-based order selection
+reduce = "mean"                        # band reduction: "mean", "median", "max", "peak_freq"
+exclude_freqs = []                     # [[lo, hi], ...] ranges left out of band reduction
+
+# Per-method options go in sub-tables named after the method, for example:
+# [estimation.gc]
+# method = "state_space"
+
+[estimation.bands]                     # named bands in Hz, lo < hi
+theta = [4.0, 8.0]
+beta_low = [13.0, 20.0]
+beta_high = [20.0, 30.0]
+
+[statistics]
+test = "surrogate"                     # "surrogate", "analytic" or "none"
+surrogate = "trial_shuffle"            # phase_randomize, aaft, iaaft, circular_shift, trial_shuffle
+n_surrogates = 200
+alpha = 0.05
+correction = "fdr_bh"                  # "fdr_bh", "bonferroni" or "none"
+
+[controls]
+time_reversal = true                   # also compute time-reversed controls
+spectral_range_check = true            # check bands against the usable spectral range
+
+[output]
+long_table = true                      # write the long-format results table
+
+[execution]
+seed = 20261115
+fail_fast = false                      # stop at the first failing task

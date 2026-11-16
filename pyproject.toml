@@ -154,3 +154,6 @@ name = "workflows do not import simulation, validation, viz or cli"
 type = "forbidden"
 source_modules = ["dirconn.workflows"]
 forbidden_modules = ["dirconn.simulation", "dirconn.validation", "dirconn.viz", "dirconn.cli"]
+# Accepted exception: the data-class lazy import (Connectivity.plot -> viz), reached transitively
+#   through dirconn.methods.
+ignore_imports = ["dirconn.data.result -> dirconn.viz"]
