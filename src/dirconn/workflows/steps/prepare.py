@@ -223,8 +223,12 @@ def prepare(ts: TimeSeries, cfg: PrepareConfig, *, events_tsv: Path | None) -> T
     ts : TimeSeries
         The record as read.
     cfg : PrepareConfig
-        Bad-segment handling (``"ignore"`` zeroes invalid samples and drops the mask, otherwise
-        the mask is padded by ``pad_bad_seconds``), then resampling, z-score and event lock.
+        Bad-segment handling, then resampling, z-score and event lock. In ``"mask"`` mode the
+        order is pad, resample, z-score, lock. In ``"ignore"`` mode it is resample, then the
+        mask is dropped (the data at invalid samples, including the resampling edge guard,
+        stays as it is), then z-score and lock; ``n_invalid`` in the history entry is counted
+        after resampling. The mask is dropped last so that estimators without mask support can
+        run on the result.
     events_tsv : Path or None
         Events file used by the event lock.
 
@@ -233,15 +237,14 @@ def prepare(ts: TimeSeries, cfg: PrepareConfig, *, events_tsv: Path | None) -> T
     TimeSeries
         The prepared record.
     """
-    if cfg.bad_segments == "ignore" and ts.valid is not None:
-        invalid = ~np.asarray(ts.valid, dtype=bool)
-        data = np.where(invalid[:, None, :], 0.0, np.asarray(ts.data))
-        step = {"step": "ignore_bad_segments", "n_invalid": int(invalid.sum())}
-        ts = _with_step(ts, step, data=data, valid=None)
-    elif cfg.pad_bad_seconds > 0:
+    ignore = cfg.bad_segments == "ignore"
+    if not ignore and cfg.pad_bad_seconds > 0:
         ts = pad_invalid(ts, cfg.pad_bad_seconds)
     if cfg.resample_hz is not None:
         ts = resample(ts, cfg.resample_hz)
+    if ignore and ts.valid is not None:
+        n_invalid = int((~np.asarray(ts.valid, dtype=bool)).sum())
+        ts = _with_step(ts, {"step": "ignore_bad_segments", "n_invalid": n_invalid}, valid=None)
     if cfg.zscore:
         ts = zscore(ts)
     return lock_events(ts, events_tsv, cfg.lock)

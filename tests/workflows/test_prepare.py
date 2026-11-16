@@ -147,13 +147,25 @@ def test_history_records_every_step_in_order(bids_tiny):
     assert out.segmentation == "epoched"
 
 
-def test_ignore_mode_zeros_invalid_samples_and_drops_the_mask():
+def test_ignore_mode_keeps_the_data_and_drops_the_mask():
     valid = np.ones(1000, dtype=bool)
     valid[100:200] = False
     ts = _synthetic(1000, valid=valid)
     cfg = PrepareConfig(resample_hz=None, zscore=False, bad_segments="ignore", pad_bad_seconds=1.0)
     out = prepare(ts, cfg, events_tsv=None)
     assert out.valid is None
-    assert not out.data[0][:, 100:200].any()
+    np.testing.assert_array_equal(out.data, ts.data)
     assert out.history[-1] == {"step": "ignore_bad_segments", "n_invalid": 100}
     assert ts.valid is not None
+
+
+def test_ignore_mode_drops_the_resample_guard_too():
+    ts = _synthetic(1000, sfreq=500.0)
+    cfg = PrepareConfig(resample_hz=250.0, zscore=False, bad_segments="ignore")
+    out = prepare(ts, cfg, events_tsv=None)
+    assert out.sfreq == 250.0
+    assert out.valid is None
+    assert [h["step"] for h in out.history[len(ts.history) :]] == [
+        "resample",
+        "ignore_bad_segments",
+    ]
