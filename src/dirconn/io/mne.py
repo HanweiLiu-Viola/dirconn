@@ -16,6 +16,7 @@ def timeseries_from_mne(
     picks: Sequence[str | int] | None = None,
     *,
     nan: str = "raise",
+    bad_annotations: str = "ignore",
     cls: type[TimeSeries] = TimeSeries,
 ) -> TimeSeries:
     """Build a time series from an MNE ``Raw`` or ``Epochs`` object.
@@ -25,6 +26,11 @@ def timeseries_from_mne(
     """
     import mne
     from mne.io import BaseRaw
+
+    if bad_annotations not in ("ignore", "mask"):
+        raise ValueError(f"bad_annotations must be 'ignore' or 'mask', got {bad_annotations!r}.")
+    if bad_annotations == "mask" and nan != "mask":
+        raise ValueError('bad_annotations="mask" needs nan="mask".')
 
     if isinstance(inst, BaseRaw):
         segmentation, tmin = "continuous", 0.0
@@ -55,7 +61,12 @@ def timeseries_from_mne(
         if not idx:
             raise ValueError("picks is empty.")
 
-    data = inst.get_data(picks=idx)
+    if bad_annotations == "mask":
+        if not isinstance(inst, BaseRaw):
+            raise ValueError('bad_annotations="mask" is only supported for Raw objects.')
+        data = inst.get_data(picks=idx, reject_by_annotation="nan", verbose="error")
+    else:
+        data = inst.get_data(picks=idx)
     channels = tuple(
         ChannelMeta(
             info["ch_names"][i],

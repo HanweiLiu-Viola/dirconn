@@ -66,8 +66,13 @@ def test_sensor_recording_carries_bad_annotations(bids_tiny):
     assert ts.n_channels == 8
     assert ts.sfreq == 500.0
     assert ts.n_times == 10000
-    # Today's reader ignores BAD_ annotations; the reader task will turn them into a mask.
+    # Default stays backward compatible: BAD_ annotations are ignored.
     assert ts.valid is None
+    masked = read_bids(
+        bids_tiny, subject="01", task="rest", level="sensor", nan="mask", bad_annotations="mask"
+    )
+    summary = masked.mask_summary()
+    assert 748 <= summary["n_samples"] - summary["n_valid"] <= 752
 
 
 def test_events_tsv_lists_five_cues_and_two_bad_segments(bids_tiny):
