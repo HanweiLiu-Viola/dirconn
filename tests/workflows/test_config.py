@@ -30,10 +30,16 @@ def test_default_config_loads_and_hashes():
 
 
 def test_surrogate_and_correction_names_match_the_library():
-    assert set(SURROGATES) == set(_NAMED_SURROGATES)
+    assert set(SURROGATES) == set(_NAMED_SURROGATES) | {"block_shuffle"}
     assert tuple(CORRECTION_METHODS) == tuple(CORRECTIONS)
     StatisticsConfig(surrogate="aaft", correction="bonferroni")
-    for bad in ({"surrogate": "block_shuffle"}, {"correction": "holm"}):
+    StatisticsConfig(surrogate="block_shuffle", block_seconds=2.5)
+    assert StatisticsConfig().surrogate == "auto" and StatisticsConfig().block_seconds == 5.0
+    for bad in (
+        {"surrogate": "block_perm"},
+        {"correction": "holm"},
+        {"block_seconds": 0},
+    ):
         with pytest.raises(pydantic.ValidationError):
             StatisticsConfig(**bad)
 

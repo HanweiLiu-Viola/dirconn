@@ -420,3 +420,55 @@ class TestBlockShuffle:
         a = generator.generate_one(prepared, rng(1)).data
         np.testing.assert_array_equal(a, generator.generate_one(prepared, rng(1)).data)
         assert not np.array_equal(a, generator.generate_one(prepared, rng(2)).data)
+
+
+class TestBlockShuffleMasks:
+    @staticmethod
+    def masked(n_times=1000, bad=(310, 380), predict=None):
+        x = np.random.default_rng(0).standard_normal((3, n_times))
+        valid = np.ones(n_times, dtype=bool)
+        valid[bad[0] : bad[1]] = False
+        return TimeSeries.from_array(x, 100.0, valid=valid, predict=predict)
+
+    def test_blocks_touching_an_invalid_run_are_dropped(self):
+        ts = self.masked()  # blocks of 50: the run 310-380 touches blocks 6 and 7
+        generator = BlockShuffle(block_size=50)
+        prepared = generator.prepare(ts)
+        assert generator.supports_mask
+        assert prepared.valid is None and prepared.segmentation == "epoched"
+        step = prepared.history[-1]
+        assert (step["n_blocks_total"], step["n_blocks_kept"]) == (20, 18)
+        assert prepared.n_trials == 18
+        kept = [k for k in range(20) if k not in (6, 7)]
+        for row, k in enumerate(kept):
+            np.testing.assert_array_equal(prepared.data[row], ts.data[0, :, k * 50 : (k + 1) * 50])
+
+    def test_predict_is_sliced_into_the_kept_blocks_and_shuffled_like_trial_shuffle(self):
+        predict = np.zeros(1000, dtype=bool)
+        predict[500:] = True
+        ts = self.masked(predict=predict)
+        generator = BlockShuffle(block_size=50)
+        prepared = generator.prepare(ts)
+        assert prepared.predict is not None and prepared.predict.shape == (18, 50)
+        assert prepared.predict.any(axis=1).sum() == 10
+        out = generator.generate_one(prepared, rng())
+        assert out.valid is None and out.predict is not None
+
+    def test_too_few_clean_blocks_are_refused(self):
+        ts = self.masked(bad=(0, 1000))
+        with pytest.raises(ValueError, match="at least two"):
+            BlockShuffle(block_size=50).prepare(ts)
+
+    def test_an_unmasked_record_is_cut_and_shuffled_as_before(self):
+        x = np.random.default_rng(3).standard_normal((3, 1000))
+        ts = TimeSeries.from_array(x, 100.0)
+        generator = BlockShuffle(block_size=50)
+        prepared = generator.prepare(ts)
+        assert prepared.history == ts.history
+        out = generator.generate_one(prepared, rng(5)).data
+        blocks = x.reshape(3, 20, 50).transpose(1, 0, 2)
+        expected = np.empty_like(blocks)
+        gen = rng(5)
+        for ch in range(3):
+            expected[:, ch] = blocks[gen.permutation(20), ch]
+        np.testing.assert_array_equal(out, expected)

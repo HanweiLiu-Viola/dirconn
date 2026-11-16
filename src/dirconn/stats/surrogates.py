@@ -7,9 +7,10 @@ than "is there connectivity": it rejects the null named in ``generator.null`` an
 ``generator.limitations`` lists how that null can be rejected for reasons other than coupling.
 
 Data with ``valid`` or ``predict`` masks (see :class:`~dirconn.TimeSeries`) can only be shuffled by
-whole trials: :class:`TrialShuffle` carries the masks with the trials. The generators that move
-samples within a trial (phase randomisation, AAFT, IAAFT, circular shifts, block shuffling) would
-mix invalid samples into valid ones and refuse masked data.
+whole units: :class:`TrialShuffle` carries the masks with the trials, :class:`BlockShuffle`
+drops the blocks that touch an invalid sample and carries ``predict`` with the rest. The generators
+that move samples within a trial (phase randomisation, AAFT, IAAFT, circular shifts) would mix
+invalid samples into valid ones and refuse masked data.
 """
 
 from __future__ import annotations
@@ -367,6 +368,13 @@ class BlockShuffle(SurrogateGenerator):
     is kept; the alignment of the blocks between channels is destroyed. This is the surrogate for
     continuous data when circular shifting is unsuitable.
 
+    Masked data are supported: every block that contains an invalid sample (``valid`` is False)
+    is dropped, so the kept blocks carry no ``valid`` mask, and ``predict`` is sliced into the
+    kept blocks and travels with them (surrogate blocks then combine ``predict`` as in
+    :class:`TrialShuffle`: a time point is predicted only where it is in every contributing
+    block). The loss is recorded in the history of the prepared data as ``n_blocks_total`` and
+    ``n_blocks_kept``.
+
     Use it through :func:`dirconn.surrogate_test`, which calls :meth:`prepare` first so that the
     observed result is computed on the same blocks.
 
@@ -378,6 +386,7 @@ class BlockShuffle(SurrogateGenerator):
     """
 
     name = "block_shuffle"
+    supports_mask = True
     null = (
         "between-channel coupling is explained by within-block structure "
         "(blocks are exchangeable within a channel)"
@@ -403,14 +412,26 @@ class BlockShuffle(SurrogateGenerator):
         """Return ``{"block_size": ...}``."""
         return {"block_size": self.block_size}
 
-    def prepare(self, data: TimeSeries) -> TimeSeries:
-        """Return the blocks of ``data`` as the trials of an epoched series."""
-        self._check_masks(data)
+    def blocks(self, data: TimeSeries) -> TimeSeries:
+        """Return the blocks of ``data`` as the trials of an epoched series.
+
+        Data and masks are cut into blocks of ``block_size`` samples (per trial, dropping the
+        samples after the last whole block). Every block that contains an invalid sample is
+        dropped, so the kept blocks carry no ``valid`` mask; ``predict`` is sliced into the kept
+        blocks and carried. For masked data the history of the result gets a
+        ``block_shuffle_blocks`` entry with ``n_blocks_total`` and ``n_blocks_kept``.
+
+        Raises
+        ------
+        ValueError
+            If fewer than two blocks are kept.
+        """
         size = self.block_size
         per_trial = data.n_times // size
-        if per_trial * data.n_trials < 2:
+        total = per_trial * data.n_trials
+        if total < 2:
             raise ValueError(
-                f"block_size={size} gives {per_trial * data.n_trials} block(s) from "
+                f"block_size={size} gives {total} block(s) from "
                 f"{data.n_trials} trial(s) of {data.n_times} samples; block shuffling needs "
                 "at least two blocks."
             )
@@ -419,16 +440,43 @@ class BlockShuffle(SurrogateGenerator):
             data.data[:, :, :used]
             .reshape(data.n_trials, data.n_channels, per_trial, size)
             .transpose(0, 2, 1, 3)
-            .reshape(data.n_trials * per_trial, data.n_channels, size)
+            .reshape(total, data.n_channels, size)
         )
-        return TimeSeries(blocks, data.sfreq, data.channels, "epoched", 0.0)
+        if not data.has_mask:
+            return TimeSeries(blocks, data.sfreq, data.channels, "epoched", 0.0)
+
+        def cut(mask: np.ndarray) -> np.ndarray:
+            return np.asarray(mask, dtype=bool)[:, :used].reshape(total, size)
+
+        keep = np.ones(total, dtype=bool)
+        if data.valid is not None:
+            keep = cut(data.valid).all(axis=1)
+        n_kept = int(keep.sum())
+        if n_kept < 2:
+            raise ValueError(
+                f"block_size={size} leaves {n_kept} of {total} block(s) without an invalid "
+                "sample; block shuffling needs at least two. Use a shorter block_size."
+            )
+        predict = None if data.predict is None else cut(data.predict)[keep]
+        out = TimeSeries(blocks[keep], data.sfreq, data.channels, "epoched", 0.0, predict=predict)
+        step = {"step": "block_shuffle_blocks", "n_blocks_total": total, "n_blocks_kept": n_kept}
+        return replace(out, history=(*out.history, step))
+
+    def prepare(self, data: TimeSeries) -> TimeSeries:
+        """Return the blocks of ``data`` as the trials of an epoched series (see :meth:`blocks`)."""
+        return self.blocks(data)
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one surrogate of data that went through :meth:`prepare`."""
-        self._check_masks(data)
-        if data.segmentation != "epoched" or data.n_times != self.block_size:
+        if (
+            data.segmentation != "epoched"
+            or data.n_times != self.block_size
+            or data.valid is not None
+        ):
             raise ValueError(
                 f"BlockShuffle expects blocks of {self.block_size} samples as trials; pass the "
                 "data through prepare() first (surrogate_test does this)."
             )
+        if data.predict is not None:
+            return TrialShuffle().generate_one(data, rng)
         return _with_data(data, _shuffle_units(data.data, rng))

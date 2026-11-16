@@ -32,7 +32,7 @@ class BandTest:
     significant : ndarray of bool
         ``adjusted < alpha``; False where NaN.
     test : str
-        ``"surrogate"`` or ``"analytic"``.
+        ``"surrogate"`` (any surrogate generator, block shuffling included) or ``"analytic"``.
     n_surrogates : int or None
         Number of surrogates, ``None`` for the analytic test.
     seed : int or None
@@ -92,7 +92,8 @@ def test_significance(
     est : Estimate
         Supplies the band names and limits.
     cfg : StatisticsConfig
-        Test kind, surrogate, number of surrogates, level and correction.
+        Test kind, surrogate (``"auto"`` is block shuffling for continuous records and trial
+        shuffling for epoched ones), block length, number of surrogates, level and correction.
     seed : int
         Seed of the first band's test; band ``i`` uses ``seed + i``.
 
@@ -110,6 +111,16 @@ def test_significance(
     if cfg.test == "analytic":
         result = significance_test(estimator, ts, test="analytic", alpha=cfg.alpha)
         return (_band_test(None, result.pvalues, cfg, None, None),)
+    surrogate = cfg.surrogate
+    if surrogate == "auto":
+        surrogate = "block_shuffle" if ts.segmentation == "continuous" else "trial_shuffle"
+    if surrogate == "block_shuffle":
+        kind: dict[str, Any] = {
+            "test": "block_perm",
+            "block_size": int(round(cfg.block_seconds * ts.sfreq)),
+        }
+    else:
+        kind = {"test": "surrogate", "surrogate": surrogate}
     names: list[str | None] = list(est.bands) if est.bands else [None]
     out = []
     for i, name in enumerate(names):
@@ -117,12 +128,11 @@ def test_significance(
         result = significance_test(
             estimator,
             ts,
-            test="surrogate",
-            surrogate=cfg.surrogate,
             n_surrogates=cfg.n_surrogates,
             seed=seed + i,
             reduce=reduce,
             alpha=cfg.alpha,
+            **kind,
         )
         out.append(_band_test(name, result.pvalues, cfg, cfg.n_surrogates, seed + i))
     return tuple(out)

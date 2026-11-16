@@ -44,13 +44,14 @@ __all__ = [
     "load_config",
 ]
 
-#: Surrogate generators selectable by name (``block_shuffle`` needs a block size, so it is not).
+#: Surrogate generators selectable by name (``block_shuffle`` is sized by ``block_seconds``).
 SURROGATES: tuple[str, ...] = (
     "phase_randomize",
     "aaft",
     "iaaft",
     "circular_shift",
     "trial_shuffle",
+    "block_shuffle",
 )
 #: Multiple-comparison corrections accepted by ``dirconn.stats.correction.adjust_pvalues``.
 CORRECTION_METHODS: tuple[str, ...] = ("fdr_bh", "bonferroni", "none")
@@ -227,7 +228,11 @@ class StatisticsConfig(_Section):
     test : {"surrogate", "analytic", "none"}
         Kind of test.
     surrogate : str
-        Surrogate generator name, one of ``SURROGATES``.
+        ``"auto"`` or a generator name from ``SURROGATES``. ``"auto"`` is ``block_shuffle`` for
+        continuous records and ``trial_shuffle`` for epoched ones (both carry masks).
+    block_seconds : float
+        Block length of ``block_shuffle`` in seconds (converted to samples with the record's
+        sampling rate).
     n_surrogates : int
         Number of surrogates.
     alpha : float
@@ -237,15 +242,18 @@ class StatisticsConfig(_Section):
     """
 
     test: Literal["surrogate", "analytic", "none"] = "surrogate"
-    surrogate: str = "trial_shuffle"
+    surrogate: str = "auto"
+    block_seconds: float = Field(default=5.0, gt=0)
     n_surrogates: int = Field(default=200, ge=1)
     alpha: float = Field(default=0.05, gt=0, lt=1)
     correction: str = "fdr_bh"
 
     @model_validator(mode="after")
     def _check(self) -> StatisticsConfig:
-        if self.surrogate not in SURROGATES:
-            raise ValueError(f"surrogate must be one of {SURROGATES}, got {self.surrogate!r}.")
+        if self.surrogate != "auto" and self.surrogate not in SURROGATES:
+            raise ValueError(
+                f"surrogate must be 'auto' or one of {SURROGATES}, got {self.surrogate!r}."
+            )
         if self.correction not in CORRECTION_METHODS:
             raise ValueError(
                 f"correction must be one of {CORRECTION_METHODS}, got {self.correction!r}."

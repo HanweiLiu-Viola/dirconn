@@ -40,7 +40,9 @@ beta_high = [20.0, 30.0]
 
 [statistics]
 test = "surrogate"                     # "surrogate", "analytic" or "none"
-surrogate = "trial_shuffle"            # phase_randomize, aaft, iaaft, circular_shift, trial_shuffle
+surrogate = "auto"                     # auto = block_shuffle (continuous) / trial_shuffle (epoched);
+                                       # or phase_randomize, aaft, iaaft, circular_shift, trial_shuffle, block_shuffle
+block_seconds = 5.0                    # block length of block_shuffle, in seconds
 n_surrogates = 200
 alpha = 0.05
 correction = "fdr_bh"                  # "fdr_bh", "bonferroni" or "none"

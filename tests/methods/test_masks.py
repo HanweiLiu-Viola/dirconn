@@ -19,7 +19,6 @@ from dirconn import (
     RPDC,
     TE,
     TPDC,
-    TRGC,
     WDTF,
     Connectivity,
     DirconnWarning,
@@ -413,7 +412,6 @@ class TestSupport:
             PCMCI(),
             PSI(bands=[(8, 13)]),
             ImCoh(),
-            TRGC(),
             ADTF(),
             TPDC(),
             WDTF(window=1.0),
@@ -464,9 +462,14 @@ class TestSurrogates:
         with pytest.raises(ValueError, match="mask"):
             generator.generate_one(gappy_epochs(), np.random.default_rng(0))
 
-    def test_block_shuffle_refuses_masks(self):
-        with pytest.raises(ValueError, match="mask"):
-            BlockShuffle(block_size=20).prepare(gappy_epochs())
+    def test_block_shuffle_drops_the_blocks_with_invalid_samples(self):
+        data = gappy_epochs()
+        generator = BlockShuffle(block_size=20)
+        prepared = generator.prepare(data)
+        assert prepared.valid is None
+        step = prepared.history[-1]
+        assert step["n_blocks_total"] == data.n_trials * (data.n_times // 20)
+        assert step["n_blocks_kept"] == prepared.n_trials < step["n_blocks_total"]
 
     def test_trial_shuffle_carries_the_masks_with_the_trials(self):
         data = gappy_epochs()
@@ -541,7 +544,7 @@ class TestResampling:
 
     def test_bootstrap_of_an_estimator_without_mask_support_raises(self):
         with pytest.raises(ValueError, match="mask"):
-            bootstrap(TRGC(), gappy_epochs(), n_boot=2, seed=0)
+            bootstrap(TE(), gappy_epochs(), n_boot=2, seed=0)
 
     @pytest.mark.parametrize("paired", [False, True])
     def test_contrast_test_carries_the_masks(self, paired):

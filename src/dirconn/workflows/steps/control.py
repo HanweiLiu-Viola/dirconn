@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from dirconn.data.result import Connectivity
 from dirconn.data.timeseries import TimeSeries
-from dirconn.methods.time_reversal import TRGC, trgc
+from dirconn.methods.time_reversal import trgc
 from dirconn.workflows.config import ControlsConfig, EstimationConfig
-from dirconn.workflows.steps.estimate import refuse_masked
 
 __all__ = ["time_reversal_control"]
 
@@ -29,13 +28,7 @@ def time_reversal_control(
     -------
     Connectivity or None
         The TRGC result, or ``None`` when the control is off.
-
-    Raises
-    ------
-    ValueError
-        If ``ts`` is masked (TRGC does not support masks).
     """
     if not controls.time_reversal:
         return None
-    refuse_masked(ts, "trgc", TRGC.info.supports_mask)
     return trgc(ts, order=cfg.order, max_order=cfg.order_max)

@@ -27,13 +27,20 @@ from dirconn.methods.mvar import check_order_spec
 
 
 def reverse_time(data: TimeSeries) -> TimeSeries:
-    """Return ``data`` with every trial reversed in time (same channels, segmentation, tmin)."""
+    """Return ``data`` with every trial reversed in time, masks and history included.
+
+    Channels, segmentation and ``tmin`` are kept; ``valid`` and ``predict`` are reversed along
+    time together with the samples.
+    """
     return TimeSeries(
         data=np.ascontiguousarray(np.asarray(data.data)[:, :, ::-1]),
         sfreq=data.sfreq,
         channels=data.channels,
         segmentation=data.segmentation,
         tmin=data.tmin,
+        valid=None if data.valid is None else np.ascontiguousarray(data.valid[:, ::-1]),
+        predict=None if data.predict is None else np.ascontiguousarray(data.predict[:, ::-1]),
+        history=data.history,
     )
 
 
@@ -81,6 +88,7 @@ class TRGC(Estimator):
         value_range=(-math.inf, math.inf),
         scale_dependent=False,
         assumptions=STANDARD_ASSUMPTIONS,
+        supports_mask=True,
     )
 
     order: int | str = "bic"

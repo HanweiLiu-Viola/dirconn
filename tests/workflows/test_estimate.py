@@ -84,7 +84,7 @@ def test_time_reversal_control_returns_trgc(ts):
 def test_surrogate_test_per_band_with_distinct_seeds(ts):
     cfg = _cfg()
     est = estimate(ts, "rpdc", cfg)
-    stats = StatisticsConfig(test="surrogate", surrogate="phase_randomize", n_surrogates=10)
+    stats = StatisticsConfig(test="surrogate", n_surrogates=10)
     tests = run_significance(ts, build_estimator("rpdc", cfg), est, stats, seed=7)
     assert [t.band for t in tests] == ["theta", "beta"]
     assert [t.seed for t in tests] == [7, 8]
@@ -112,5 +112,6 @@ def test_masked_data_with_unsupported_method_gets_a_clear_error(ts):
     masked = dataclasses.replace(ts, valid=valid)
     with pytest.raises(ValueError, match="does not support masked data"):
         estimate(masked, "te", _cfg())
-    with pytest.raises(ValueError, match="trgc does not support masked data"):
-        time_reversal_control(masked, _cfg(), ControlsConfig(time_reversal=True))
+    out = time_reversal_control(masked, _cfg(), ControlsConfig(time_reversal=True))
+    assert out is not None
+    assert out.provenance.details["masks"]["n_valid"] < masked.n_times * masked.n_trials
