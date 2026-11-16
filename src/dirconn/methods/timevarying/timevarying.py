@@ -268,6 +268,7 @@ class ADTF(_TimeVaryingVAR):
 
     info = MethodInfo(
         name="adtf",
+        report_kind="time_frequency",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,
@@ -304,6 +305,7 @@ class TPDC(_TimeVaryingVAR):
 
     info = MethodInfo(
         name="tpdc",
+        report_kind="time_frequency",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,

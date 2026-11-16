@@ -96,6 +96,7 @@ class PCMCI(Estimator):
 
     info = MethodInfo(
         name="pcmci",
+        report_kind="matrix",
         backend="tigramite PCMCI with ParCorr, lagged links (tau_min=1)",
         directed=True,
         signed=True,

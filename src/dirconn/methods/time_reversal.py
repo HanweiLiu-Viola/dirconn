@@ -73,6 +73,7 @@ class TRGC(Estimator):
 
     info = MethodInfo(
         name="trgc",
+        report_kind="control",
         backend="own numpy pooled OLS VAR (GC) on the data and on its time reversal",
         directed=True,
         antisymmetric=True,

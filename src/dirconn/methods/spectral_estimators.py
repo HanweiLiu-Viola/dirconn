@@ -208,6 +208,7 @@ class DTF(_SpectralVAR):
 
     info = MethodInfo(
         name="dtf",
+        report_kind="spectrum",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,
@@ -259,6 +260,7 @@ class PDC(_PartialDirectedCoherence):
 
     info = MethodInfo(
         name="pdc",
+        report_kind="spectrum",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,
@@ -295,6 +297,7 @@ class GPDC(_PartialDirectedCoherence):
 
     info = MethodInfo(
         name="gpdc",
+        report_kind="spectrum",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,
@@ -347,6 +350,7 @@ class RPDC(_SpectralVAR):
 
     info = MethodInfo(
         name="rpdc",
+        report_kind="spectrum",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,
@@ -403,6 +407,7 @@ class SSGC(_SpectralVAR):
 
     info = MethodInfo(
         name="ssgc",
+        report_kind="spectrum",
         backend="own numpy pooled OLS VAR, innovations-form state space, scipy DARE",
         directed=True,
         min_nodes=2,

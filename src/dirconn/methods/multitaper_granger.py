@@ -211,6 +211,7 @@ class MTGC(Estimator):
 
     info = MethodInfo(
         name="mtgc",
+        report_kind="spectrum",
         backend="own multitaper spectra, Wilson factorisation, Geweke decomposition (pairwise)",
         directed=True,
         min_nodes=2,
