@@ -1,3 +1,6 @@
+import json
+import warnings
+
 import numpy as np
 import pytest
 from scipy import signal
@@ -62,3 +65,31 @@ def test_to_dict_rounds_and_is_plain():
     assert isinstance(d["worst_db"], float)
     assert isinstance(d["psd"], list)
     assert d["worst_db"] == float(f"{sr.worst_db:.6g}")
+
+
+def test_flat_channel_gives_finite_warning_and_json():
+    data = _white(n_channels=2)
+    data[0] = 3.0
+    ts = TimeSeries.from_array(data, SFREQ)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        sr = spectral_dynamic_range(ts, BANDS)
+        check = spectral_range_check(sr)
+    assert np.all(np.isfinite(sr.dynamic_range_db))
+    assert check.status == "warn"
+    assert sr.worst_channel == ts.names[0]
+    json.dumps(sr.to_dict(), allow_nan=False)
+
+
+def test_runs_are_weighted_by_length():
+    rng = np.random.default_rng(1)
+    x = rng.standard_normal((1, 2000)) * np.linspace(1, 5, 2000)
+    valid = np.zeros(2000, dtype=bool)
+    valid[0:600] = True
+    valid[800:1800] = True
+    ts = TimeSeries.from_array(x, SFREQ, valid=valid)
+    sr = spectral_dynamic_range(ts, {"all": (1.0, 100.0)}, nperseg=500)
+    _, pa = signal.welch(x[:, 0:600], fs=SFREQ, nperseg=500, axis=-1)
+    _, pb = signal.welch(x[:, 800:1800], fs=SFREQ, nperseg=500, axis=-1)
+    assert np.allclose(sr.psd, (pa * 600 + pb * 1000) / 1600)
+    assert not np.allclose(sr.psd, (pa + pb) / 2)

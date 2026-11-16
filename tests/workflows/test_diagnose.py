@@ -1,4 +1,5 @@
 import json
+import warnings
 
 import numpy as np
 
@@ -40,3 +41,21 @@ def test_spectral_check_can_be_switched_off():
     assert diag.checks == ()
     assert diag.valid_fraction == 1.0
     assert diag.to_dict()["spectral"] is None
+
+
+def test_flat_channel_diagnostics_stay_json_safe():
+    data = np.array(_ts().data[0])
+    data[0] = 2.0
+    flat = TimeSeries.from_array(data, SFREQ)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        diag = diagnose(flat, _cfg())
+    assert diag.checks[0].status == "warn"
+    json.dumps(diag.to_dict(), allow_nan=False)
+
+
+def test_channel_without_valid_samples_has_none_std():
+    valid = np.zeros(int(20 * SFREQ), dtype=bool)
+    diag = diagnose(_ts(valid), _cfg(spectral=False))
+    assert all(v is None for v in diag.channel_std.values())
+    json.dumps(diag.to_dict(), allow_nan=False)

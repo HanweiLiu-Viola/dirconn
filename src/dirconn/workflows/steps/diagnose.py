@@ -34,8 +34,9 @@ class Diagnostics:
         Shape of the record.
     sfreq : float
         Sampling frequency in Hz.
-    channel_std : dict of str to float
-        Standard deviation per channel over the valid samples.
+    channel_std : dict of str to float or None
+        Standard deviation per channel over the valid samples; ``None`` for a channel without
+        valid samples.
     spectral : SpectralRange or None
         The spectral dynamic range, or ``None`` when the check is switched off.
     checks : tuple of AssumptionCheck
@@ -46,7 +47,7 @@ class Diagnostics:
     n_trials: int
     n_times: int
     sfreq: float
-    channel_std: dict[str, float]
+    channel_std: dict[str, float | None]
     spectral: SpectralRange | None
     checks: tuple[AssumptionCheck, ...]
 
@@ -57,7 +58,9 @@ class Diagnostics:
             "n_trials": self.n_trials,
             "n_times": self.n_times,
             "sfreq": self.sfreq,
-            "channel_std": {k: float(f"{v:.6g}") for k, v in self.channel_std.items()},
+            "channel_std": {
+                k: None if v is None else float(f"{v:.6g}") for k, v in self.channel_std.items()
+            },
             "spectral": None if self.spectral is None else self.spectral.to_dict(),
             "checks": [c.to_dict() for c in self.checks],
         }
@@ -98,7 +101,10 @@ def diagnose(ts: TimeSeries, cfg: PipelineConfig) -> Diagnostics:
         n_trials=int(n_trials),
         n_times=int(n_times),
         sfreq=float(ts.sfreq),
-        channel_std={name: float(s) for name, s in zip(ts.names, std, strict=True)},
+        channel_std={
+            name: float(s) if np.isfinite(s) else None
+            for name, s in zip(ts.names, std, strict=True)
+        },
         spectral=spectral,
         checks=checks,
     )

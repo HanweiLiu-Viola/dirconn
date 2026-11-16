@@ -33,6 +33,9 @@ The threshold is a conservative rule of thumb; it has not been calibrated on a b
 """
 
 
+_POWER_FLOOR = 1e-30
+
+
 def _round(x: Any) -> Any:
     """Round floats (scalars or nested lists of them) to 6 significant digits."""
     if isinstance(x, np.ndarray):
@@ -154,8 +157,14 @@ def spectral_dynamic_range(
             raise ValueError(f"Band {name!r} ({lo}-{hi} Hz) contains no frequency bin.")
         band_power[name] = psd[:, sel].mean(axis=1)
     stacked = np.stack(list(band_power.values()))
-    with np.errstate(divide="ignore"):
-        db = 10.0 * np.log10(stacked.max(axis=0) / stacked.min(axis=0))
+    # Floor the powers so the ratio is always finite. A dead channel (no power in any band)
+    # would otherwise give 0/0; it is reported at the largest range the floor can express.
+    hi = np.maximum(stacked.max(axis=0), _POWER_FLOOR)
+    lo = np.maximum(stacked.min(axis=0), _POWER_FLOOR)
+    with np.errstate(all="ignore"):
+        db = 10.0 * np.log10(hi / lo)
+    dead = stacked.max(axis=0) <= _POWER_FLOOR
+    db = np.where(dead, 10.0 * np.log10(1.0 / _POWER_FLOOR), db)
     worst = int(np.argmax(db))
     return SpectralRange(
         names=tuple(ts.names),
