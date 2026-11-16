@@ -1,8 +1,8 @@
 """Generate (or check) the tiny synthetic BIDS dataset ``tests/fixtures/bids_tiny``.
 
 The dataset has five region-level (ROI) units in ``derivatives/dirconn-roi`` and one raw
-BrainVision EEG recording. Everything is deterministic except the dates BrainVision writes into
-its header, so ``--check`` compares the file list and the total size, not hashes.
+BrainVision EEG recording. Everything is seeded, but ``--check`` compares only the file list and
+the total size, not hashes, so library versions may differ in incidental bytes.
 
 Usage::
 
@@ -18,7 +18,6 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 BASE_SEED = 20261116
 MAX_BYTES = 5_000_000
@@ -115,20 +114,6 @@ def _write_roi_units(root: Path) -> None:
         )
 
 
-def _write_bad_markers(vmrk: Path, sfreq: float) -> None:
-    """Replace the markers mne-bids wrote with ones that keep the BAD annotations.
-
-    mne-bids stores annotations as bare ``S  1`` stimulus markers without name or duration. Here
-    each marker has the segment's duration, and its type is ``BAD_segment`` so that
-    ``mne.io.read_raw_brainvision`` returns an annotation whose description starts with ``BAD_``.
-    """
-    lines = [line for line in vmrk.read_text().splitlines() if not line.startswith("Mk")]
-    for number, (onset, duration) in enumerate(BAD_SEGMENTS, start=1):
-        position = int(onset * sfreq) + 1
-        lines.append(f"Mk{number}=BAD_segment,,{position},{int(duration * sfreq)},0")
-    vmrk.write_text("\n".join(lines) + "\n", newline="\n")
-
-
 def _write_sensor_recording(root: Path) -> None:
     import mne
     from mne_bids import BIDSPath, write_raw_bids
@@ -140,24 +125,23 @@ def _write_sensor_recording(root: Path) -> None:
     data = 1e-5 * (rng.standard_normal((len(SENSOR_NAMES), n_times)) + np.sin(2 * np.pi * 10 * t))
     info = mne.create_info(SENSOR_NAMES, sfreq, "eeg")
     raw = mne.io.RawArray(data, info, verbose="error")
+    # "standard_1020" is deprecated in MNE 1.13 (removed in 1.14); colin27_1020 has the same names.
     raw.set_montage(mne.channels.make_standard_montage("colin27_1020"), verbose="error")
     raw.info["line_freq"] = 50.0
-    onsets, durations = zip(*BAD_SEGMENTS, strict=True)
-    raw.set_annotations(
-        mne.Annotations(list(onsets), list(durations), ["BAD_segment"] * len(BAD_SEGMENTS))
+    # mne-bids derives events.tsv from the annotations, so the cues and the BAD segments become
+    # rows of events.tsv (the BIDS-native place, which read_raw_bids restores as annotations).
+    rows = sorted(
+        [(float(onset), 0.0, "cue") for onset in CUE_ONSETS]
+        + [(onset, duration, "BAD_segment") for onset, duration in BAD_SEGMENTS]
     )
+    onsets, durations, descriptions = zip(*rows, strict=True)
+    raw.set_annotations(mne.Annotations(list(onsets), list(durations), list(descriptions)))
     path = BIDSPath(root=root, subject="01", task="rest", datatype="eeg")
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         write_raw_bids(
             raw, path, format="BrainVision", allow_preload=True, overwrite=True, verbose="error"
         )
-    _write_bad_markers(path.copy().update(suffix="eeg", extension=".vmrk").fpath, sfreq)
-    events = pd.DataFrame(
-        {"onset": CUE_ONSETS, "duration": 0, "trial_type": "cue"},
-    )
-    events_path = path.copy().update(suffix="events", extension=".tsv")
-    events.to_csv(events_path.fpath, sep="\t", index=False, lineterminator="\n")
 
 
 def generate(out: Path, *, force: bool = False) -> None:

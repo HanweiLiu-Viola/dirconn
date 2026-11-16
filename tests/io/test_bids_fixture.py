@@ -5,9 +5,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-import mne
 import pandas as pd
 import pytest
+from mne_bids import BIDSPath, read_raw_bids
 
 from dirconn import read_bids
 
@@ -54,12 +54,14 @@ def test_roi_units_read_as_timeseries(bids_tiny, unit):
 
 
 def test_sensor_recording_carries_bad_annotations(bids_tiny):
-    vhdr = bids_tiny / "sub-01" / "eeg" / "sub-01_task-rest_eeg.vhdr"
-    raw = mne.io.read_raw_brainvision(vhdr, preload=False, verbose="error")
-    bad = [a for a in raw.annotations if a["description"].startswith("BAD_")]
-    assert len(bad) == 2
+    path = BIDSPath(root=bids_tiny, subject="01", task="rest", datatype="eeg", suffix="eeg")
+    raw = read_raw_bids(path, verbose="error")
+    notes = raw.annotations
+    bad = [a for a in notes if a["description"] == "BAD_segment"]
     assert [a["onset"] - raw.first_time for a in bad] == pytest.approx([5.0, 12.0])
-    assert sum(a["duration"] for a in bad) == pytest.approx(1.5)
+    assert [a["duration"] for a in bad] == pytest.approx([0.8, 0.7])
+    assert len(bad) == 2
+    assert sum(a["description"] == "cue" for a in notes) == 5
     ts = read_bids(bids_tiny, subject="01", task="rest", level="sensor", nan="mask")
     assert ts.n_channels == 8
     assert ts.sfreq == 500.0
@@ -68,11 +70,16 @@ def test_sensor_recording_carries_bad_annotations(bids_tiny):
     assert ts.valid is None
 
 
-def test_events_tsv_lists_five_cues(bids_tiny):
-    events = pd.read_csv(bids_tiny / "sub-01" / "eeg" / "sub-01_task-rest_events.tsv", sep="\t")
-    assert len(events) == 5
-    assert set(events["trial_type"]) == {"cue"}
-    assert events["onset"].tolist() == [2, 6, 10, 14, 18]
+def test_events_tsv_lists_five_cues_and_two_bad_segments(bids_tiny):
+    events = pd.read_csv(bids_tiny / "sub-01" / "eeg" / "sub-01_task-rest_events.tsv", sep="	")
+    assert events["onset"].is_monotonic_increasing
+    cues = events[events["trial_type"] == "cue"]
+    assert cues["onset"].tolist() == [2, 6, 10, 14, 18]
+    assert cues["duration"].tolist() == [0] * 5
+    bad = events[events["trial_type"] == "BAD_segment"]
+    assert bad["onset"].tolist() == [5.0, 12.0]
+    assert bad["duration"].tolist() == pytest.approx([0.8, 0.7])
+    assert len(events) == 7
 
 
 def test_fixture_is_under_five_megabytes(bids_tiny):

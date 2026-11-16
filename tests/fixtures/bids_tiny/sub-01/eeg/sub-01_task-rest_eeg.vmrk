@@ -11,5 +11,10 @@ DataFile=sub-01_task-rest_eeg.eeg
 ;             <Date (YYYYMMDDhhmmssuuuuuu)>
 ; Fields are delimited by commas, some fields might be omitted (empty).
 ; Commas in type or description text are coded as "\1".
-Mk1=BAD_segment,,2501,400,0
-Mk2=BAD_segment,,6001,350,0
+Mk1=Stimulus,S  2,1001,1,0
+Mk2=Stimulus,S  1,2501,1,0
+Mk3=Stimulus,S  2,3001,1,0
+Mk4=Stimulus,S  2,5001,1,0
+Mk5=Stimulus,S  1,6001,1,0
+Mk6=Stimulus,S  2,7001,1,0
+Mk7=Stimulus,S  2,9001,1,0
