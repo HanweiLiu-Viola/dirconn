@@ -37,7 +37,14 @@ def test_resample_halves_the_length_and_keeps_duration():
     assert out.data.shape[-1] == 5000
     assert out.sfreq == 250.0
     assert abs(out.duration - ts.duration) <= 1 / 250.0
-    assert out.history[-1] == {"step": "resample", "from": 500.0, "to": 250.0}
+    assert out.history[-1] == {
+        "step": "resample",
+        "from": 500.0,
+        "to": 250.0,
+        "up": 1,
+        "down": 2,
+        "guard_samples": 10,
+    }
     assert resample(ts, 500.0) is ts
 
 
@@ -45,9 +52,42 @@ def test_resample_keeps_invalid_regions_invalid():
     valid = np.ones(1000, dtype=bool)
     valid[400:500] = False
     out = resample(_synthetic(1000, valid=valid), 250.0)
-    assert not out.valid[0, 200:250].any()
-    assert out.valid[0, :199].all()
-    assert out.valid[0, 251:].all()
+    half = out.history[-1]["guard_samples"]
+    expected = np.ones(500, dtype=bool)
+    expected[200 - half : 250 + half] = False
+    expected[:half] = False
+    expected[500 - half :] = False
+    np.testing.assert_array_equal(out.valid[0], expected)
+
+
+def test_resample_does_not_leak_artefacts_from_invalid_samples():
+    data = np.zeros((2, 2000))
+    data[:, 1001] = 1e6
+    valid = np.ones(2000, dtype=bool)
+    valid[1001] = False
+    ts = TimeSeries.from_array(data, 500.0, valid=valid)
+    out = resample(ts, 250.0)
+    half = out.history[-1]["guard_samples"]
+    assert np.abs(out.data[0][:, out.valid[0]]).max() < 1e-6
+    assert not out.valid[0, 500 - half : 500 + half + 1].any()
+    assert out.valid[0, 500 - half - 1] and out.valid[0, 500 + half + 1]
+    # unmasked input gets only the edge guard
+    plain = resample(_synthetic(1000), 250.0)
+    assert plain.valid is not None
+    assert plain.valid[0].sum() == 500 - 2 * half
+
+
+def test_resample_2048_to_250_is_exact():
+    out = resample(_synthetic(2048 * 2, sfreq=2048.0), 250.0)
+    assert out.data.shape[-1] == 500
+    assert out.sfreq == 250.0
+    assert out.history[-1]["up"] == 125
+    assert out.history[-1]["down"] == 1024
+
+
+def test_resample_rejects_inexact_ratio():
+    with pytest.raises(ValueError, match="nearest representable"):
+        resample(_synthetic(1000, sfreq=1000.0), 999.9999)
 
 
 def test_zscore_uses_only_valid_samples():
@@ -103,8 +143,7 @@ def test_history_records_every_step_in_order(bids_tiny):
     )
     out = prepare(ts, cfg, events_tsv=_events(bids_tiny))
     steps = [h["step"] for h in out.history[len(ts.history) :]]
-    assert steps[:3] == ["pad_invalid", "resample", "zscore"]
-    assert len(steps) == 4
+    assert steps == ["pad_invalid", "resample", "zscore", "lock"]
     assert out.segmentation == "epoched"
 
 

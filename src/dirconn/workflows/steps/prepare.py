@@ -76,37 +76,70 @@ def _resample_mask(
 
 
 def resample(ts: TimeSeries, sfreq: float) -> TimeSeries:
-    """Resample to ``sfreq`` Hz with a polyphase filter.
+    """Resample to ``sfreq`` Hz with a polyphase filter, guarding against filter leakage.
 
     Parameters
     ----------
     ts : TimeSeries
         The record.
     sfreq : float
-        Target rate in Hz; the ratio to the current rate is approximated by a fraction with
-        denominator at most 1000. An equal rate returns the record unchanged.
+        Target rate in Hz. The ratio to the current rate must be a fraction with denominator at
+        most 10000 that reproduces ``sfreq`` exactly; an equal rate returns the record unchanged.
 
     Returns
     -------
     TimeSeries
-        The resampled record. An output sample is invalid when any original sample it covers was
-        invalid; it is a ``predict`` sample only when all original samples it covers were.
-        ``tmin`` is unchanged.
+        The resampled record. Data at invalid samples is zeroed before filtering. An output
+        sample is invalid when any original sample it covers was invalid, when it lies within
+        ``guard_samples`` output samples (the filter's half-length) of such a sample, or when it
+        lies within ``guard_samples`` of either end of a trial (edge transient). It is a
+        ``predict`` sample only when all original samples it covers were. ``valid`` is therefore
+        set even when the input had none. ``tmin`` is unchanged; the history entry records
+        ``up``, ``down`` and ``guard_samples``.
+
+    Raises
+    ------
+    ValueError
+        If the rate ratio is not exactly representable; the message names the nearest rate.
     """
     if sfreq == ts.sfreq:
         return ts
-    frac = Fraction(sfreq / ts.sfreq).limit_denominator(1000)
+    frac = Fraction(sfreq / ts.sfreq).limit_denominator(10000)
     up, down = frac.numerator, frac.denominator
-    data = signal.resample_poly(np.asarray(ts.data), up, down, axis=-1)
+    achieved = float(frac) * ts.sfreq
+    if up < 1 or abs(achieved - sfreq) > 1e-9 * sfreq:
+        raise ValueError(
+            f"Cannot resample {ts.sfreq} Hz to {sfreq} Hz: the ratio is not representable as a "
+            f"fraction with denominator <= 10000 (nearest representable rate: {achieved} Hz). "
+            "Choose a target rate with an exact ratio."
+        )
+    data = np.array(ts.data)
+    if ts.valid is not None:
+        data = np.where(np.asarray(ts.valid, dtype=bool)[:, None, :], data, 0.0)
+    data = signal.resample_poly(data, up, down, axis=-1)
     n_out = data.shape[-1]
-    valid = predict = None
+    half = -(-10 * max(up, down) // down)  # filter half-length in output samples
     if ts.valid is not None:
         valid = _resample_mask(np.asarray(ts.valid, dtype=bool), up, down, n_out, require_all=False)
+    else:
+        valid = np.ones((data.shape[0], n_out), dtype=bool)
+    if half > 0:
+        valid = ~ndimage.binary_dilation(~valid, structure=np.ones((1, 2 * half + 1), dtype=bool))
+        valid[:, :half] = False
+        valid[:, max(n_out - half, 0) :] = False
+    predict = None
     if ts.predict is not None:
         predict = _resample_mask(
             np.asarray(ts.predict, dtype=bool), up, down, n_out, require_all=True
         )
-    step = {"step": "resample", "from": ts.sfreq, "to": sfreq}
+    step = {
+        "step": "resample",
+        "from": ts.sfreq,
+        "to": sfreq,
+        "up": up,
+        "down": down,
+        "guard_samples": half,
+    }
     return _with_step(ts, step, data=data, sfreq=float(sfreq), valid=valid, predict=predict)
 
 
