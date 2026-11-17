@@ -75,6 +75,7 @@ class ImCoh(_CrossSpectral):
 
     info = MethodInfo(
         name="imcoh",
+        report_kind="spectrum",
         backend=_BACKEND,
         directed=False,
         antisymmetric=True,
@@ -137,6 +138,7 @@ class PSI(_CrossSpectral):
 
     info = MethodInfo(
         name="psi",
+        report_kind="spectrum",
         backend=_BACKEND,
         directed=True,
         antisymmetric=True,

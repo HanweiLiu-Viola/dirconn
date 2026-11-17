@@ -305,6 +305,10 @@ def residual_whiteness_check(
     return AssumptionCheck("residual_whiteness", "pass", detail=detail, value=pvalue)
 
 
+REPORT_KINDS: tuple[str, ...] = ("matrix", "spectrum", "time_frequency", "control")
+"""Allowed values of :attr:`MethodInfo.report_kind`."""
+
+
 @dataclass(frozen=True)
 class MethodInfo:
     """Structured description of a method, enforced at run time.
@@ -342,6 +346,12 @@ class MethodInfo:
         Whether the method uses the per-sample ``valid`` and ``predict`` masks of a
         :class:`~dirconn.TimeSeries`. :meth:`Estimator.fit` refuses masked data for a method that
         does not, instead of silently ignoring the masks.
+    report_kind : str
+        How a report draws the result, one of ``REPORT_KINDS``: ``"matrix"`` (one value per
+        pair), ``"spectrum"`` (a frequency axis), ``"time_frequency"`` (a time-frequency map) or
+        ``"control"`` (a control measure that is not a connectivity estimate in itself).
+    citations : tuple of str
+        Bibliography keys of the references for the method.
     """
 
     name: str
@@ -358,6 +368,8 @@ class MethodInfo:
     time_resolved: bool = False
     assumptions: tuple[str, ...] = ()
     supports_mask: bool = False
+    report_kind: str = "matrix"
+    citations: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         """Validate and normalise the fields."""
@@ -389,6 +401,9 @@ class MethodInfo:
                 f"assumptions must be among {STANDARD_ASSUMPTIONS}, got unknown {unknown}."
             )
         object.__setattr__(self, "assumptions", assumptions)
+        if self.report_kind not in REPORT_KINDS:
+            raise ValueError(f"report_kind must be among {REPORT_KINDS}, got {self.report_kind!r}.")
+        object.__setattr__(self, "citations", tuple(self.citations))
 
 
 class Estimator(ABC):

@@ -76,6 +76,25 @@ enforces it; the few accepted exceptions are listed in `[tool.importlinter]` in 
 decision 0002. The old top-level module paths (`dirconn.granger`, `dirconn.plotting`, ...) are
 deprecated shims that are removed in 0.4.0; new code and tests import the new paths.
 
+#### The app layer
+
+On top of the library sit two application packages that need the `app` extra (pydantic, joblib):
+`dirconn.workflows` (the typed configuration, input discovery, the preparation, estimation, test
+and control steps under `workflows/steps/`, the idempotent executor and the run provenance) and
+`dirconn.cli` (the `dirconn-bids` command, a thin layer over `workflows`). Dependencies point
+down only: no library subpackage imports `workflows` or `cli`; `workflows` does not import
+`simulation`, `validation`, `viz` or `cli`; the steps are pure functions of their inputs and the
+configuration, and only `workflows.participant` and the executor touch the disk. `lint-imports`
+checks these as two of its five contracts. `dirconn.cli` imports only the core package at module
+level, so `dirconn-bids --version`, `--help` and `list-methods` work without the extra; import
+`workflows` inside the functions that need it. The derivatives writer lives in
+`dirconn.io.derivatives` and does not import `workflows`. A change of the numbers the pipeline
+produces shows up in `tests/workflows/test_golden.py`; if it is intended, regenerate the golden file
+with `python tools/make_golden.py --out tests/workflows/golden/bids_tiny_gc_order3.json` and say why
+in the commit message. Options of the command line and fields of the configuration must be
+documented in `docs/usage.rst` and `docs/configuration.rst` (`tests/cli/test_docs_cover_the_cli.py`
+checks it).
+
 #### Style
 
 - Python 3.10+, line length 100, English docstrings in numpydoc style, type hints on public code.
@@ -234,7 +253,15 @@ runner live in `dirconn.validation.method_validation`; the metrics are in `dirco
 5. Export the class and its lower-case function in `src/dirconn/__init__.py` (import and
    `__all__`; `tests/test_public_api.py` pins the list, so add the names there too) and list them
    under "Estimators" in `docs/api.rst`.
-6. Add it to `dirconn.validation.method_validation.METHODS` and regenerate the validation report, so that it is
+6. Register it in `REGISTRY` in `src/dirconn/methods/registry.py` under its `info.name`, which makes
+   it available to the pipeline (`estimation.methods`) and to `dirconn-bids list-methods`. Set
+   `MethodInfo.report_kind` to how a report should draw the result (`"matrix"`, `"spectrum"`,
+   `"time_frequency"` or `"control"`; a `"control"` method is refused in `estimation.methods`
+   and runs only through `[controls]`). Leave `citations` empty: it will hold the bibliography keys
+   of the method's references once the reports that cite them arrive (0.3.0), and no shipped
+   method fills it yet. `tests/methods/test_registry.py` fails until every concrete estimator is registered under its
+   name, so add the name to `EXPECTED_NAMES` there.
+7. Add it to `dirconn.validation.method_validation.METHODS` and regenerate the validation report, so that it is
    evaluated against known truth from the day it exists (the simulation benchmark builds on the
    same scenarios).
 

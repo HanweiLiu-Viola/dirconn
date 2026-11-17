@@ -486,7 +486,12 @@ class TimeSeries:
 
     @classmethod
     def from_mne(
-        cls, inst: Any, picks: Sequence[str | int] | None = None, *, nan: str = "raise"
+        cls,
+        inst: Any,
+        picks: Sequence[str | int] | None = None,
+        *,
+        nan: str = "raise",
+        bad_annotations: str = "ignore",
     ) -> TimeSeries:
         """Build a time series from an MNE ``Raw`` or ``Epochs`` object.
 
@@ -504,6 +509,9 @@ class TimeSeries:
             Channel names or indices, in the order wanted. Overrides the default selection.
         nan : {"raise", "mask"}
             As in :meth:`from_array`: ``"mask"`` turns NaN samples (gaps) into invalid samples.
+        bad_annotations : {"ignore", "mask"}
+            ``"mask"`` makes samples under annotations whose description starts with ``bad``
+            (case-insensitive) invalid; it needs ``nan="mask"`` and a ``Raw`` object.
 
         Returns
         -------
@@ -511,7 +519,7 @@ class TimeSeries:
         """
         from dirconn.io.mne import timeseries_from_mne
 
-        return timeseries_from_mne(inst, picks, nan=nan, cls=cls)
+        return timeseries_from_mne(inst, picks, nan=nan, bad_annotations=bad_annotations, cls=cls)
 
 
 def _check_mask(mask: Any, name: str, shape: tuple[int, ...]) -> np.ndarray | None:

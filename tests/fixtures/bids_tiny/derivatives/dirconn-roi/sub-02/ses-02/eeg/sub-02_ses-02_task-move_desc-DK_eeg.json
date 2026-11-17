@@ -1,0 +1,12 @@
+{
+    "TaskName": "move",
+    "SamplingFrequency": 250.0,
+    "Dirconn": {
+        "Convention": "0",
+        "Atlas": "DK",
+        "Segmentation": "continuous",
+        "NTrials": 1,
+        "EpochLength": 10000,
+        "Tmin": 0.0
+    }
+}

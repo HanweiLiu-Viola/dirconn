@@ -7,9 +7,10 @@ than "is there connectivity": it rejects the null named in ``generator.null`` an
 ``generator.limitations`` lists how that null can be rejected for reasons other than coupling.
 
 Data with ``valid`` or ``predict`` masks (see :class:`~dirconn.TimeSeries`) can only be shuffled by
-whole trials: :class:`TrialShuffle` carries the masks with the trials. The generators that move
-samples within a trial (phase randomisation, AAFT, IAAFT, circular shifts, block shuffling) would
-mix invalid samples into valid ones and refuse masked data.
+whole units: :class:`TrialShuffle` carries the masks with the trials, :class:`BlockShuffle`
+drops the blocks that touch an invalid sample and carries ``predict`` with the rest. The generators
+that move samples within a trial (phase randomisation, AAFT, IAAFT, circular shifts) would mix
+invalid samples into valid ones and refuse masked data.
 """
 
 from __future__ import annotations
@@ -51,7 +52,7 @@ class SurrogateGenerator(ABC):
             raise ValueError(
                 f"The {self.name} surrogate does not support data with valid or predict masks: "
                 "it moves samples within a trial, so gaps and predicted samples would no longer "
-                "line up. Use TrialShuffle, which keeps whole trials with their masks."
+                "line up. Use TrialShuffle or BlockShuffle, which keep whole units with masks."
             )
 
     def prepare(self, data: TimeSeries) -> TimeSeries:
@@ -111,6 +112,13 @@ def limitations_table(generators: Sequence[SurrogateGenerator] | None = None) ->
         limits = "<br>".join(f"{i}. {text}" for i, text in enumerate(g.limitations, start=1))
         rows.append(f"| `{g.name}` | {g.null} | {limits} |")
     return "\n".join(rows)
+
+
+def _valid_runs(valid: np.ndarray) -> list[tuple[int, int]]:
+    """Return the ``(start, stop)`` of every contiguous run of True in a 1-D mask."""
+    padded = np.concatenate([[False], valid, [False]]).astype(np.int8)
+    edges = np.flatnonzero(np.diff(padded))
+    return [(int(lo), int(hi)) for lo, hi in zip(edges[::2], edges[1::2], strict=True)]
 
 
 def _shuffle_units(values: np.ndarray, rng: np.random.Generator) -> np.ndarray:
@@ -367,6 +375,13 @@ class BlockShuffle(SurrogateGenerator):
     is kept; the alignment of the blocks between channels is destroyed. This is the surrogate for
     continuous data when circular shifting is unsuitable.
 
+    Masked data are supported: blocks are cut inside each contiguous run of valid samples, so no
+    block contains an invalid sample and the kept blocks carry no ``valid`` mask; ``predict`` is
+    sliced into the kept blocks and travels with them (surrogate blocks combine ``predict`` as in
+    :class:`TrialShuffle`: a time point is predicted only where it is in every contributing
+    block). The loss is recorded in the history of the prepared data as ``n_blocks_total`` and
+    ``n_blocks_kept``.
+
     Use it through :func:`dirconn.surrogate_test`, which calls :meth:`prepare` first so that the
     observed result is computed on the same blocks.
 
@@ -378,6 +393,7 @@ class BlockShuffle(SurrogateGenerator):
     """
 
     name = "block_shuffle"
+    supports_mask = True
     null = (
         "between-channel coupling is explained by within-block structure "
         "(blocks are exchangeable within a channel)"
@@ -403,32 +419,79 @@ class BlockShuffle(SurrogateGenerator):
         """Return ``{"block_size": ...}``."""
         return {"block_size": self.block_size}
 
-    def prepare(self, data: TimeSeries) -> TimeSeries:
-        """Return the blocks of ``data`` as the trials of an epoched series."""
-        self._check_masks(data)
+    def blocks(self, data: TimeSeries) -> TimeSeries:
+        """Return the blocks of ``data`` as the trials of an epoched series.
+
+        Every trial is cut into non-overlapping blocks of ``block_size`` samples, starting at the
+        beginning of each contiguous run of valid samples (a trial without a ``valid`` mask is one
+        run); samples after the last whole block of a run are dropped. A block therefore never
+        contains an invalid sample, and the kept blocks carry no ``valid`` mask. ``predict`` is
+        sliced into the kept blocks and carried. The history of ``data`` is kept and gets a
+        ``block_shuffle_blocks`` entry with ``n_blocks_total`` (the blocks the record would give
+        without any mask) and ``n_blocks_kept``.
+
+        Raises
+        ------
+        ValueError
+            If fewer than two blocks are kept.
+        """
         size = self.block_size
         per_trial = data.n_times // size
-        if per_trial * data.n_trials < 2:
+        total = per_trial * data.n_trials
+        if total < 2:
             raise ValueError(
-                f"block_size={size} gives {per_trial * data.n_trials} block(s) from "
+                f"block_size={size} gives {total} block(s) from "
                 f"{data.n_trials} trial(s) of {data.n_times} samples; block shuffling needs "
                 "at least two blocks."
             )
-        used = per_trial * size
-        blocks = (
-            data.data[:, :, :used]
-            .reshape(data.n_trials, data.n_channels, per_trial, size)
-            .transpose(0, 2, 1, 3)
-            .reshape(data.n_trials * per_trial, data.n_channels, size)
-        )
-        return TimeSeries(blocks, data.sfreq, data.channels, "epoched", 0.0)
+        if not data.has_mask:
+            used = per_trial * size
+            blocks: np.ndarray = (
+                data.data[:, :, :used]
+                .reshape(data.n_trials, data.n_channels, per_trial, size)
+                .transpose(0, 2, 1, 3)
+                .reshape(total, data.n_channels, size)
+            )
+            n_kept = total
+            predict = None
+        else:
+            starts: list[tuple[int, int]] = []
+            for trial in range(data.n_trials):
+                if data.valid is None:
+                    runs = [(0, data.n_times)]
+                else:
+                    runs = _valid_runs(np.asarray(data.valid[trial], dtype=bool))
+                for lo, hi in runs:
+                    starts.extend((trial, lo + k * size) for k in range((hi - lo) // size))
+            n_kept = len(starts)
+            if n_kept < 2:
+                raise ValueError(
+                    f"block_size={size} leaves {n_kept} of {total} block(s) inside runs of valid "
+                    "samples; block shuffling needs at least two. Use a shorter block_size."
+                )
+            blocks = np.stack([data.data[t, :, s : s + size] for t, s in starts])
+            predict = None
+            if data.predict is not None:
+                predict = np.stack([np.asarray(data.predict[t, s : s + size]) for t, s in starts])
+        step = {"step": "block_shuffle_blocks", "n_blocks_total": total, "n_blocks_kept": n_kept}
+        out = TimeSeries(blocks, data.sfreq, data.channels, "epoched", 0.0, predict=predict)
+        return replace(out, history=(*data.history, step))
+
+    def prepare(self, data: TimeSeries) -> TimeSeries:
+        """Return the blocks of ``data`` as the trials of an epoched series (see :meth:`blocks`)."""
+        return self.blocks(data)
 
     def generate_one(self, data: TimeSeries, rng: np.random.Generator) -> TimeSeries:
         """Return one surrogate of data that went through :meth:`prepare`."""
-        self._check_masks(data)
-        if data.segmentation != "epoched" or data.n_times != self.block_size:
+        if (
+            data.segmentation != "epoched"
+            or data.n_times != self.block_size
+            or data.valid is not None
+        ):
             raise ValueError(
                 f"BlockShuffle expects blocks of {self.block_size} samples as trials; pass the "
                 "data through prepare() first (surrogate_test does this)."
             )
+        if data.predict is not None:
+            return TrialShuffle().generate_one(data, rng)
         return _with_data(data, _shuffle_units(data.data, rng))

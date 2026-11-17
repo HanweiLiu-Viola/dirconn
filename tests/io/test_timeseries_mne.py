@@ -14,6 +14,19 @@ def rng():
     return np.random.default_rng(1)
 
 
+def test_bad_annotations_mask_turns_bad_samples_invalid(rng):
+    data = rng.standard_normal((2, 1000)) * 1e-6
+    raw = mne.io.RawArray(data, _info(["Fz", "Cz"], "eeg"), verbose="error")
+    raw.set_annotations(mne.Annotations(onset=3.0, duration=1.5, description="BAD_segment"))
+    masked = TimeSeries.from_mne(raw, nan="mask", bad_annotations="mask")
+    summary = masked.mask_summary()
+    assert abs(summary["n_samples"] - summary["n_valid"] - 150) <= 1
+    assert TimeSeries.from_mne(raw, nan="mask", bad_annotations="ignore").valid is None
+    assert TimeSeries.from_mne(raw, nan="mask").valid is None
+    with pytest.raises(ValueError, match='needs nan="mask"'):
+        TimeSeries.from_mne(raw, nan="raise", bad_annotations="mask")
+
+
 def test_raw_becomes_continuous_time_series(rng):
     data = rng.standard_normal((3, 300)) * 1e-6
     raw = mne.io.RawArray(data, _info(["Fz", "Cz", "Pz"], "eeg"), verbose="error")

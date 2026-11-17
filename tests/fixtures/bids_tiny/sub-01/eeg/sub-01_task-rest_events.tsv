@@ -1,0 +1,8 @@
+onset	duration	trial_type	value	sample
+2.0	0.0	cue	2	1000
+5.0	0.8	BAD_segment	1	2500
+6.0	0.0	cue	2	3000
+10.0	0.0	cue	2	5000
+12.0	0.7	BAD_segment	1	6000
+14.0	0.0	cue	2	7000
+18.0	0.0	cue	2	9000

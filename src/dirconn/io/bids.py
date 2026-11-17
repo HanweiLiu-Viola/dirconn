@@ -246,6 +246,7 @@ def read_bids(
     level: str = "sensor",
     description: str | None = None,
     nan: str = "raise",
+    bad_annotations: str = "ignore",
 ) -> TimeSeries:
     """Read one recording from a BIDS dataset as a :class:`TimeSeries`.
 
@@ -267,6 +268,9 @@ def read_bids(
     nan : {"raise", "mask"}
         What to do with NaN samples, as in :meth:`TimeSeries.from_array`: ``"mask"`` replaces
         them by 0 and marks them invalid in ``TimeSeries.valid`` (gaps in the recording).
+    bad_annotations : {"ignore", "mask"}
+        Sensor level only: ``"mask"`` also marks samples under ``BAD_`` annotations invalid (needs
+        ``nan="mask"``). Ignored for ``level="roi"``, where invalid samples are stored as NaN.
 
     Returns
     -------
@@ -285,11 +289,18 @@ def read_bids(
     if level == "roi":
         assert description is not None
         return _read_roi(root, subject, task, session, run, datatype, description, nan)
-    return _read_sensor(root, subject, task, session, run, datatype, nan)
+    return _read_sensor(root, subject, task, session, run, datatype, nan, bad_annotations)
 
 
 def _read_sensor(
-    root: Path, subject: str, task: str, session: str | None, run: Any, datatype: str, nan: str
+    root: Path,
+    subject: str,
+    task: str,
+    session: str | None,
+    run: Any,
+    datatype: str,
+    nan: str,
+    bad_annotations: str = "ignore",
 ) -> TimeSeries:
     from mne_bids import BIDSPath, read_raw_bids
 
@@ -305,7 +316,7 @@ def _read_sensor(
     if not path.directory.is_dir():
         raise FileNotFoundError(f"{path.directory} does not exist.")
     raw = read_raw_bids(path, verbose="error")
-    series = TimeSeries.from_mne(raw, nan=nan)
+    series = TimeSeries.from_mne(raw, nan=nan, bad_annotations=bad_annotations)
 
     # Epoched recordings are stored as concatenated trials; the sidecar says how to split them.
     sidecar_path = path.copy().update(extension=".json").fpath

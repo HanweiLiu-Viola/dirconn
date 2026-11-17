@@ -1,0 +1,16 @@
+{
+    "Name": "dirconn region-level time series",
+    "BIDSVersion": "1.9.0",
+    "DatasetType": "derivative",
+    "Authors": [
+        "[Unspecified1]",
+        "[Unspecified2]"
+    ],
+    "GeneratedBy": [
+        {
+            "Name": "dirconn",
+            "Version": "0.1.0",
+            "Description": "Region-level time series, dirconn convention 0 (not part of the BIDS specification)."
+        }
+    ]
+}

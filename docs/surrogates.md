@@ -20,8 +20,10 @@ number never travels without its premise.
 | `block_shuffle` | every block of every channel (blocks of `block_size` samples) | nothing else | alignment of the blocks between channels |
 
 Data with `valid` or `predict` masks (see [Gaps, selected samples and event locks](masks.md))
-can only be tested with `trial_shuffle`, which carries the masks with the trials; the other
-generators move samples within a trial and refuse masked data.
+can be tested with `trial_shuffle`, which carries the masks with the trials, and with
+`block_shuffle`, which cuts blocks inside each run of valid samples (the numbers of blocks
+total and kept are recorded in the history of the prepared data) and carries `predict` with the
+remaining blocks. The other generators move samples within a trial and refuse masked data.
 
 ## Null hypotheses and their limitations
 

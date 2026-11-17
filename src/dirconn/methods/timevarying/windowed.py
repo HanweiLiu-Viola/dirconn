@@ -90,6 +90,7 @@ class WDTF(Estimator):
 
     info = MethodInfo(
         name="wdtf",
+        report_kind="time_frequency",
         backend=_BACKEND,
         directed=True,
         min_nodes=2,

@@ -166,6 +166,7 @@ class TE(Estimator):
 
     info = MethodInfo(
         name="te",
+        report_kind="matrix",
         backend=(
             "own KSG conditional mutual information (Frenzel-Pompe) with scipy cKDTree or brute "
             "force in PyTorch; greedy multivariate selection after IDTxl"

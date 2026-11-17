@@ -239,3 +239,30 @@ def test_asymmetry_refuses_complex_results_and_non_estimators():
         time_reversal_asymmetry(_Complex(), _ramp())
     with pytest.raises(TypeError, match="Estimator"):
         time_reversal_asymmetry(lambda d: d, _ramp())
+
+
+def test_reverse_time_reverses_the_masks_and_keeps_the_history():
+    data = _lagged(0, n_times=600)
+    valid = np.ones((1, 600), dtype=bool)
+    valid[0, 10:20] = False
+    predict = np.zeros((1, 600), dtype=bool)
+    predict[0, 300:] = True
+    masked = TimeSeries.from_array(data.data[0], SFREQ, valid=valid, predict=predict)
+    back = reverse_time(masked)
+    np.testing.assert_array_equal(back.valid, valid[:, ::-1])
+    np.testing.assert_array_equal(back.predict, predict[:, ::-1])
+    assert back.history == masked.history
+
+
+def test_trgc_fits_masked_data_and_records_the_masks():
+    data = _lagged(1, n_times=3000)
+    valid = np.ones((1, 3000), dtype=bool)
+    valid[0, 1000:1100] = False
+    masked = TimeSeries.from_array(data.data[0], SFREQ, valid=valid)
+    assert TRGC.info.supports_mask
+    result = _fit(TRGC(order=2), masked)
+    assert result.provenance.details["masks"]["n_valid"] == 2900
+    assert result.values[0, 1, 0, 0] > 0.1
+    plain = _fit(TRGC(order=2), data)
+    again = _fit(TRGC(order=2), TimeSeries.from_array(data.data[0], SFREQ))
+    np.testing.assert_array_equal(plain.values, again.values)

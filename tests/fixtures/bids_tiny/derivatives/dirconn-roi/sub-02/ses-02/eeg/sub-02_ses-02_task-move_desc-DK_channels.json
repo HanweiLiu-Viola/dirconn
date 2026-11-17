@@ -1,0 +1,24 @@
+{
+    "region": {
+        "Description": "Region label of the node, for example a Desikan-Killiany label or STN."
+    },
+    "hemisphere": {
+        "Description": "Hemisphere of the node.",
+        "Levels": {
+            "lh": "left",
+            "rh": "right",
+            "mid": "midline"
+        }
+    },
+    "atlas": {
+        "Description": "Atlas the region label comes from; n/a for direct channels."
+    },
+    "node_kind": {
+        "Description": "What the channel represents in the connectivity analysis.",
+        "Levels": {
+            "sensor": "scalp or MEG sensor",
+            "cortical": "cortical region of interest extracted from a source estimate",
+            "direct": "invasive channel used as recorded, for example an STN LFP"
+        }
+    }
+}

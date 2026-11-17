@@ -1,0 +1,72 @@
+{
+  "sub-01_task-move": {
+    "precuneus-lh|postcentral-lh": 0.19019277251364838,
+    "precuneus-lh|superiorfrontal-lh": 7.141727473952004e-05,
+    "precuneus-lh|STN-L": 0.008494909302206474,
+    "postcentral-lh|precuneus-lh": 0.04704187015096877,
+    "postcentral-lh|superiorfrontal-lh": 0.00046824804314882066,
+    "postcentral-lh|STN-L": 0.04070113944825767,
+    "superiorfrontal-lh|precuneus-lh": 6.059696000383715e-05,
+    "superiorfrontal-lh|postcentral-lh": 5.207934299122719e-05,
+    "superiorfrontal-lh|STN-L": 3.6317825456569795e-05,
+    "STN-L|precuneus-lh": 0.013974066037379,
+    "STN-L|postcentral-lh": 0.20938205397087753,
+    "STN-L|superiorfrontal-lh": 0.00035606612741304354
+  },
+  "sub-01_task-rest_run-1": {
+    "precuneus-lh|postcentral-lh": 0.23355609278258782,
+    "precuneus-lh|superiorfrontal-lh": 4.718497960172772e-05,
+    "precuneus-lh|STN-L": 0.03665652674033287,
+    "postcentral-lh|precuneus-lh": 0.07983238201689226,
+    "postcentral-lh|superiorfrontal-lh": 0.00019768630225163155,
+    "postcentral-lh|STN-L": 0.031474960154099486,
+    "superiorfrontal-lh|precuneus-lh": 0.00016054062832160425,
+    "superiorfrontal-lh|postcentral-lh": 5.974209641446419e-05,
+    "superiorfrontal-lh|STN-L": 0.00020649185261305562,
+    "STN-L|precuneus-lh": 0.029026055310429122,
+    "STN-L|postcentral-lh": 0.005294139542217151,
+    "STN-L|superiorfrontal-lh": 1.9666030913405866e-05
+  },
+  "sub-01_task-rest_run-2": {
+    "precuneus-lh|postcentral-lh": 0.23714975049795703,
+    "precuneus-lh|superiorfrontal-lh": 6.476902732705158e-05,
+    "precuneus-lh|STN-L": 0.028637199671363463,
+    "postcentral-lh|precuneus-lh": 0.08686260164884835,
+    "postcentral-lh|superiorfrontal-lh": 0.0006299444107368215,
+    "postcentral-lh|STN-L": 0.03708765053455226,
+    "superiorfrontal-lh|precuneus-lh": 0.00012746388486972683,
+    "superiorfrontal-lh|postcentral-lh": 0.0003225763196420513,
+    "superiorfrontal-lh|STN-L": 9.17699894630655e-05,
+    "STN-L|precuneus-lh": 0.025636362705247467,
+    "STN-L|postcentral-lh": 0.005508232029305377,
+    "STN-L|superiorfrontal-lh": 0.0002167711038910459
+  },
+  "sub-02_ses-01_task-rest": {
+    "precuneus-lh|postcentral-lh": 0.22503855033916229,
+    "precuneus-lh|superiorfrontal-lh": 0.0001146554342255459,
+    "precuneus-lh|STN-L": 0.045878677650234276,
+    "postcentral-lh|precuneus-lh": 0.08213482465182376,
+    "postcentral-lh|superiorfrontal-lh": 0.00012021004401917297,
+    "postcentral-lh|STN-L": 0.03037861065820028,
+    "superiorfrontal-lh|precuneus-lh": 0.000313658464705281,
+    "superiorfrontal-lh|postcentral-lh": 4.800660338491211e-05,
+    "superiorfrontal-lh|STN-L": 2.2387202532037397e-05,
+    "STN-L|precuneus-lh": 0.029587043634578068,
+    "STN-L|postcentral-lh": 0.007718201801436182,
+    "STN-L|superiorfrontal-lh": 0.00011228925526245525
+  },
+  "sub-02_ses-02_task-move": {
+    "precuneus-lh|postcentral-lh": 0.19942465536268353,
+    "precuneus-lh|superiorfrontal-lh": 0.0001849628804475908,
+    "precuneus-lh|STN-L": 0.012188694445020354,
+    "postcentral-lh|precuneus-lh": 0.04363101528557827,
+    "postcentral-lh|superiorfrontal-lh": 0.0001471330938578445,
+    "postcentral-lh|STN-L": 0.04056444725384091,
+    "superiorfrontal-lh|precuneus-lh": 9.742714464184126e-05,
+    "superiorfrontal-lh|postcentral-lh": 7.48226923603718e-05,
+    "superiorfrontal-lh|STN-L": 6.403755847687658e-05,
+    "STN-L|precuneus-lh": 0.012249376192922693,
+    "STN-L|postcentral-lh": 0.2135238555615383,
+    "STN-L|superiorfrontal-lh": 0.00027261591674621673
+  }
+}
