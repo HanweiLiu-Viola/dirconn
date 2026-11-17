@@ -283,6 +283,7 @@ def _prepared(unit: InputUnit, cfg: PipelineConfig, work_dir: Path) -> TimeSerie
         level=unit.level,
         description=cfg.input.description,
         node_kinds=cfg.input.node_kinds,
+        bad_annotations="ignore" if cfg.prepare.bad_segments == "ignore" else "mask",
     )
     ts = prepare(raw, cfg.prepare, events_tsv=events_tsv_for(unit))
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -301,11 +302,15 @@ def _write(
     cfg: PipelineConfig,
     bids_dir: Path,
     *,
+    ts: TimeSeries,
     desc: str,
     conn: Connectivity,
     bands: Mapping[str, Connectivity],
     tests: Sequence[Any],
 ) -> ResultFiles:
+    """Write one result; node kinds and sampling rate come from the prepared series ``ts``."""
+    kinds = {ch.name: ch.node_kind for ch in ts.channels}
+    node_kinds = [kinds[name] for name in conn.source] if set(conn.source) <= set(kinds) else None
     return write_result(
         root,
         unit.entities(),
@@ -318,6 +323,8 @@ def _write(
         bids_dir=Path(bids_dir),
         task_key=task.key,
         long_table=cfg.output.long_table,
+        node_kinds=node_kinds,
+        sfreq=ts.sfreq,
     )
 
 
@@ -365,7 +372,9 @@ def run_controls_task(
     _write_atomic(path, json.dumps(record, indent=2) + "\n")
     control = time_reversal_control(ts, cfg.estimation, cfg.controls)
     if control is not None:
-        _write(root, unit, task, cfg, bids_dir, desc="trgc", conn=control, bands={}, tests=())
+        _write(
+            root, unit, task, cfg, bids_dir, ts=ts, desc="trgc", conn=control, bands={}, tests=()
+        )
     return path
 
 
@@ -414,6 +423,7 @@ def run_unit_task(
         task,
         cfg,
         bids_dir,
+        ts=ts,
         desc=method,
         conn=est.full,
         bands=est.bands,

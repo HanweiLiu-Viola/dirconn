@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from dirconn.io.readers import READERS, read_unit
@@ -64,3 +65,23 @@ def test_unknown_pair_lists_known_readers(bids_tiny):
             description=None,
             node_kinds=(),
         )
+
+
+def test_sensor_reader_in_ignore_mode_keeps_the_bad_segment_samples(bids_tiny):
+    ts = read_unit(
+        bids_tiny,
+        subject="01",
+        session=None,
+        task="rest",
+        run=None,
+        datatype="eeg",
+        level="sensor",
+        description=None,
+        node_kinds=(),
+        bad_annotations="ignore",
+    )
+    assert not ts.has_mask
+    start, stop = int(5.0 * ts.sfreq), int(5.8 * ts.sfreq)
+    segment = ts.data[0, :, start:stop]
+    assert np.all(np.isfinite(segment))
+    assert np.count_nonzero(segment) > 0.9 * segment.size

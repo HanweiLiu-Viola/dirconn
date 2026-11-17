@@ -93,3 +93,29 @@ def test_runs_are_weighted_by_length():
     _, pb = signal.welch(x[:, 800:1800], fs=SFREQ, nperseg=500, axis=-1)
     assert np.allclose(sr.psd, (pa * 600 + pb * 1000) / 1600)
     assert not np.allclose(sr.psd, (pa + pb) / 2)
+
+
+def test_short_epochs_are_used_whole():
+    rng = np.random.default_rng(2)
+    epochs = rng.standard_normal((6, 2, int(1.5 * SFREQ)))
+    ts = TimeSeries.from_array(epochs, SFREQ, segmentation="epoched")
+    sr = spectral_dynamic_range(ts, BANDS)
+    assert sr.freqs.size == epochs.shape[-1] // 2 + 1
+    _, pxx = signal.welch(epochs, fs=SFREQ, nperseg=epochs.shape[-1], axis=-1)
+    assert np.allclose(sr.psd, pxx.mean(axis=0))
+
+
+def test_default_nperseg_is_capped_at_the_longest_valid_run():
+    x = _white(seconds=4)
+    valid = np.zeros(x.shape[-1], dtype=bool)
+    valid[100:400] = True
+    valid[500:700] = True
+    sr = spectral_dynamic_range(TimeSeries.from_array(x, SFREQ, valid=valid), BANDS)
+    _, pxx = signal.welch(x[:, 100:400], fs=SFREQ, nperseg=300, axis=-1)
+    assert np.allclose(sr.psd, pxx)
+
+
+def test_a_run_of_exactly_nperseg_samples_is_used():
+    x = _white(seconds=4)
+    sr = spectral_dynamic_range(TimeSeries.from_array(x, SFREQ), BANDS, nperseg=x.shape[-1])
+    assert sr.freqs.size == x.shape[-1] // 2 + 1

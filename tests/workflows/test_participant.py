@@ -384,3 +384,104 @@ def test_setup_logging_is_idempotent(tmp_path: Path) -> None:
     assert not [h for h in logger.handlers if getattr(h, "_dirconn_handler", False)]
     text = (tmp_path / "b" / "dirconn.log").read_text(encoding="utf-8")
     assert "DEBUG dirconn.x: quiet on stderr, kept in the file" in text
+
+
+def test_pipeline_sidecars_record_node_kinds_and_sampling_rate(first_run: Run) -> None:
+    for unit in first_run.units:
+        ts = _prepared(unit, first_run.cfg, first_run.out / "work")
+        kinds = {ch.name: ch.node_kind for ch in ts.channels}
+        directory = unit_dir(first_run.root, unit.entities(), unit.datatype)
+        for desc in ("gc", "trgc"):
+            path = directory / f"{unit.label()}_desc-{desc}_conn.json"
+            meta = json.loads(path.read_text(encoding="utf-8"))
+            assert meta["NodeKinds"] == [kinds[name] for name in meta["NodeLabels"]], path
+            assert meta["SamplingFrequency"] == ts.sfreq, path
+        assert "direct" in kinds.values()
+
+
+def _run_units(bids: Path, out: Path, cfg: PipelineConfig, units: list[InputUnit]) -> Run:
+    resources = Resources(nprocs=1, omp_nthreads=1, mem_mb=None, work_dir=out / "work")
+    summary = run_participant(
+        cfg,
+        bids_dir=bids,
+        out_dir=out,
+        units=units,
+        resources=resources,
+        argv=["dirconn"],
+        verbosity=1,
+    )
+    return Run(bids, out, cfg, units, summary)
+
+
+TIME_VARYING_CONFIG = """\
+[prepare]
+resample_hz = "null"
+bad_segments = "ignore"
+
+[estimation]
+methods = ["adtf"]
+order = 2
+
+[estimation.bands]
+beta = [13.0, 30.0]
+
+[estimation.adtf]
+n_freqs = 16
+fmax = 40.0
+
+[statistics]
+n_surrogates = 2
+block_seconds = 2.0
+
+[controls]
+time_reversal = false
+"""
+
+
+def test_time_varying_method_writes_a_header_only_edges_table(
+    bids_tiny_copy: Path, tmp_path: Path
+) -> None:
+    cfg = _config(tmp_path, base=TIME_VARYING_CONFIG)
+    units = _units(bids_tiny_copy, cfg)[:1]
+    run = _run_units(bids_tiny_copy, tmp_path / "out", cfg, units)
+    assert (run.summary.done, run.summary.failed) == (2, 0)
+    (table,) = run.root.rglob("*_desc-adtf_edges.tsv")
+    edges = read_edges(table)
+    assert list(edges.columns) == ["source", "target", "band", "value", "p", "p_adj", "significant"]
+    assert len(edges) == 0
+    (sidecar,) = run.root.rglob("*_desc-adtf_conn.json")
+    meta = json.loads(sidecar.read_text(encoding="utf-8"))
+    assert meta["Statistics"]
+
+
+EPOCHED_SENSOR_CONFIG = """\
+[input]
+level = "sensor"
+datatypes = ["eeg"]
+
+[prepare]
+resample_hz = "null"
+
+[prepare.lock]
+events = ["cue"]
+tmin = -0.5
+tmax = 1.0
+
+[estimation]
+methods = ["gc"]
+order = 3
+
+[statistics]
+n_surrogates = 5
+"""
+
+
+def test_short_epochs_run_the_controls_task(bids_tiny_copy: Path, tmp_path: Path) -> None:
+    cfg = _config(tmp_path, base=EPOCHED_SENSOR_CONFIG)
+    units = [u for u in _units(bids_tiny_copy, cfg) if u.task == "rest"]
+    assert len(units) == 1
+    run = _run_units(bids_tiny_copy, tmp_path / "out", cfg, units)
+    assert (run.summary.done, run.summary.failed) == (2, 0)
+    diag = json.loads(diagnostics_path(run.root, units[0]).read_text(encoding="utf-8"))
+    assert diag["task_key"] == _controls_key(units[0], cfg)
+    assert len(list(run.root.rglob("*_desc-trgc_conn.json"))) == 1

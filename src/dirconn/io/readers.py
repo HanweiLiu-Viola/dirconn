@@ -9,7 +9,8 @@ from dirconn.data.timeseries import TimeSeries
 from dirconn.io.bids import read_bids
 
 Reader = Callable[..., TimeSeries]
-"""``reader(root, *, subject, session, task, run, datatype, description, node_kinds)``."""
+"""``reader(root, *, subject, session, task, run, datatype, description, node_kinds,
+bad_annotations)``."""
 
 _DATATYPES = ("eeg", "meg", "ieeg")
 
@@ -24,7 +25,9 @@ def _roi_reader(
     datatype: str,
     description: str | None,
     node_kinds: Collection[str],
+    bad_annotations: str = "mask",
 ) -> TimeSeries:
+    # bad_annotations only applies to sensor recordings: NaN in an ROI file is always masked.
     series = read_bids(
         root,
         subject=subject,
@@ -56,6 +59,7 @@ def _sensor_reader(
     datatype: str,
     description: str | None = None,
     node_kinds: Collection[str] = (),
+    bad_annotations: str = "mask",
 ) -> TimeSeries:
     # description and node_kinds only apply to ROI derivatives.
     return read_bids(
@@ -67,7 +71,7 @@ def _sensor_reader(
         datatype=datatype,
         level="sensor",
         nan="mask",
-        bad_annotations="mask",
+        bad_annotations=bad_annotations,
     )
 
 
@@ -88,8 +92,26 @@ def read_unit(
     level: str,
     description: str | None,
     node_kinds: Collection[str],
+    bad_annotations: str = "mask",
 ) -> TimeSeries:
-    """Read one analysis unit with the reader registered for ``(datatype, level)``."""
+    """Read one analysis unit with the reader registered for ``(datatype, level)``.
+
+    Parameters
+    ----------
+    root : Path
+        BIDS root (sensor level) or ROI derivatives root.
+    subject, session, task, run, datatype : str or None
+        Entities of the unit.
+    level : {"roi", "sensor"}
+        Node level; selects the reader together with ``datatype``.
+    description : str or None
+        ``desc`` entity of the ROI file (ROI level only).
+    node_kinds : collection of str
+        Node kinds to keep (ROI level only).
+    bad_annotations : {"mask", "ignore"}
+        Sensor level: ``"mask"`` marks ``BAD_`` annotated samples invalid, ``"ignore"`` keeps
+        them as recorded. NaN samples are masked in both modes and at both levels.
+    """
     try:
         reader = READERS[(datatype, level)]
     except KeyError:
@@ -104,4 +126,5 @@ def read_unit(
         datatype=datatype,
         description=description,
         node_kinds=node_kinds,
+        bad_annotations=bad_annotations,
     )

@@ -88,6 +88,10 @@ class SpectralRange:
         }
 
 
+_MIN_NPERSEG = 64
+"""Shortest Welch segment the default ``nperseg`` uses."""
+
+
 def _valid_runs(valid: np.ndarray) -> list[tuple[int, int]]:
     """Return ``(start, stop)`` of the maximal runs of True in a 1-D mask."""
     padded = np.concatenate(([False], valid, [False])).astype(np.int8)
@@ -104,8 +108,8 @@ def spectral_dynamic_range(
     """Compare the Welch power of the bands per channel.
 
     Every trial is cut into its maximal runs of valid samples (the whole trial without a mask) and
-    Welch's method is applied to each run longer than ``nperseg``; the spectra are averaged over
-    runs and trials, weighted by run length. Shorter runs are skipped.
+    Welch's method is applied to each run of at least ``nperseg`` samples; the spectra are
+    averaged over runs and trials, weighted by run length. Shorter runs are skipped.
 
     Parameters
     ----------
@@ -114,7 +118,8 @@ def spectral_dynamic_range(
     bands : mapping of str to (float, float)
         Named bands ``(lo, hi)`` in Hz; the power of a band is the mean PSD over ``lo <= f < hi``.
     nperseg : int, optional
-        Welch segment length; default ``min(n_times, int(2 * sfreq))``, at least 64.
+        Welch segment length; default ``int(2 * sfreq)`` capped at the longest run of valid
+        samples (so that short epochs are used whole), but at least 64.
 
     Returns
     -------
@@ -124,28 +129,30 @@ def spectral_dynamic_range(
     Raises
     ------
     ValueError
-        If no run of valid samples is longer than ``nperseg``, or a band holds no frequency bin.
+        If no run of valid samples has ``nperseg`` samples, or a band holds no frequency bin.
     """
     data = np.asarray(ts.data, dtype=float)
     n_trials, n_channels, n_times = data.shape
-    if nperseg is None:
-        nperseg = max(64, min(n_times, int(2 * ts.sfreq)))
-    nperseg = int(nperseg)
     valid = ts.valid if ts.valid is not None else np.ones((n_trials, n_times), dtype=bool)
+    runs = [_valid_runs(np.asarray(valid[trial], dtype=bool)) for trial in range(n_trials)]
+    if nperseg is None:
+        longest = max((stop - start for trial in runs for start, stop in trial), default=0)
+        nperseg = max(_MIN_NPERSEG, min(int(2 * ts.sfreq), longest))
+    nperseg = int(nperseg)
 
     total = np.zeros((n_channels, nperseg // 2 + 1))
     weight = 0
     freqs = np.fft.rfftfreq(nperseg, 1.0 / ts.sfreq)
     for trial in range(n_trials):
-        for start, stop in _valid_runs(np.asarray(valid[trial], dtype=bool)):
-            if stop - start <= nperseg:
+        for start, stop in runs[trial]:
+            if stop - start < nperseg:
                 continue
             _, pxx = signal.welch(data[trial, :, start:stop], fs=ts.sfreq, nperseg=nperseg, axis=-1)
             total += pxx * (stop - start)
             weight += stop - start
     if weight == 0:
         raise ValueError(
-            f"No run of valid samples is longer than nperseg={nperseg} "
+            f"No run of valid samples has nperseg={nperseg} samples "
             f"({nperseg / ts.sfreq:.2f} s); cannot estimate the spectrum."
         )
     psd = total / weight

@@ -2,7 +2,8 @@
 
 A result is one NetCDF file (the full-spectrum :class:`~dirconn.Connectivity`), a JSON sidecar with
 the fields a reader needs without opening it, and an optional long ``_edges.tsv`` table with one
-row per ordered pair and band. See ``docs/decisions/0003-derivatives-layout.md``.
+row per ordered pair and band. The sidecar is written last and marks the result as complete.
+See ``docs/decisions/0003-derivatives-layout.md``.
 
 This module does not import :mod:`dirconn.workflows`; the significance results are described by the
 :class:`BandTestLike` protocol.
@@ -11,6 +12,7 @@ This module does not import :mod:`dirconn.workflows`; the significance results a
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from importlib import metadata
@@ -109,11 +111,24 @@ def filename(entities: Mapping[str, str], *, desc: str, suffix: str, ext: str) -
     return "_".join(parts) + f"_{suffix}{ext}"
 
 
+def _json_text(payload: Mapping[str, Any]) -> str:
+    return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+
+
 def _write_json(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+    path.write_text(_json_text(payload), encoding="utf-8")
+
+
+def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
+    """Write ``payload`` to a temporary file next to ``path`` and move it into place."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(_json_text(payload), encoding="utf-8")
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def write_dataset_description(
@@ -214,6 +229,9 @@ def _edge_rows(
         items = []
     rows: list[dict[str, Any]] = []
     for name, bc in items:
+        if bc.values.shape[2:] != (1, 1):
+            # A time-resolved band keeps its time axis: no single value per pair.
+            continue
         vals = _pair_values(bc)
         test = by_band.get(name)
         for i, s in enumerate(bc.source):
@@ -253,8 +271,10 @@ def write_result(
     bids_dir: Path,
     task_key: str,
     long_table: bool,
+    node_kinds: Sequence[str] | None = None,
+    sfreq: float | None = None,
 ) -> ResultFiles:
-    """Write the NetCDF file, the sidecar and (optionally) the long edge table of one result.
+    """Write the NetCDF file, the (optional) long edge table and the sidecar of one result.
 
     Parameters
     ----------
@@ -281,13 +301,32 @@ def write_result(
     long_table : bool
         Whether to write ``_edges.tsv``. Complex values are written as magnitudes
         (``ValueIsMagnitude`` in the sidecar). A result without bands is tabulated only when it
-        has no frequency or time axis; otherwise the table has no rows.
+        has no frequency or time axis, and a band only when it has no time axis; otherwise the
+        table has the header only.
+    node_kinds : sequence of str, optional
+        Node kind of each entry of ``conn.source`` (``NodeKinds`` in the sidecar); omitted when
+        ``None``.
+    sfreq : float, optional
+        Sampling rate in Hz of the series the result was estimated on (``SamplingFrequency``);
+        omitted when ``None``.
 
     Returns
     -------
     ResultFiles
         The written paths.
+
+    Raises
+    ------
+    ValueError
+        If ``node_kinds`` does not have one entry per node.
+
+    Notes
+    -----
+    The sidecar is written last and atomically: it carries the task key that marks the task as
+    done, so a run interrupted before it (or failing while writing the table) is redone.
     """
+    if node_kinds is not None and len(node_kinds) != len(conn.source):
+        raise ValueError(f"node_kinds has {len(node_kinds)} entries for {len(conn.source)} nodes.")
     directory = unit_dir(root, entities, datatype)
     directory.mkdir(parents=True, exist_ok=True)
     nc = directory / filename(entities, desc=desc, suffix="conn", ext=".nc")
@@ -295,6 +334,8 @@ def write_result(
     edges = directory / filename(entities, desc=desc, suffix="edges", ext=".tsv")
 
     conn.to_netcdf(nc)
+    if long_table:
+        _edge_rows(conn, bands, tests).to_csv(edges, sep="\t", index=False, na_rep="n/a")
 
     prov = conn.provenance
     meta: dict[str, Any] = {
@@ -314,21 +355,14 @@ def write_result(
         "Statistics": _statistics(tests),
     }
     meta["Bands"] = _band_limits(bands)
-    kinds = prov.preprocessing.get("node_kinds")
-    if kinds is not None:
-        meta["NodeKinds"] = kinds
-    sfreq = prov.preprocessing.get("sfreq")
+    if node_kinds is not None:
+        meta["NodeKinds"] = list(node_kinds)
     if sfreq is not None:
-        meta["SamplingFrequency"] = sfreq
+        meta["SamplingFrequency"] = float(sfreq)
     if np.iscomplexobj(conn.values):
         meta["ValueIsMagnitude"] = True
-    _write_json(sidecar, _plain(meta))
-
-    if long_table:
-        df = _edge_rows(conn, bands, tests)
-        df.to_csv(edges, sep="\t", index=False, na_rep="n/a")
-        return ResultFiles(nc=nc, json=sidecar, edges=edges)
-    return ResultFiles(nc=nc, json=sidecar, edges=None)
+    _write_json_atomic(sidecar, _plain(meta))
+    return ResultFiles(nc=nc, json=sidecar, edges=edges if long_table else None)
 
 
 def _band_limits(bands: Mapping[str, Connectivity]) -> dict[str, list[float] | None]:
