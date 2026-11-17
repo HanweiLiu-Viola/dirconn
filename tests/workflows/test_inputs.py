@@ -11,6 +11,7 @@ import pytest
 from dirconn.workflows.inputs import (
     InputDiscoveryError,
     InputUnit,
+    _find_recordings,
     derivatives_root,
     discover,
 )
@@ -61,6 +62,18 @@ def test_sensor_level_finds_the_eeg_recording(bids_tiny: Path) -> None:
     assert units[0].root == bids_tiny
     assert units[0].files[0].suffix == ".vhdr"
     assert units[0].level == "sensor"
+
+
+def test_recordings_are_listed_from_the_subject_folders_only(bids_tiny: Path) -> None:
+    # mne-bids 0.17's find_matching_paths entered derivatives/ and rebuilt those paths against
+    # the raw root, so they pointed at files that do not exist.
+    raw = _find_recordings(bids_tiny, ["meg", "eeg", "ieeg"])
+    assert [p.fpath.name for p in raw] == ["sub-01_task-rest_eeg.vhdr"]
+    roi = _find_recordings(derivatives_root(bids_tiny), ["meg", "eeg", "ieeg"])
+    assert [p.fpath.name for p in roi] == [f"{label}_desc-DK_eeg.fif" for label in ROI_LABELS]
+    for path in raw + roi:
+        assert Path(path.fpath).is_file()
+        assert path.datatype == "eeg"
 
 
 def test_participant_label_filters_with_or_without_prefix(bids_tiny: Path) -> None:

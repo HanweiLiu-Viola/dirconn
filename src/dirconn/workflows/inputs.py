@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from mne_bids import find_matching_paths
+from mne_bids import BIDSPath, get_bids_path_from_fname
 
 __all__ = ["InputDiscoveryError", "InputUnit", "derivatives_root", "discover"]
 
@@ -26,6 +26,40 @@ _PREFIX = {"subject": "sub-", "session": "ses-", "task": "task-", "run": "run-"}
 
 class InputDiscoveryError(ValueError):
     """Raised when the inputs of a run cannot be determined unambiguously."""
+
+
+def _find_recordings(root: Path, datatypes: Sequence[str]) -> list[BIDSPath]:
+    """List the data files below the subject folders of ``root``.
+
+    Only ``sub-*/<datatype>/`` and ``sub-*/ses-*/<datatype>/`` are searched, so nested
+    ``derivatives/`` datasets are never entered. ``mne_bids.find_matching_paths`` is not used:
+    in mne-bids 0.17 it returns nothing when ``datatypes`` is given, and rebuilds the path of a
+    file found in a nested dataset against the wrong root.
+
+    Parameters
+    ----------
+    root : Path
+        BIDS dataset (raw or derivatives) to search.
+    datatypes : sequence of str
+        Data type folders to search.
+
+    Returns
+    -------
+    list of BIDSPath
+        One path per data file whose name ends in ``_<suffix><extension>`` for a supported
+        suffix and extension, sorted by file path.
+    """
+    endings = tuple(f"_{suffix}{ext}" for suffix in _SUFFIXES for ext in _EXTENSIONS)
+    files: set[Path] = set()
+    for datatype in datatypes:
+        for pattern in (f"sub-*/{datatype}/*", f"sub-*/ses-*/{datatype}/*"):
+            files.update(f for f in root.glob(pattern) if f.is_file() and f.name.endswith(endings))
+    paths = []
+    for file in sorted(files):
+        path = get_bids_path_from_fname(file, check=False)
+        path.update(root=root, datatype=file.parent.name, check=False)
+        paths.append(path)
+    return paths
 
 
 @dataclass(frozen=True)
@@ -268,13 +302,7 @@ def discover(
     from_file = _read_filter_file(filter_file) if filter_file is not None else {}
     filters = _combine_filters(cli, from_file)
 
-    paths = find_matching_paths(
-        root,
-        datatypes=list(datatypes),
-        suffixes=_SUFFIXES,
-        extensions=_EXTENSIONS,
-        check=False,
-    )
+    paths = _find_recordings(root, datatypes)
     groups: dict[tuple[str, str, str, str], list[Any]] = {}
     derivatives_dir = root / "derivatives"
     for path in paths:
