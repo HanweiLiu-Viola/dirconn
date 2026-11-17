@@ -61,32 +61,47 @@ class Resources:
 
 
 def git_revision(path: Path) -> str | None:
-    """Return the ``HEAD`` commit of the git checkout at ``path``.
+    """Return the ``HEAD`` commit of the git checkout whose top level is ``path``.
 
     Parameters
     ----------
     path : Path
-        Any directory inside the checkout.
+        The expected top-level directory of the checkout (for the package itself
+        ``PACKAGE_DIR.parent.parent``, the root of a source tree).
 
     Returns
     -------
     str or None
-        The commit hash, or ``None`` when ``path`` is not a checkout, git is missing, or the
+        The commit hash; ``None`` when ``git rev-parse --show-toplevel`` run in ``path`` names
+        another directory (an installed package inside some other repository, or a
+        subdirectory), when ``path`` is not in a checkout, when git is missing, or when a
         command fails or takes longer than 5 seconds.
     """
-    try:
+    path = Path(path)
+
+    def git(*args: str) -> str:
         out = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=Path(path),
+            ["git", *args],
+            cwd=path,
             capture_output=True,
             text=True,
             timeout=5,
             check=True,
         )
+        return out.stdout.strip()
+
+    try:
+        top = git("rev-parse", "--show-toplevel")
+        if not top or not _same_dir(Path(top), path):
+            return None
+        revision = git("rev-parse", "HEAD")
     except (OSError, subprocess.SubprocessError, ValueError):
         return None
-    revision = out.stdout.strip()
     return revision or None
+
+
+def _same_dir(a: Path, b: Path) -> bool:
+    return os.path.normcase(str(a.resolve())) == os.path.normcase(str(b.resolve()))
 
 
 def _iso(moment: datetime) -> str:

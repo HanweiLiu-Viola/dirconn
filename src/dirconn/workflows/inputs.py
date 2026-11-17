@@ -43,7 +43,8 @@ class InputUnit:
     root : Path
         Root of the dataset the unit was found in.
     files : tuple of Path
-        Absolute paths: the data file, then its ``.json`` sidecar and ``channels.tsv`` if present.
+        Absolute paths: the data file (and its BrainVision / EEGLAB data companions), then its
+        ``.json`` sidecar, ``channels.tsv`` and ``events.tsv`` if present.
     sha256 : str
         Hex digest over the concatenated bytes of ``files``, in order.
     """
@@ -184,7 +185,12 @@ def _unit_files(data_file: Path) -> tuple[Path, ...]:
         data_part = data_file.with_suffix(ext)
         if data_part.is_file():
             files.append(data_part)
-    for companion in (data_file.with_suffix(".json"), data_file.with_name(f"{base}_channels.tsv")):
+    companions = (
+        data_file.with_suffix(".json"),
+        data_file.with_name(f"{base}_channels.tsv"),
+        data_file.with_name(f"{base}_events.tsv"),
+    )
+    for companion in companions:
         if companion.is_file():
             files.append(companion)
     return tuple(files)

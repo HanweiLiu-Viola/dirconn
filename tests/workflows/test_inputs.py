@@ -117,6 +117,15 @@ def test_sensor_hash_covers_brainvision_companions(bids_tiny_copy: Path) -> None
     assert changed.sha256 != unit.sha256
 
 
+def test_sensor_hash_covers_the_events_file(bids_tiny_copy: Path) -> None:
+    (unit,) = discover(bids_tiny_copy, level="sensor", datatypes=["eeg"])
+    assert unit.files[-1].name == "sub-01_task-rest_events.tsv"
+    events = unit.files[-1]
+    events.write_text(events.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+    (changed,) = discover(bids_tiny_copy, level="sensor", datatypes=["eeg"])
+    assert changed.sha256 != unit.sha256
+
+
 def test_two_dirconn_derivatives_is_an_error(bids_tiny_copy: Path) -> None:
     deriv = bids_tiny_copy / "derivatives"
     shutil.copytree(deriv / "dirconn-roi", deriv / "dirconn-roi-2")
