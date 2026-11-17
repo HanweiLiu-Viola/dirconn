@@ -154,7 +154,8 @@ class EstimationConfig(_Section):
     Parameters
     ----------
     methods : tuple of str
-        Method names from the registry.
+        Method names from the registry. Control estimators (``report_kind == "control"``, that
+        is ``trgc``) are not allowed here; they run through the ``[controls]`` section.
     order : int or {"aic", "bic", "hqc", "cv"}
         Model order or the criterion that selects it.
     order_max : int
@@ -204,6 +205,13 @@ class EstimationConfig(_Section):
             raise ValueError(f"unknown method(s) {unknown}; available: {sorted(REGISTRY)}.")
         if not self.methods:
             raise ValueError("methods must not be empty.")
+        controls = [m for m in self.methods if REGISTRY[m].info.report_kind == "control"]
+        if controls:
+            raise ValueError(
+                f"method(s) {controls} are controls, not estimation methods; remove them from "
+                "estimation.methods and use the [controls] section (time_reversal = true "
+                "writes desc-trgc)."
+            )
         if not self.bands:
             raise ValueError("bands must not be empty.")
         for name, (lo, hi) in self.bands.items():
@@ -338,6 +346,14 @@ class PipelineConfig(_Section):
                         f"band {name!r} upper edge {hi} Hz is not below the Nyquist frequency "
                         f"{nyquist} Hz (resample_hz={fs})."
                     )
+        if self.statistics.test == "analytic":
+            banded = [m for m in self.estimation.methods if REGISTRY[m].info.frequency_resolved]
+            if banded:
+                raise ValueError(
+                    'statistics.test = "analytic" only supports methods without frequency '
+                    f"resolution; {banded} are frequency resolved and their tests would have "
+                    'no band. Use test = "surrogate" (one test per band) or test = "none".'
+                )
         return self
 
 

@@ -157,8 +157,9 @@ def _participant(args: argparse.Namespace, argv: Sequence[str]) -> int:
         error(str(exc))
         return 2
     except OSError as exc:
-        # Task errors stay inside the executor; an OSError here comes from setting up the run.
-        error(f"cannot set up the run in {out_dir}: {exc}")
+        # Task errors stay inside the executor; an OSError here comes from the run's own files
+        # (setting up, logging, provenance), before or while the tasks run.
+        error(f"the run stopped: {exc}")
         return 2
     print(
         f"{PROG}: done {summary.done}, skipped {summary.skipped}, failed {summary.failed}; "

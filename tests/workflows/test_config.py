@@ -227,3 +227,20 @@ def test_bad_exclude_freqs_are_rejected():
         with pytest.raises(pydantic.ValidationError):
             EstimationConfig(exclude_freqs=ranges)
     EstimationConfig(exclude_freqs=((49.0, 51.0),))
+
+
+def test_control_methods_are_rejected_as_estimation_methods():
+    with pytest.raises(pydantic.ValidationError, match=r"\[controls\]") as exc:
+        EstimationConfig(methods=("gc", "trgc"))
+    assert "trgc" in str(exc.value)
+
+
+def test_analytic_test_of_a_frequency_resolved_method_is_rejected():
+    stats = StatisticsConfig(test="analytic")
+    PipelineConfig(estimation=EstimationConfig(methods=("gc",)), statistics=stats)
+    with pytest.raises(pydantic.ValidationError, match="analytic") as exc:
+        PipelineConfig(estimation=EstimationConfig(methods=("gc", "pdc")), statistics=stats)
+    assert "['pdc']" in str(exc.value)
+    PipelineConfig(
+        estimation=EstimationConfig(methods=("pdc",)), statistics=StatisticsConfig(test="none")
+    )

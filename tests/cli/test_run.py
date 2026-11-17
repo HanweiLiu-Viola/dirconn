@@ -15,6 +15,7 @@ import pytest
 
 import dirconn
 from dirconn.cli import run as cli_run
+from dirconn.cli.tools import APP_MODULES
 from dirconn.methods.registry import REGISTRY
 from dirconn.workflows import participant
 from dirconn.workflows.config import config_hash, load_config
@@ -226,21 +227,23 @@ def test_rerun_with_output_below_bids_derivatives(bids_tiny_copy: Path, tmp_path
 
 NO_APP = """\
 import sys
-sys.modules["pydantic"] = None
+sys.modules[sys.argv.pop(1)] = None
 from dirconn.cli.run import main
 raise SystemExit(main(sys.argv[1:]))
 """
 
 
-def _no_app(*args: str | Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run([sys.executable, "-c", NO_APP, *map(str, args)], timeout=300, **_TEXT)
+def _no_app(module: str, *args: str | Path) -> subprocess.CompletedProcess[str]:
+    command = [sys.executable, "-c", NO_APP, module, *map(str, args)]
+    return subprocess.run(command, timeout=300, **_TEXT)
 
 
-def test_cli_without_the_app_extra(tmp_path: Path):
-    version = _no_app("--version")
+@pytest.mark.parametrize("module", APP_MODULES)
+def test_cli_without_the_app_extra(module: str, tmp_path: Path):
+    version = _no_app(module, "--version")
     assert version.returncode == 0, version.stderr
     assert dirconn.__version__ in version.stdout
-    assert _no_app("--help").returncode == 0
+    assert _no_app(module, "--help").returncode == 0
     message = (
         'dirconn-bids: error: the command line needs the app extra: pip install "dirconn[app]"'
     )
@@ -248,7 +251,7 @@ def test_cli_without_the_app_extra(tmp_path: Path):
         (tmp_path, tmp_path / "out", "participant"),
         ("validate-config", _write_config(tmp_path)),
     ):
-        proc = _no_app(*args)
+        proc = _no_app(module, *args)
         assert proc.returncode == 2, proc.stderr
         assert message in proc.stderr
     assert not (tmp_path / "out").exists()
@@ -374,7 +377,7 @@ def test_missing_bids_validator_warns_and_continues(
     assert "No recordings found" in err
 
 
-def test_os_error_setting_up_the_run_exits_two(
+def test_os_error_during_the_run_exits_two(
     bids_tiny_copy: Path,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -388,7 +391,23 @@ def test_os_error_setting_up_the_run_exits_two(
         bids_tiny_copy, tmp_path / "out", _write_config(tmp_path), "--skip-bids-validation"
     )
     assert code == 2
-    assert "dirconn-bids: error: cannot set up the run" in capsys.readouterr().err
+    assert "dirconn-bids: error: the run stopped: read-only file system" in capsys.readouterr().err
+
+
+def test_invalid_stored_config_exits_two(
+    bids_tiny_copy: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    stored = tmp_path / "out" / "dirconn" / "dirconn.toml"
+    stored.parent.mkdir(parents=True)
+    stored.write_text('[estimation]\nmethods = ["nope"]\n', encoding="utf-8")
+    code = _main(
+        bids_tiny_copy, tmp_path / "out", _write_config(tmp_path), "--skip-bids-validation"
+    )
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "dirconn-bids: error: " in err
+    assert str(stored) in err
+    assert "Traceback" not in err
 
 
 def test_filter_file_resources_and_argv_reach_the_provenance(bids_tiny_copy: Path, tmp_path: Path):

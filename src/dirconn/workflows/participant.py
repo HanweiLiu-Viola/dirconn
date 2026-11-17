@@ -130,6 +130,16 @@ class ParticipantSummary(RunSummary):
     run_dir: Path
 
 
+def _error_text(exc: ValueError) -> str:
+    """One line per problem of a failed configuration load, joined with ``"; "``."""
+    errors = getattr(exc, "errors", None)
+    if callable(errors):  # pydantic ValidationError
+        return "; ".join(
+            f"{'.'.join(str(part) for part in err['loc'])}: {err['msg']}" for err in errors()
+        )
+    return str(exc)
+
+
 def check_existing_config(root: Path, cfg: PipelineConfig) -> None:
     """Refuse to add results of a different analysis to an existing derivatives dataset.
 
@@ -145,12 +155,20 @@ def check_existing_config(root: Path, cfg: PipelineConfig) -> None:
     ConfigMismatchError
         If ``root/dirconn.toml`` exists and differs from ``cfg`` in its ``analysis_hash`` (the
         ``prepare``, ``estimation``, ``statistics`` and ``controls`` sections) or in its
-        ``input`` section. Differences in ``output`` or ``execution`` are allowed.
+        ``input`` section, or is not a valid configuration. Differences in ``output`` or
+        ``execution`` are allowed.
     """
     path = Path(root) / CONFIG_FILE
     if not path.is_file():
         return
-    stored = load_config(path)
+    try:
+        stored = load_config(path)
+    except ValueError as exc:  # TOML syntax and pydantic validation errors
+        raise ConfigMismatchError(
+            f"{path} is not a valid dirconn configuration ({_error_text(exc)}), so this run "
+            "cannot be checked against the results there. Repair the file or use a new output "
+            "directory."
+        ) from exc
     differ = []
     if analysis_hash(stored) != analysis_hash(cfg):
         differ.append("analysis (prepare, estimation, statistics, controls)")
