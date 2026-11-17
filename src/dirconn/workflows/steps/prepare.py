@@ -162,7 +162,7 @@ def zscore(ts: TimeSeries) -> TimeSeries:
         If a channel has zero standard deviation over its valid samples.
     """
     data = np.asarray(ts.data)
-    keep = np.ones((data.shape[0], data.shape[2]), dtype=bool)
+    keep: np.ndarray = np.ones((data.shape[0], data.shape[2]), dtype=bool)
     if ts.valid is not None:
         keep = np.asarray(ts.valid, dtype=bool)
     mean = np.zeros(data.shape[1])

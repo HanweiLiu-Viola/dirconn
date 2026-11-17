@@ -446,7 +446,7 @@ class BlockShuffle(SurrogateGenerator):
             )
         if not data.has_mask:
             used = per_trial * size
-            blocks = (
+            blocks: np.ndarray = (
                 data.data[:, :, :used]
                 .reshape(data.n_trials, data.n_channels, per_trial, size)
                 .transpose(0, 2, 1, 3)
