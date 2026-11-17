@@ -74,18 +74,29 @@ class InputUnit:
         return "_".join(f"{key}-{value}" for key, value in self.entities().items())
 
 
-def derivatives_root(bids_dir: Path) -> Path:
+def _is_connectivity_output(data: dict[str, Any]) -> bool:
+    """Whether a dataset description is that of a dirconn connectivity output dataset."""
+    marker = data.get("Dirconn")
+    return isinstance(marker, dict) and "DerivativesVersion" in marker
+
+
+def derivatives_root(bids_dir: Path, *, exclude: Path | None = None) -> Path:
     """Locate the dirconn derivatives dataset below ``bids_dir/derivatives``.
 
     Parameters
     ----------
     bids_dir : Path
         Root of the BIDS dataset.
+    exclude : Path, optional
+        A dataset to leave out (compared as resolved paths), typically the output dataset of
+        the run, which may live below ``bids_dir/derivatives`` too.
 
     Returns
     -------
     Path
         The only derivatives directory whose ``GeneratedBy`` lists ``Name == "dirconn"``.
+        Connectivity output datasets (their description has ``"Dirconn": {"DerivativesVersion":
+        ...}``) and ``exclude`` are not inputs and are skipped.
 
     Raises
     ------
@@ -93,13 +104,18 @@ def derivatives_root(bids_dir: Path) -> Path:
         If there is no such directory or more than one.
     """
     bids_dir = Path(bids_dir)
+    excluded = Path(exclude).resolve() if exclude is not None else None
     found: list[Path] = []
     for description in sorted((bids_dir / "derivatives").glob("*/dataset_description.json")):
         try:
             data = json.loads(description.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        generated_by = data.get("GeneratedBy") if isinstance(data, dict) else None
+        if not isinstance(data, dict) or _is_connectivity_output(data):
+            continue
+        if excluded is not None and description.parent.resolve() == excluded:
+            continue
+        generated_by = data.get("GeneratedBy")
         if not isinstance(generated_by, list):
             continue
         if any(isinstance(g, dict) and g.get("Name") == "dirconn" for g in generated_by):
@@ -207,6 +223,7 @@ def discover(
     task_ids: Sequence[str] | None = None,
     run_ids: Sequence[str] | None = None,
     filter_file: Path | None = None,
+    exclude: Path | None = None,
 ) -> list[InputUnit]:
     """Find the recordings of a run.
 
@@ -225,6 +242,8 @@ def discover(
     filter_file : Path, optional
         JSON file with the keys ``subject session task run`` (lists of values). Combined with the
         other filters by intersection.
+    exclude : Path, optional
+        Dataset that is never an input at ``level="roi"``, see `derivatives_root`.
 
     Returns
     -------
@@ -239,7 +258,7 @@ def discover(
     if level not in ("roi", "sensor"):
         raise InputDiscoveryError(f"Unknown input level {level!r}; use 'roi' or 'sensor'.")
     bids_dir = Path(bids_dir)
-    root = derivatives_root(bids_dir) if level == "roi" else bids_dir
+    root = derivatives_root(bids_dir, exclude=exclude) if level == "roi" else bids_dir
     cli = {
         "subject": _normalise(participant_labels, "subject"),
         "session": _normalise(session_ids, "session"),

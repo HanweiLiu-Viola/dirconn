@@ -135,3 +135,32 @@ def test_two_dirconn_derivatives_is_an_error(bids_tiny_copy: Path) -> None:
     assert "dirconn-roi-2" in str(exc.value)
     with pytest.raises(InputDiscoveryError):
         _roi(bids_tiny_copy)
+
+
+def _output_dataset(path: Path) -> None:
+    path.mkdir(parents=True)
+    description = {
+        "Name": "dirconn derivatives",
+        "BIDSVersion": "1.9.0",
+        "DatasetType": "derivative",
+        "GeneratedBy": [{"Name": "dirconn", "Version": "0.2.0"}],
+        "Dirconn": {"DerivativesVersion": "1"},
+    }
+    (path / "dataset_description.json").write_text(json.dumps(description), encoding="utf-8")
+
+
+def test_connectivity_output_dataset_is_not_an_input(bids_tiny_copy: Path) -> None:
+    deriv = bids_tiny_copy / "derivatives"
+    _output_dataset(deriv / "dirconn")
+    assert derivatives_root(bids_tiny_copy) == deriv / "dirconn-roi"
+    assert [u.label() for u in _roi(bids_tiny_copy)] == ROI_LABELS
+
+
+def test_excluded_dataset_is_skipped(bids_tiny_copy: Path) -> None:
+    deriv = bids_tiny_copy / "derivatives"
+    shutil.copytree(deriv / "dirconn-roi", deriv / "dirconn-roi-2")
+    # compared as resolved paths, so a relative or unnormalised spelling works too
+    exclude = deriv / "dirconn-roi-2" / ".." / "dirconn-roi-2"
+    assert derivatives_root(bids_tiny_copy, exclude=exclude) == deriv / "dirconn-roi"
+    units = _roi(bids_tiny_copy, exclude=exclude)
+    assert {u.root for u in units} == {deriv / "dirconn-roi"}

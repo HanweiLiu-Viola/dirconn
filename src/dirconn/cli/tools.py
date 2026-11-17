@@ -1,23 +1,58 @@
-"""Subcommands of ``dirconn-bids`` that do not run the pipeline."""
+"""Helpers and subcommands of ``dirconn-bids`` that do not run the pipeline.
+
+Importable with the core dependencies only: everything that needs the ``app`` extra (pydantic,
+the configuration model) is imported inside the functions, after `require_app`.
+"""
 
 from __future__ import annotations
 
+import importlib
 import sys
 from pathlib import Path
-
-from pydantic import ValidationError
+from typing import TYPE_CHECKING
 
 from dirconn.methods.registry import REGISTRY
-from dirconn.workflows.config import PipelineConfig, config_hash, load_config
 
-__all__ = ["config_errors", "error", "list_methods", "load_or_report", "validate_config"]
+if TYPE_CHECKING:
+    from dirconn.workflows.config import PipelineConfig
+
+__all__ = [
+    "APP_MODULES",
+    "config_errors",
+    "error",
+    "list_methods",
+    "load_or_report",
+    "require_app",
+    "validate_config",
+]
 
 _ERROR = "dirconn-bids: error: "
+#: Third-party modules of the ``app`` extra.
+APP_MODULES: tuple[str, ...] = ("pydantic", "joblib") + (
+    ("tomli",) if sys.version_info < (3, 11) else ()
+)
 
 
 def error(message: str) -> None:
     """Print ``message`` to stderr with the ``dirconn-bids: error:`` prefix."""
     print(f"{_ERROR}{message}", file=sys.stderr)
+
+
+def require_app() -> bool:
+    """Check that the modules of the ``app`` extra import.
+
+    Returns
+    -------
+    bool
+        ``True`` when they do; otherwise ``False`` after printing how to install them.
+    """
+    for name in APP_MODULES:
+        try:
+            importlib.import_module(name)
+        except ImportError:
+            error('the command line needs the app extra: pip install "dirconn[app]"')
+            return False
+    return True
 
 
 def config_errors(exc: Exception) -> list[str]:
@@ -34,6 +69,8 @@ def config_errors(exc: Exception) -> list[str]:
     list of str
         The messages.
     """
+    from pydantic import ValidationError
+
     if isinstance(exc, ValidationError):
         messages = []
         for err in exc.errors():
@@ -46,6 +83,8 @@ def config_errors(exc: Exception) -> list[str]:
 def load_or_report(path: Path | None) -> PipelineConfig | None:
     """Load a configuration, or print its errors and return ``None``.
 
+    Requires the ``app`` extra (see `require_app`).
+
     Parameters
     ----------
     path : Path or None
@@ -56,6 +95,8 @@ def load_or_report(path: Path | None) -> PipelineConfig | None:
     PipelineConfig or None
         The configuration, ``None`` after printing the errors.
     """
+    from dirconn.workflows.config import load_config
+
     try:
         return load_config(path)
     except OSError as exc:
@@ -77,8 +118,12 @@ def validate_config(path: Path) -> int:
     Returns
     -------
     int
-        0 when valid; 2 after printing the errors to stderr.
+        0 when valid; 2 after printing the errors (or the missing ``app`` extra) to stderr.
     """
+    if not require_app():
+        return 2
+    from dirconn.workflows.config import config_hash
+
     cfg = load_or_report(Path(path))
     if cfg is None:
         return 2

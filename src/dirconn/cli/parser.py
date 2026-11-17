@@ -52,13 +52,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             "Exit codes: 0 every task succeeded; 1 at least one task failed (the other "
-            "outputs are kept); 2 invalid arguments, configuration or inputs (nothing run); "
+            "outputs are kept); 2 invalid arguments, configuration, inputs or output location, "
+            "or a file system error before the tasks ran (nothing run); "
             "3 BIDS validation failed."
         ),
     )
     parser.add_argument("bids_dir", type=Path, help="Root of the BIDS dataset.")
     parser.add_argument(
-        "out_dir", type=Path, help="Output directory; results go to OUT_DIR/dirconn."
+        "out_dir",
+        type=Path,
+        help="Output directory; results go to OUT_DIR/dirconn. Outside BIDS_DIR, or below "
+        "BIDS_DIR/derivatives.",
     )
     parser.add_argument("analysis_level", choices=("participant", "group"), help="Analysis level.")
 
@@ -81,7 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         metavar="FILE",
         help="JSON file with lists under 'subject', 'session', 'task', 'run'; intersected with "
-        "the options above.",
+        "the other filters.",
     )
 
     config = parser.add_argument_group("configuration")
