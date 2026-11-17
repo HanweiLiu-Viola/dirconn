@@ -179,11 +179,14 @@ Code   Meaning
 0      Every task succeeded or was already done.
 1      At least one task failed. The outputs of the other tasks are kept; each failure leaves a
        ``crash-<key>.txt`` file in the run directory, and its label is logged.
-2      Nothing was run: invalid arguments, configuration or ``--set`` override; ``BIDS_DIR`` missing;
-       an output location inside ``BIDS_DIR``; no matching recordings, an ambiguous layout or an invalid
-       filter file; an output dataset written with a different configuration; the ``app`` extra
-       missing; the group level or a 0.3.0 option; or a file system error while setting up or
-       recording the run (including ``bids-validator`` failing to start).
+2      The run did not start: invalid arguments, configuration or ``--set`` override; ``BIDS_DIR``
+       missing; an output location inside ``BIDS_DIR``; no matching recordings, an ambiguous layout or
+       an invalid filter file; an output dataset written with a different configuration, or whose
+       stored ``dirconn.toml`` is not a valid configuration; the ``app`` extra missing; the group level
+       or a 0.3.0 option; ``bids-validator`` failing to start. Or the run stopped on a file system
+       error in its own files (dataset files, run directory, log, provenance; the message starts with
+       ``the run stopped:``), before or while the tasks ran: tasks that had finished keep their
+       results and are skipped by the next run.
 3      ``bids-validator`` rejected the dataset.
 =====  =================================================================================================
 

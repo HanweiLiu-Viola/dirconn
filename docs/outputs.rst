@@ -87,11 +87,13 @@ Each method gives three files per recording.
       * - ``NodeLabels``
         - Node names, in the order of both axes.
       * - ``NodeKinds``
-        - Kind of each node (``cortical`` or ``direct``); present when the provenance records it.
+        - Kind of each node, in the order of ``NodeLabels``: ``cortical`` or ``direct`` for
+          region-level inputs, ``sensor`` for sensor-level ones.
       * - ``Bands``
         - Band name to ``[low, high]`` in Hz; empty for a method without frequency resolution.
       * - ``SamplingFrequency``
-        - Present when the provenance records it.
+        - Sampling rate in Hz of the prepared series the result was estimated on (after
+          ``prepare.resample_hz``).
       * - ``Description``
         - The orientation of the matrix, in words.
       * - ``Sources``
@@ -101,7 +103,9 @@ Each method gives three files per recording.
           (``"surrogate"`` or ``"analytic"``), ``Generator`` (``name``, the null hypothesis
           ``null`` and ``params``, for example the block size), ``NSurrogates``, ``Seed`` and
           ``ObservedHistory``, the data history of the observed value (with the block counts for
-          block shuffling). Empty when ``statistics.test = "none"``. No arrays are stored here.
+          block shuffling). The analytic test gives a single ``"broadband"`` entry with
+          ``Generator`` ``{"name": "analytic"}`` and ``NSurrogates`` and ``Seed`` ``null``.
+          Empty when ``statistics.test = "none"``. No arrays are stored here.
       * - ``ValueIsMagnitude``
         - Present for complex-valued measures: the edge table holds magnitudes.
       * - ``TaskKey``
@@ -125,8 +129,12 @@ Each method gives three files per recording.
 
    The test columns are ``n/a`` without a test (``statistics.test = "none"``, and always for
    ``desc-trgc``). :func:`dirconn.io.derivatives.read_edges` reads the table with ``n/a`` as NaN. A
-   frequency-resolved result without bands, or a time-resolved one, gives a table with the header
-   only; the NetCDF file has the values.
+   frequency-resolved result without bands, or a time-resolved one (``adtf``, ``tpdc``, ``wdtf``),
+   gives a table with the header only; the NetCDF file has the values.
+
+   The three files are written in the order ``_conn.nc``, ``_edges.tsv``, ``_conn.json``. The
+   sidecar is written last and atomically: its ``TaskKey`` marks the result as complete, so a task
+   that stopped before it is run again.
 
 The controls of a recording
 ---------------------------
@@ -178,11 +186,14 @@ never share files, so jobs writing to the same output directory do not overwrite
         - Versions of Python, dirconn and the installed scientific packages it records.
       * - ``image``
         - ``tag`` and ``revision`` of the Docker image (from ``DIRCONN_IMAGE_TAG`` and
-          ``DIRCONN_BUILD_REVISION``), ``null`` outside it.
+          ``DIRCONN_BUILD_REVISION``); outside it ``{"tag": null, "revision": null}``.
       * - ``git``
         - Commit of the dirconn source tree for a source install, otherwise ``null``.
       * - ``inputs``
-        - One entry per recording: ``label``, ``files`` and their ``sha256``.
+        - One entry per recording: ``label``, ``files`` (absolute paths with ``/``: the data file
+          and its data companions such as ``.eeg`` and ``.vmrk``, then the ``.json`` sidecar,
+          ``channels.tsv`` and ``events.tsv`` when present) and ``sha256``, one digest over all of
+          them in that order (each file's name and length, then its bytes).
       * - ``config_hash``, ``analysis_hash``
         - Hashes of the configuration (see :doc:`configuration`).
       * - ``resources``

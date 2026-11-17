@@ -41,21 +41,22 @@ Names follow the BEP017 draft where it has an equivalent (`Measure`, `Directed`,
 | `Directed` | Whether `values[i, j]` differs from `values[j, i]`. |
 | `Estimator` | The `desc` entity. |
 | `Parameters` | Estimator parameters. |
-| `NodeLabels`, `NodeKinds` | Node names; `cortical` or `direct`, omitted when unknown. |
+| `NodeLabels`, `NodeKinds` | Node names; `cortical`, `direct` or `sensor` (from the prepared series), omitted when unknown. |
 | `Bands` | Band name to `[low, high]` in Hz (`null` when not recorded). |
-| `SamplingFrequency` | Omitted when unknown. |
+| `SamplingFrequency` | Sampling rate of the prepared series in Hz; omitted when unknown. |
 | `Description` | Orientation of the matrix: `values[i, j]` is the influence of node `i` on node `j`. |
 | `Sources` | Input files relative to the BIDS root (absolute when outside it). |
 | `Statistics` | One entry per band: test, surrogate generator, number of surrogates, seed, data history of the observed estimate. Arrays are never stored here. |
 | `ValueIsMagnitude` | Present for complex-valued measures: the table holds magnitudes. |
-| `TaskKey` | Hash of the pipeline task; lets a re-run skip finished results. |
+| `TaskKey` | Hash of the pipeline task; lets a re-run skip finished results. The sidecar is written after the NetCDF file and the table, atomically, so its presence marks a complete result. |
 | `DirconnVersion`, `DerivativesVersion` | Writer version and layout version. |
 
 ## The long table
 
 `_edges.tsv` has one row per ordered pair and band with the columns
 `source target band value p p_adj significant`. A measure without bands uses `band = broadband`. A
-missing p-value or decision (no test run) is `n/a`. The table exists for people who open results in a
+missing p-value or decision (no test run) is `n/a`. A time-resolved result has no single value per
+pair and band, so its table has the header only. The table exists for people who open results in a
 spreadsheet or `pandas` and for group-level tools that want a flat file; the NetCDF file remains the
 source of truth.
 

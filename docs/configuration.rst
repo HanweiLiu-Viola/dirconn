@@ -40,7 +40,8 @@ The file
   estimator. ``estimation.order`` and ``estimation.order_max`` are passed as ``order`` and
   ``max_order`` to the estimators that have these options, unless the sub-table sets them.
 * **Checks across sections.** With ``prepare.resample_hz`` set, every band's upper edge must lie below
-  half of it (the Nyquist frequency).
+  half of it (the Nyquist frequency). ``statistics.test = "analytic"`` is refused when
+  ``estimation.methods`` lists a frequency-resolved method (see ``statistics.test``).
 
 Hashes
 ------
@@ -124,7 +125,11 @@ recorded in the data history that every result carries in its provenance.
      - ``"mask"`` leaves the ``BAD_`` annotations (and the resampling guards) out of the estimate
        through the validity mask (see :doc:`masks`); methods without mask support then refuse the
        record (``supports_mask`` in ``list-methods``). ``"ignore"`` drops the mask after
-       resampling, so every method runs and the bad samples enter the estimate.
+       resampling, so every method runs and the bad samples enter the estimate: at
+       ``input.level = "sensor"`` the recording is read without the ``BAD_`` mask, so these are
+       the samples as recorded. A region-level file stores its bad samples as NaN, and the
+       recorded values cannot be recovered from it; in ``"ignore"`` mode they enter the estimate
+       as zeros.
    * - ``prepare.pad_bad_seconds``
      - number >= 0
      - ``0.0``
@@ -134,6 +139,10 @@ recorded in the data history that every result carries in its provenance.
      - ``[]``
      - ``trial_type`` values of the recording's ``_events.tsv`` to cut epochs around; empty keeps the
        record continuous. Epochs that cross the record edges or contain invalid samples are dropped.
+       At ``input.level = "roi"`` the events come from the ``_events.tsv`` next to the
+       region-level file, which :func:`~dirconn.io.write_roi_bids` writes only for epoched records
+       (one ``epoch`` event per epoch); a continuous region-level record has none unless one is
+       added.
    * - ``prepare.lock.tmin``
      - number
      - ``-1.0``
@@ -158,7 +167,9 @@ recorded in the data history that every result carries in its provenance.
      - list of strings, not empty
      - ``["gc"]``
      - Methods to run, by their registry names (``dirconn-bids list-methods``). Each gives one task
-       and one ``desc-<method>`` result per recording.
+       and one ``desc-<method>`` result per recording. Control estimators (``trgc``, report kind
+       ``control``) are refused here: the time-reversal control runs through
+       ``controls.time_reversal``.
    * - ``estimation.order``
      - integer >= 1, or ``"aic"``, ``"bic"``, ``"hqc"``, ``"cv"``
      - ``"bic"``
@@ -207,7 +218,9 @@ Every test is corrected over the pairs of its band; the choice of test and surro
      - ``"surrogate"`` tests every band (or the single value of a method without frequency
        resolution) against surrogates; ``"analytic"`` uses the estimator's asymptotic test (a task
        fails for estimators without one); ``"none"`` runs no test (the p-value columns of the
-       edge table are ``n/a``).
+       edge table are ``n/a``). The pipeline runs the analytic test only for methods without
+       frequency resolution (one test, no band): a configuration that combines it with a
+       frequency-resolved method is refused.
    * - ``statistics.surrogate``
      - ``"auto"`` or a generator name
      - ``"auto"``

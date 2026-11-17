@@ -256,8 +256,10 @@ runner live in `dirconn.validation.method_validation`; the metrics are in `dirco
 6. Register it in `REGISTRY` in `src/dirconn/methods/registry.py` under its `info.name`, which makes
    it available to the pipeline (`estimation.methods`) and to `dirconn-bids list-methods`. Set
    `MethodInfo.report_kind` to how a report should draw the result (`"matrix"`, `"spectrum"`,
-   `"time_frequency"` or `"control"`) and `citations` to the bibliography keys of its references;
-   `tests/methods/test_registry.py` fails until every concrete estimator is registered under its
+   `"time_frequency"` or `"control"`; a `"control"` method is refused in `estimation.methods`
+   and runs only through `[controls]`). Leave `citations` empty: it will hold the bibliography keys
+   of the method's references once the reports that cite them arrive (0.3.0), and no shipped
+   method fills it yet. `tests/methods/test_registry.py` fails until every concrete estimator is registered under its
    name, so add the name to `EXPECTED_NAMES` there.
 7. Add it to `dirconn.validation.method_validation.METHODS` and regenerate the validation report, so that it is
    evaluated against known truth from the day it exists (the simulation benchmark builds on the
