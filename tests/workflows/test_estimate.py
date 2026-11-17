@@ -105,7 +105,9 @@ def test_surrogate_test_per_band_with_distinct_seeds(ts):
 
 def test_observed_history_carries_the_block_counts_on_masked_data():
     rng = np.random.default_rng(0)
-    raw = TimeSeries.from_array(rng.standard_normal((3, 20000)), 500.0)
+    valid = np.ones(20000, dtype=bool)
+    valid[10000:10500] = False  # a bad segment mid-record; the record edges are cut, not masked
+    raw = TimeSeries.from_array(rng.standard_normal((3, 20000)), 500.0, valid=valid)
     prepared = prepare(raw, PrepareConfig(), events_tsv=None)
     assert prepared.valid is not None
     cfg = _cfg()
@@ -116,8 +118,8 @@ def test_observed_history_carries_the_block_counts_on_masked_data():
     assert steps == ["resample", "zscore", "block_shuffle_blocks"]
     assert test.observed_history[-1] == {
         "step": "block_shuffle_blocks",
-        "n_blocks_total": 8,
-        "n_blocks_kept": 7,
+        "n_blocks_total": 7,
+        "n_blocks_kept": 6,
     }
 
 

@@ -90,17 +90,20 @@ def resample(ts: TimeSeries, sfreq: float) -> TimeSeries:
     -------
     TimeSeries
         The resampled record. Data at invalid samples is zeroed before filtering. An output
-        sample is invalid when any original sample it covers was invalid, when it lies within
-        ``guard_samples`` output samples (the filter's half-length) of such a sample, or when it
-        lies within ``guard_samples`` of either end of a trial (edge transient). It is a
-        ``predict`` sample only when all original samples it covers were. ``valid`` is therefore
-        set even when the input had none. ``tmin`` is unchanged; the history entry records
-        ``up``, ``down`` and ``guard_samples``.
+        sample is invalid when any original sample it covers was invalid, or when it lies within
+        ``guard_samples`` output samples (the filter's half-length) of such a sample. It is a
+        ``predict`` sample only when all original samples it covers were. The edge transients
+        are cut off rather than masked: ``guard_samples`` samples are removed from both ends of
+        every trial and ``tmin`` moves later by ``guard_samples / sfreq``, so the time of every
+        remaining sample is unchanged. ``valid`` is ``None`` when the input had no mask. The
+        history entry records ``up``, ``down``, ``guard_samples`` (cut from each end) and the
+        new ``tmin``.
 
     Raises
     ------
     ValueError
-        If the rate ratio is not exactly representable; the message names the nearest rate.
+        If the rate ratio is not exactly representable (the message names the nearest rate), or
+        a trial is too short to keep any sample after the edges are cut.
     """
     if sfreq == ts.sfreq:
         return ts
@@ -119,19 +122,29 @@ def resample(ts: TimeSeries, sfreq: float) -> TimeSeries:
     data = signal.resample_poly(data, up, down, axis=-1)
     n_out = data.shape[-1]
     half = -(-10 * max(up, down) // down)  # filter half-length in output samples
+    if n_out <= 2 * half:
+        raise ValueError(
+            f"Cannot resample {ts.sfreq} Hz to {sfreq} Hz: a trial of {ts.n_times} samples keeps "
+            f"no sample after cutting {half} filter-transient samples from each end."
+        )
+    valid = None
     if ts.valid is not None:
         valid = _resample_mask(np.asarray(ts.valid, dtype=bool), up, down, n_out, require_all=False)
-    else:
-        valid = np.ones((data.shape[0], n_out), dtype=bool)
-    if half > 0:
-        valid = ~ndimage.binary_dilation(~valid, structure=np.ones((1, 2 * half + 1), dtype=bool))
-        valid[:, :half] = False
-        valid[:, max(n_out - half, 0) :] = False
+        if half > 0:
+            structure = np.ones((1, 2 * half + 1), dtype=bool)
+            valid = ~ndimage.binary_dilation(~valid, structure=structure)
     predict = None
     if ts.predict is not None:
         predict = _resample_mask(
             np.asarray(ts.predict, dtype=bool), up, down, n_out, require_all=True
         )
+    keep = slice(half, n_out - half)
+    data = data[..., keep]
+    if valid is not None:
+        valid = valid[:, keep]
+    if predict is not None:
+        predict = predict[:, keep]
+    tmin = ts.tmin + half / sfreq
     step = {
         "step": "resample",
         "from": ts.sfreq,
@@ -139,8 +152,11 @@ def resample(ts: TimeSeries, sfreq: float) -> TimeSeries:
         "up": up,
         "down": down,
         "guard_samples": half,
+        "tmin": tmin,
     }
-    return _with_step(ts, step, data=data, sfreq=float(sfreq), valid=valid, predict=predict)
+    return _with_step(
+        ts, step, data=data, sfreq=float(sfreq), tmin=tmin, valid=valid, predict=predict
+    )
 
 
 def zscore(ts: TimeSeries) -> TimeSeries:
@@ -224,8 +240,9 @@ def prepare(ts: TimeSeries, cfg: PrepareConfig, *, events_tsv: Path | None) -> T
         The record as read.
     cfg : PrepareConfig
         Bad-segment handling, then resampling, z-score and event lock. In ``"mask"`` mode the
-        order is pad, resample, z-score, lock. In ``"ignore"`` mode it is resample, then the
-        mask is dropped (the data at invalid samples, including the resampling edge guard,
+        order is pad, resample, z-score, lock; resampling cuts the edge transients instead
+        of masking them, so a record without bad segments carries no mask. In
+        ``"ignore"`` mode it is resample, then the mask is dropped (the data at invalid samples
         stays as it is), then z-score and lock; ``n_invalid`` in the history entry is counted
         after resampling. The mask is dropped last so that estimators without mask support can
         run on the result.
