@@ -14,6 +14,7 @@ import pytest
 
 import dirconn
 from dirconn.io.derivatives import read_edges, result_task_key, unit_dir
+from dirconn.workflows import participant
 from dirconn.workflows.config import PipelineConfig, analysis_hash, config_hash, load_config
 from dirconn.workflows.executor import task_key
 from dirconn.workflows.inputs import InputUnit, discover
@@ -168,6 +169,7 @@ def test_participant_run_writes_every_output(first_run: Run) -> None:
     assert run_dir.name.startswith("run-")
     assert (run_dir / "environment-lock.txt").read_text(encoding="utf-8").strip()
     assert (run_dir / "provenance.json").is_file()
+    assert load_config(run_dir / "dirconn.toml") == first_run.cfg
     progress = (run_dir / "progress.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(progress) == 10
     assert "run started" in (run_dir / "dirconn.log").read_text(encoding="utf-8")
@@ -273,6 +275,7 @@ def test_rerun_with_different_execution_is_allowed(bids_tiny_copy: Path, tmp_pat
     again = _run(bids_tiny_copy, out, other)
     assert again.summary.skipped == 10
     assert (out / "dirconn" / "dirconn.toml").read_text(encoding="utf-8") == stored
+    assert load_config(again.summary.run_dir / "dirconn.toml") == other
 
 
 def test_failing_method_is_isolated(bids_tiny_copy: Path, tmp_path: Path) -> None:
@@ -325,6 +328,17 @@ def test_workers_two_matches_workers_one(first_run: Run, tmp_path: Path) -> None
         assert list(ea["band"]) == list(eb["band"])
         np.testing.assert_allclose(ea["value"], eb["value"])
         np.testing.assert_array_equal(ea["p"], eb["p"])
+
+
+def test_cache_key_changes_with_the_dirconn_version(
+    bids_tiny: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    cfg = _config(tmp_path)
+    unit = _units(bids_tiny, cfg)[0]
+    before = participant._prepare_key(unit, cfg)
+    assert participant._prepare_key(unit, cfg) == before
+    monkeypatch.setattr(participant, "DIRCONN_VERSION", "999.0.0")
+    assert participant._prepare_key(unit, cfg) != before
 
 
 def test_unreadable_cache_entry_is_recomputed(bids_tiny: Path, tmp_path: Path) -> None:

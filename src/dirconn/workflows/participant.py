@@ -123,8 +123,8 @@ class ParticipantSummary(RunSummary):
     run_dir : Path
         The run directory ``<dataset>/logs/run-<YYYYmmddTHHMMSS>-<pid>[-<n>]`` (start time in
         UTC; ``-<n>`` only when a run of the same process started in the same second) with
-        ``dirconn.log``, ``progress.jsonl``, crash files, ``environment-lock.txt`` and
-        ``provenance.json``.
+        ``dirconn.log``, ``progress.jsonl``, crash files, ``environment-lock.txt``, the run's
+        effective ``dirconn.toml`` and ``provenance.json``.
     """
 
     run_dir: Path
@@ -562,6 +562,8 @@ def run_participant(
         Path(resources.work_dir).mkdir(parents=True, exist_ok=True)
         _ensure_dataset_files(root, cfg)
         write_environment_lock(run_dir)
+        # execution/output may differ between runs; each run records its own configuration.
+        dump_config(cfg, run_dir / CONFIG_FILE)
 
         tasks = plan_tasks(units, cfg)
         _log.info(
