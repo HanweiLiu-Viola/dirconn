@@ -24,6 +24,8 @@ Where to start
 * :doc:`masks`: records with gaps, models fitted on selected samples (such as bursts), and event
   locks with matched controls.
 * :doc:`api`: every public class and function.
+* :doc:`usage`, :doc:`configuration` and :doc:`outputs`: the ``dirconn-bids`` command line, which
+  runs the pipeline on a BIDS dataset, its TOML configuration and the derivatives it writes.
 
 Install
 -------
@@ -32,6 +34,7 @@ Install
 
    pip install dirconn                  # the package
    pip install "dirconn[plot,stats]"    # with plotting and the statsmodels-based tests
+   pip install "dirconn[app]"           # with the dirconn-bids command line
    pip install -e ".[dev,all]"          # from a clone, for development
 
 Plots need the ``plot`` extra (matplotlib and, for the chord diagram of :mod:`dirconn.viz`,
@@ -61,6 +64,15 @@ in front of its tables, which are generated from the saved results. :doc:`timeva
 
    auto_tutorials/index
    api
+
+.. toctree::
+   :hidden:
+   :caption: Command line
+   :maxdepth: 1
+
+   usage
+   configuration
+   outputs
 
 .. toctree::
    :hidden:

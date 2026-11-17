@@ -43,7 +43,8 @@ pip install "dirconn[plot,stats]"   # with plotting and the statsmodels-based te
 
 Optional extras: `connectivity` (mne-connectivity), `pcmci` (tigramite), `stats` (statsmodels),
 `parallel` (joblib), `speed` (numba), `gpu` (torch), `plot` (matplotlib, pyCirclize), `plot-extra`
-(3D maps of the cortical surface), `all`. Python 3.10 to 3.13.
+(3D maps of the cortical surface), `app` (pydantic and joblib, for the `dirconn-bids` command line),
+`all`. Python 3.10 to 3.13.
 
 From a clone, for development:
 
@@ -95,6 +96,22 @@ The tutorials go on from here: model order, frequency-domain measures, significa
 mislead (indirect paths, shared and hidden drivers), time-varying connectivity, sensors to regions and
 leakage, sources and sinks, zero-delay controls, PCMCI, transfer entropy, and the renormalised PDC.
 Each ends on what its result does and does not show.
+
+## Command line
+
+`dirconn-bids` runs the pipeline on a BIDS dataset (BIDS App convention, participant level): it reads
+the region-level series of every recording, estimates, tests and controls directed connectivity as a
+TOML file configures it, and writes a derivatives dataset to `OUTPUT_DIR/dirconn`. Runs can be
+repeated and resumed; every run records its provenance.
+
+```bash
+pip install "dirconn[app]"
+dirconn-bids /data/bids /data/out participant --participant-label 01 --config my_config.toml
+```
+
+Options, configuration fields and output files are described in the
+[documentation](https://hanweiliu-viola.github.io/dirconn/usage.html) (`docs/usage.rst`,
+`docs/configuration.rst`, `docs/outputs.rst`).
 
 ## Reproducible Docker environment
 
