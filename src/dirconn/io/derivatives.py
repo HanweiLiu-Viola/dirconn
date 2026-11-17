@@ -13,13 +13,13 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from importlib import metadata
 from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
 import pandas as pd
 
-import dirconn
 from dirconn.data.result import Connectivity
 
 __all__ = [
@@ -309,7 +309,7 @@ def write_result(
         ),
         "Sources": [_source_name(p, bids_dir) for p in sources],
         "TaskKey": task_key,
-        "DirconnVersion": dirconn.__version__,
+        "DirconnVersion": metadata.version("dirconn"),
         "DerivativesVersion": DERIVATIVES_VERSION,
         "Statistics": _statistics(tests),
     }
