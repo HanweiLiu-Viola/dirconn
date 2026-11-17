@@ -77,3 +77,4 @@ in front of its tables, which are generated from the saved results. :doc:`timeva
    Benchmark conclusions and results <benchmark_results>
    decisions/0001-bids-roi-layout
    decisions/0002-package-layout
+   decisions/0003-derivatives-layout
