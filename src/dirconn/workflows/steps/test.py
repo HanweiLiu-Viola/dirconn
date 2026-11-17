@@ -11,6 +11,7 @@ from dirconn.data.timeseries import TimeSeries
 from dirconn.methods.base import Estimator
 from dirconn.stats.correction import adjust_pvalues
 from dirconn.stats.significance import significance_test
+from dirconn.stats.surrogate_test import SurrogateTestResult
 from dirconn.workflows.config import StatisticsConfig
 from dirconn.workflows.steps.estimate import Estimate
 
@@ -37,6 +38,12 @@ class BandTest:
         Number of surrogates, ``None`` for the analytic test.
     seed : int or None
         Seed of this test, ``None`` for the analytic test.
+    generator : dict
+        The surrogate generator as recorded by the test (``name``, ``null``, ``params`` with the
+        block size for block shuffling); ``{"name": "analytic"}`` for the analytic test.
+    observed_history : tuple of dict
+        The data history the observed estimate was fitted on, including the
+        ``block_shuffle_blocks`` step with its block counts for block shuffling.
     """
 
     band: str | None
@@ -46,6 +53,8 @@ class BandTest:
     test: str
     n_surrogates: int | None
     seed: int | None
+    generator: dict[str, Any]
+    observed_history: tuple[dict[str, Any], ...]
 
 
 def _band_limits(est: Estimate, name: str) -> tuple[float, float]:
@@ -63,6 +72,8 @@ def _band_test(
     cfg: StatisticsConfig,
     n_surrogates: int | None,
     seed: int | None,
+    generator: dict[str, Any],
+    observed_history: Any,
 ) -> BandTest:
     pvalues = np.asarray(raw, dtype=float)
     if pvalues.ndim == 4 and pvalues.shape[2:] == (1, 1):
@@ -70,7 +81,14 @@ def _band_test(
     adjusted = adjust_pvalues(pvalues, cfg.correction)
     with np.errstate(invalid="ignore"):
         significant = np.where(np.isfinite(adjusted), adjusted < cfg.alpha, False)
-    return BandTest(band, pvalues, adjusted, significant, cfg.test, n_surrogates, seed)
+    history = tuple(dict(step) for step in observed_history)
+    return BandTest(
+        band, pvalues, adjusted, significant, cfg.test, n_surrogates, seed, generator, history
+    )
+
+
+def _history(result: Any) -> Any:
+    return result.observed.provenance.preprocessing.get("data_history", [])
 
 
 def test_significance(
@@ -110,7 +128,8 @@ def test_significance(
         return ()
     if cfg.test == "analytic":
         result = significance_test(estimator, ts, test="analytic", alpha=cfg.alpha)
-        return (_band_test(None, result.pvalues, cfg, None, None),)
+        generator = {"name": "analytic"}
+        return (_band_test(None, result.pvalues, cfg, None, None, generator, _history(result)),)
     surrogate = cfg.surrogate
     if surrogate == "auto":
         surrogate = "block_shuffle" if ts.segmentation == "continuous" else "trial_shuffle"
@@ -134,5 +153,16 @@ def test_significance(
             alpha=cfg.alpha,
             **kind,
         )
-        out.append(_band_test(name, result.pvalues, cfg, cfg.n_surrogates, seed + i))
+        assert isinstance(result, SurrogateTestResult)
+        out.append(
+            _band_test(
+                name,
+                result.pvalues,
+                cfg,
+                cfg.n_surrogates,
+                seed + i,
+                dict(result.generator),
+                _history(result),
+            )
+        )
     return tuple(out)

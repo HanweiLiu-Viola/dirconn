@@ -469,7 +469,7 @@ class TestSurrogates:
         assert prepared.valid is None
         step = prepared.history[-1]
         assert step["n_blocks_total"] == data.n_trials * (data.n_times // 20)
-        assert step["n_blocks_kept"] == prepared.n_trials < step["n_blocks_total"]
+        assert step["n_blocks_kept"] == prepared.n_trials <= step["n_blocks_total"]
 
     def test_trial_shuffle_carries_the_masks_with_the_trials(self):
         data = gappy_epochs()

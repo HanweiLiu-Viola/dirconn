@@ -169,3 +169,4 @@ def test_ignore_mode_drops_the_resample_guard_too():
         "resample",
         "ignore_bad_segments",
     ]
+    assert out.history[-1]["n_invalid"] == 20

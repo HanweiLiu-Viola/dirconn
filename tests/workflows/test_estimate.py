@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from dirconn import TimeSeries
 from dirconn.io.readers import read_unit
 from dirconn.workflows.config import (
     ControlsConfig,
@@ -95,6 +96,29 @@ def test_surrogate_test_per_band_with_distinct_seeds(ts):
         assert np.isnan(np.diag(t.adjusted)).all()
         assert t.significant.dtype == bool
         assert not np.diag(t.significant).any()
+        assert t.generator["name"] == "block_shuffle"
+        assert t.generator["params"] == {"block_size": 1250}
+        steps = [h["step"] for h in t.observed_history]
+        assert steps[-1] == "block_shuffle_blocks"
+        assert t.observed_history[-1]["n_blocks_kept"] == 8
+
+
+def test_observed_history_carries_the_block_counts_on_masked_data():
+    rng = np.random.default_rng(0)
+    raw = TimeSeries.from_array(rng.standard_normal((3, 20000)), 500.0)
+    prepared = prepare(raw, PrepareConfig(), events_tsv=None)
+    assert prepared.valid is not None
+    cfg = _cfg()
+    est = estimate(prepared, "gc", cfg)
+    stats = StatisticsConfig(test="surrogate", n_surrogates=5)
+    (test,) = run_significance(prepared, build_estimator("gc", cfg), est, stats, seed=0)
+    steps = [h["step"] for h in test.observed_history]
+    assert steps == ["resample", "zscore", "block_shuffle_blocks"]
+    assert test.observed_history[-1] == {
+        "step": "block_shuffle_blocks",
+        "n_blocks_total": 8,
+        "n_blocks_kept": 7,
+    }
 
 
 def test_statistics_none_gives_no_tests(ts):

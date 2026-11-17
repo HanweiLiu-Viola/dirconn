@@ -1,4 +1,5 @@
 import warnings
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -439,9 +440,41 @@ class TestBlockShuffleMasks:
         step = prepared.history[-1]
         assert (step["n_blocks_total"], step["n_blocks_kept"]) == (20, 18)
         assert prepared.n_trials == 18
-        kept = [k for k in range(20) if k not in (6, 7)]
-        for row, k in enumerate(kept):
-            np.testing.assert_array_equal(prepared.data[row], ts.data[0, :, k * 50 : (k + 1) * 50])
+        # blocks restart after the run: 0-310 gives 6 blocks, 380-1000 gives 12
+        starts = [k * 50 for k in range(6)] + [380 + k * 50 for k in range(12)]
+        for row, start in enumerate(starts):
+            np.testing.assert_array_equal(prepared.data[row], ts.data[0, :, start : start + 50])
+
+    def test_blocks_are_cut_inside_each_valid_run_not_on_a_global_grid(self):
+        x = np.random.default_rng(0).standard_normal((3, 10000))
+        valid = np.ones(10000, dtype=bool)
+        valid[:10] = False  # the guard of a resampled record
+        valid[-10:] = False
+        prepared = BlockShuffle(block_size=1250).prepare(
+            TimeSeries.from_array(x, 250.0, valid=valid)
+        )
+        step = prepared.history[-1]
+        assert (step["n_blocks_total"], step["n_blocks_kept"]) == (8, 7)
+        np.testing.assert_array_equal(prepared.data[0], x[:, 10:1260])
+
+    def test_the_history_of_the_input_is_kept_and_the_step_appended(self):
+        x = np.random.default_rng(0).standard_normal((3, 1000))
+        ts = TimeSeries.from_array(x, 100.0)
+        ts = replace(ts, history=({"step": "zscore"},))
+        generator = BlockShuffle(block_size=50)
+        assert [h["step"] for h in generator.prepare(ts).history] == [
+            "zscore",
+            "block_shuffle_blocks",
+        ]
+        valid = np.ones(1000, dtype=bool)
+        valid[300:310] = False
+        masked = replace(
+            TimeSeries.from_array(x, 100.0, valid=valid), history=({"step": "zscore"},)
+        )
+        assert [h["step"] for h in generator.prepare(masked).history] == [
+            "zscore",
+            "block_shuffle_blocks",
+        ]
 
     def test_predict_is_sliced_into_the_kept_blocks_and_shuffled_like_trial_shuffle(self):
         predict = np.zeros(1000, dtype=bool)
@@ -464,7 +497,11 @@ class TestBlockShuffleMasks:
         ts = TimeSeries.from_array(x, 100.0)
         generator = BlockShuffle(block_size=50)
         prepared = generator.prepare(ts)
-        assert prepared.history == ts.history
+        assert prepared.history[-1] == {
+            "step": "block_shuffle_blocks",
+            "n_blocks_total": 20,
+            "n_blocks_kept": 20,
+        }
         out = generator.generate_one(prepared, rng(5)).data
         blocks = x.reshape(3, 20, 50).transpose(1, 0, 2)
         expected = np.empty_like(blocks)

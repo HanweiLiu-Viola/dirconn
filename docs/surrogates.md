@@ -21,7 +21,7 @@ number never travels without its premise.
 
 Data with `valid` or `predict` masks (see [Gaps, selected samples and event locks](masks.md))
 can be tested with `trial_shuffle`, which carries the masks with the trials, and with
-`block_shuffle`, which drops every block that contains an invalid sample (the numbers of blocks
+`block_shuffle`, which cuts blocks inside each run of valid samples (the numbers of blocks
 total and kept are recorded in the history of the prepared data) and carries `predict` with the
 remaining blocks. The other generators move samples within a trial and refuse masked data.
 
