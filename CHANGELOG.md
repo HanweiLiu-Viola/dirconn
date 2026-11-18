@@ -24,7 +24,8 @@ All notable changes to dirconn are listed here. The format follows
   `config_hash`, `analysis_hash`, a commented built-in default; `"null"` turns nullable options
   off; control methods such as `trgc` are refused in `estimation.methods`, and so is the analytic
   test with a frequency-resolved method), discovery of the BIDS inputs with content hashes, and pure steps for preparation (mask
-  padding, resampling that guards the filter support around invalid samples, z-score, event lock),
+  padding, resampling that guards the filter support around invalid samples and cuts the filter
+  transients at the record edges, moving `tmin`, so clean records stay unmasked; z-score, event lock),
   diagnostics, estimation with band reduction and excluded frequencies, significance tests with
   multiple-comparison correction, and the time-reversal control.
 - An idempotent task executor: one task per recording and method plus one controls task per
@@ -99,8 +100,10 @@ All notable changes to dirconn are listed here. The format follows
 
 ### Changed
 
-- The version is `0.2.0.dev0` until the 0.2.0 release; it is part of the pipeline's task keys and
-  of the `DirconnVersion` of every result.
+- The version is `0.2.0.devN` until the 0.2.0 release; it is part of the pipeline's task keys, of
+  the prepared-data cache key and of the `DirconnVersion` of every result. A change to what a
+  pipeline step computes bumps `N` (`0.2.0.dev1` for the edge cropping in resampling), so results
+  and caches written before are recomputed instead of reused.
 - `MethodInfo` gains `report_kind` (`"matrix"`, `"spectrum"`, `"time_frequency"` or `"control"`, how
   a report draws the result) and `citations` (bibliography keys); both have defaults, so existing
   estimators keep working.

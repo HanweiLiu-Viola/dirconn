@@ -112,8 +112,14 @@ recorded in the data history that every result carries in its provenance.
      - Target sampling rate in Hz; ``"null"`` keeps the recorded rate, and so does a rate equal to
        it. The ratio to the recorded rate must be exactly representable as a fraction with a
        denominator up to 10000, otherwise the task fails and names the nearest possible rate.
-       After resampling, the samples within the filter's half-length of a bad segment or of the
-       record edges are invalid.
+       After resampling, the samples within the filter's half-length of a bad segment are
+       invalid. The filter transients at both ends of the record (and of every epoch) are cut
+       off rather than masked: ``guard_samples`` samples go from each end, ``tmin`` moves later by
+       the same time, and the times of the remaining samples are unchanged (10 samples, 40 ms, when
+       downsampling to 250 Hz). A record without bad segments therefore carries no mask after
+       resampling. Data that is already epoched gets shorter epochs: -1 to 1 s at 1000 Hz becomes
+       -0.96 to 0.96 s at 250 Hz. The resample entry of the data history records
+       ``guard_samples`` and the new ``tmin``.
    * - ``prepare.zscore``
      - boolean
      - ``true``
@@ -122,8 +128,8 @@ recorded in the data history that every result carries in its provenance.
    * - ``prepare.bad_segments``
      - ``"mask"`` or ``"ignore"``
      - ``"mask"``
-     - ``"mask"`` leaves the ``BAD_`` annotations (and the resampling guards) out of the estimate
-       through the validity mask (see :doc:`masks`); methods without mask support then refuse the
+     - ``"mask"`` leaves the ``BAD_`` annotations (and the resampling guards around them) out of the
+       estimate through the validity mask (see :doc:`masks`); methods without mask support then refuse the
        record (``supports_mask`` in ``list-methods``). ``"ignore"`` drops the mask after
        resampling, so every method runs and the bad samples enter the estimate: at
        ``input.level = "sensor"`` the recording is read without the ``BAD_`` mask, so these are
