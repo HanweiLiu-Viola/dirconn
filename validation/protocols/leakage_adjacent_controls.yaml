@@ -1,0 +1,31 @@
+version: 1
+name: leakage_adjacent_controls
+description: >-
+  The leakage controls (issue #9), an add-on to leakage_adjacent: the neighbour geometry of
+  leakage_adjacent and four more of the same family (pairs 1 to 4 of tools/pick_regions.py
+  leakage, each with its far, quiet region), same dynamics, Z -> X the only edge. Conditional
+  Granger causality as the reference and the three controls against leakage: time-reversed GC (BIC
+  order), imaginary coherence and the phase slope index (multitaper), EEG and gradiometers, SNR
+  10 dB, 50 seeds per geometry. A seed fails when some false edge scores at least as high as the
+  true edge Z -> X (|score|); the controls are compared with GC seed by seed (McNemar). The score
+  matrices are kept. Task seeds depend on the task, not on the protocol, so seeds 0 to 9 of
+  leakage_adjacent simulate the same data as in that protocol.
+scenarios:
+  - leakage_adjacent
+  - leakage_adjacent_temporal_lh
+  - leakage_adjacent_cingulate_lh
+  - leakage_adjacent_orbitofrontal_rh
+  - leakage_adjacent_cingulate_rh
+estimators:
+  - gc/bic
+  - trgc/bic
+  - imcoh/mt
+  - psi/mt
+n_seeds: 50
+snr_db: [10]
+duration_s: [60]
+source_model: [partial]
+modality: [eeg, grad]
+settings:
+  store_scores: true
+budget_hours: 3.0
