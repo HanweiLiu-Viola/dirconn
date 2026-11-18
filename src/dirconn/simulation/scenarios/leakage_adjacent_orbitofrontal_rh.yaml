@@ -1,0 +1,22 @@
+version: 1
+name: leakage_adjacent_orbitofrontal_rh
+description: >-
+  A geometry of the leakage_adjacent family for the leakage controls (issue #9), with the same
+  dynamics: Z -> X is the only edge (0.4, 10 ms). Y is a neighbour of X into whose series X leaks:
+  medialorbitofrontal-rh (X) and lateralorbitofrontal-rh (Y) are 20 mm apart, X leaks 2.45 (EEG)
+  and 1.53 (gradiometers) into Y, and the pair is in the leakiest tenth of all region pairs on
+  both (pair 3 of tools/pick_regions.py leakage). Z, cuneus-rh, is far from both and leaks little
+  into them (distant_region). Nothing drives Y, so every edge into Y that an estimator finds at
+  source level (Z -> Y, X -> Y) is leakage; at region level there is none.
+network:
+  nodes:
+    - name: cuneus-rh
+    - name: medialorbitofrontal-rh
+    - name: lateralorbitofrontal-rh
+  edges:
+    - {source: cuneus-rh, target: medialorbitofrontal-rh, strength: 0.4, delay_ms: 10.0}
+dynamics:
+  nodes:
+    cuneus-rh: {kind: oscillator, freq_hz: 10.0, bandwidth_hz: 4.0}
+    medialorbitofrontal-rh: {kind: oscillator, freq_hz: 20.0, bandwidth_hz: 4.0}
+    lateralorbitofrontal-rh: {kind: oscillator, freq_hz: 12.0, bandwidth_hz: 4.0}
