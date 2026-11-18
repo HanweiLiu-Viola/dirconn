@@ -64,6 +64,40 @@ def adjust_pvalues(pvalues: np.ndarray, method: str = "fdr_bh") -> np.ndarray:
     return adjusted
 
 
+def holm(pvalues: np.ndarray) -> np.ndarray:
+    """Return the Holm (step-down Bonferroni) adjusted p-values over the defined cells.
+
+    Holm controls the family-wise error rate under any dependence between the tests and is never
+    more conservative than Bonferroni. It is kept apart from :func:`adjust_pvalues`, whose
+    methods are also the choices of the pipeline configuration.
+
+    Parameters
+    ----------
+    pvalues : ndarray
+        Any shape; NaN marks undefined cells, which are kept and are not in the family.
+
+    Returns
+    -------
+    ndarray
+        Same shape: the sorted values ``p_(i) * (m - i + 1)`` (rank ``i`` from 1), made
+        non-decreasing and capped at 1.
+    """
+    p = np.asarray(pvalues, dtype=float)
+    defined = ~np.isnan(p)
+    values = p[defined]
+    if values.size and (values.min() < 0.0 or values.max() > 1.0 or not np.isfinite(values).all()):
+        raise ValueError("p-values must lie between 0 and 1.")
+    adjusted = np.full(p.shape, np.nan)
+    m = values.size
+    if m:
+        order = np.argsort(values, kind="stable")
+        scaled = values[order] * (m - np.arange(m))
+        out = np.empty(m)
+        out[order] = np.minimum(1.0, np.maximum.accumulate(scaled))
+        adjusted[defined] = out
+    return adjusted
+
+
 class Correctable:
     """Mixin for test results that have ``pvalues``, ``alpha``, ``null`` and ``limitations``."""
 

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from dirconn import surrogate_test
-from dirconn.stats.correction import adjust_pvalues
+from dirconn.stats.correction import adjust_pvalues, holm
 from dirconn.stats.surrogates import PhaseRandomize
 from tests.helpers import AbsCorr, coupled
 
@@ -25,6 +25,25 @@ def test_adjusted_values_equal_statsmodels_on_the_defined_cells(method, referenc
     adjusted = adjust_pvalues(p, method)
     np.testing.assert_allclose(adjusted[ok], expected, rtol=1e-12)
     assert np.isnan(adjusted[~ok]).all()
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_holm_equals_statsmodels_on_the_defined_cells(seed):
+    p = with_holes(seed)
+    ok = ~np.isnan(p)
+    expected = multipletests(p[ok], method="holm")[1]
+    adjusted = holm(p)
+    np.testing.assert_allclose(adjusted[ok], expected, rtol=1e-12)
+    assert np.isnan(adjusted[~ok]).all()
+
+
+def test_holm_by_hand():
+    # sorted 0.01, 0.02, 0.04 times 3, 2, 1 -> 0.03, 0.04, 0.04 (made non-decreasing)
+    np.testing.assert_allclose(holm(np.array([0.04, 0.01, 0.02])), [0.04, 0.03, 0.04])
+    np.testing.assert_allclose(holm(np.array([0.5, 0.9])), [1.0, 1.0])
+    assert holm(np.array([])).size == 0
+    with pytest.raises(ValueError, match="between 0 and 1"):
+        holm(np.array([1.5]))
 
 
 def test_the_family_is_the_defined_cells_only():
