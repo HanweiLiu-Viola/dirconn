@@ -4,8 +4,13 @@ The rules are in ``dirconn.diagnostics.regions``; this script applies them to th
 model and
 prints the result, which the scenario files and ``tests/simulation/test_scenario_library.py`` carry.
 
+``leakage`` lists the leakiest neighbour pairs X -> Y, then the far, quiet region Z of the best
+pair (``leakage_adjacent``) and of every pair: the geometries of the ``leakage_adjacent_*``
+scenarios of the leakage controls (issue #9) are pairs 1 to 4 (counted from 0) with their Z.
+
     python tools/pick_regions.py pool        # the four regions of the hand-written scenarios
-    python tools/pick_regions.py leakage     # leaking neighbour pair and a far, quiet region
+    python tools/pick_regions.py leakage     # leaking neighbour pairs and a far, quiet region
+                                             # for each (the leakage_adjacent scenarios)
     python tools/pick_regions.py distance    # one pair per distance tercile
 
 Needs the MNE sample dataset.
@@ -42,7 +47,7 @@ def show_pool(heads: dict, args: argparse.Namespace) -> None:
 
 
 def show_leakage(heads: dict, args: argparse.Namespace) -> None:
-    """Print the leakiest neighbour pairs and the far, quiet region for the best one."""
+    """Print the leakiest neighbour pairs, the far, quiet region of the best one and of each."""
     head = heads["eeg"]
     visibility = min_visibility(heads.values())
     distances = centre_distances(head)
@@ -62,6 +67,19 @@ def show_leakage(heads: dict, args: argparse.Namespace) -> None:
         f"far, quiet region: {head.roi_names[z]} (visibility {visibility[z]:.2f}, "
         f"{distances[z, best.source]:.0f} and {distances[z, best.receiver]:.0f} mm away)"
     )
+    print("far, quiet region of every pair (Z, X, Y of a leakage_adjacent scenario):")
+    for k, pair in enumerate(pairs):
+        x, y = pair.source, pair.receiver
+        try:
+            z = distant_region((x, y), matrices, visibility, distances)
+        except ValueError:
+            print(f"{k}: {head.roi_names[x]} -> {head.roi_names[y]}: no far, quiet region")
+            continue
+        print(
+            f"{k}: Z {head.roi_names[z]}, X {head.roi_names[x]}, Y {head.roi_names[y]} "
+            f"(visibility {visibility[z]:.2f}, {distances[z, x]:.0f} and {distances[z, y]:.0f} mm "
+            "away)"
+        )
 
 
 def show_distance(heads: dict, args: argparse.Namespace) -> None:
