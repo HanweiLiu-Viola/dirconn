@@ -100,8 +100,10 @@ All notable changes to dirconn are listed here. The format follows
 
 ### Changed
 
-- The version is `0.2.0.dev0` until the 0.2.0 release; it is part of the pipeline's task keys and
-  of the `DirconnVersion` of every result.
+- The version is `0.2.0.devN` until the 0.2.0 release; it is part of the pipeline's task keys, of
+  the prepared-data cache key and of the `DirconnVersion` of every result. A change to what a
+  pipeline step computes bumps `N` (`0.2.0.dev1` for the edge cropping in resampling), so results
+  and caches written before are recomputed instead of reused.
 - `MethodInfo` gains `report_kind` (`"matrix"`, `"spectrum"`, `"time_frequency"` or `"control"`, how
   a report draws the result) and `citations` (bibliography keys); both have defaults, so existing
   estimators keep working.
