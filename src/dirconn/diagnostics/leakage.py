@@ -72,9 +72,11 @@ def leakage_correlation(
 
     Every finished task of a region pair gives two cells per estimator and stage: the score of
     ``x -> y`` is paired with ``|crosstalk[y, x]|``, the leak of ``x`` into the series of ``y``, and
-    the score of ``y -> x`` with ``|crosstalk[x, y]|``. A score is a rank-only quantity here, so
-    estimators with different units need no normalisation. The interval is a percentile bootstrap
-    over **pairs** (all the cells and seeds of a pair move together), 95%.
+    the score of ``y -> x`` with ``|crosstalk[x, y]|``. Scores enter as ``|score|``: net measures
+    (time-reversed GC, PSI) are signed, and the strength of a false edge is their magnitude. A score
+    is a rank-only quantity here, so estimators with different units need no normalisation. The
+    interval is a percentile bootstrap over **pairs** (all the cells and seeds of a pair move
+    together), 95%.
 
     Parameters
     ----------
@@ -126,7 +128,7 @@ def leakage_correlation(
                 card = payload.get(stage)
                 if not isinstance(card, Mapping) or "scores" not in card:
                     continue
-                scores = np.asarray(card["scores"], dtype=float)
+                scores = np.abs(np.asarray(card["scores"], dtype=float))
                 points = [(scores[0, 1], matrix[iy, ix]), (scores[1, 0], matrix[ix, iy])]
                 bucket = cells.setdefault((estimator, modality, stage), {}).setdefault(scenario, [])
                 bucket.extend((float(s), float(m)) for s, m in points if np.isfinite(s))

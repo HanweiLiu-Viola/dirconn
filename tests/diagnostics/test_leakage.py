@@ -116,6 +116,19 @@ class TestLeakageCorrelation:
         )
         assert [r for r in rows if r["stage"] == "source"][0]["spearman"] == pytest.approx(1.0)
 
+    def test_the_sign_of_a_net_score_is_ignored(self):
+        # a net measure (PSI, TRGC) is signed: its magnitude is what tracks the leak
+        matrix = crosstalk_matrix()
+        records = faithful_records(matrix, estimator="psi/mt")
+        signs = iter(np.where(np.random.default_rng(3).random(2 * len(PAIRS)) < 0.5, -1.0, 1.0))
+        for record in records:
+            scores = record["result"]["psi/mt"]["source"]["scores"]
+            scores[0][1] *= next(signs)
+            scores[1][0] *= next(signs)
+        rows = leakage_correlation(header(matrix), records, n_boot=50, seed=0)
+        (row,) = [r for r in rows if r["stage"] == "source"]
+        assert row["spearman"] == pytest.approx(1.0)
+
     def test_one_row_per_estimator_modality_and_stage(self):
         matrix = crosstalk_matrix()
         records = faithful_records(matrix) + faithful_records(matrix, estimator="dtf/bic")
