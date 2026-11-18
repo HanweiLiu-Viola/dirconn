@@ -19,6 +19,9 @@ All notable changes to dirconn are listed here. The format follows
   not start: invalid arguments, configuration, inputs or output location, missing extra; or it
   stopped on a file system error in its own files) and 3 (BIDS validation failed). The group level, `--reports-only` and `--boilerplate-only` arrive in 0.3.0.
   Documentation pages "Command line", "Pipeline configuration" and "Outputs".
+- Tutorial 17: a simulated network with a known truth written as a BIDS dataset, twelve directed
+  methods run on it with one `dirconn-bids` command and a TOML configuration, and the outputs read
+  back (edge tables against the truth, diagnostics, run provenance).
 - `dirconn.workflows`: the pipeline behind the command. A typed TOML configuration (pydantic,
   frozen and strict about unknown keys; `load_config`, `apply_overrides`, `dump_config`,
   `config_hash`, `analysis_hash`, a commented built-in default; `"null"` turns nullable options
