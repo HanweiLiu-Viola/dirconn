@@ -16,6 +16,7 @@ from dirconn.validation.benchmark_report import (
     paired_differences,
     runtime_markdown,
 )
+from dirconn.validation.protocol import _leakage_sections
 
 ROOT = Path(__file__).resolve().parents[2]
 ENV = {"python": "3.11.16", "platform": "Windows", "numpy": "2.4.6", "scipy": "1.17.1"}
@@ -390,12 +391,14 @@ class TestLoadAndBuild:
             "noise",
         }
 
-    def test_the_add_ons_are_four_named_protocols_apart_from_the_published_ten(self):
+    def test_the_add_ons_are_six_named_protocols_apart_from_the_published_ten(self):
         assert ADDONS == (
             "noise_hard",
             "significance_power",
             "m5_methods",
             "asymptotic_calibration",
+            "leakage_adjacent_controls",
+            "leakage_pairs_controls",
         )
         assert not set(ADDONS) & set(PUBLISHED)
 
@@ -502,6 +505,138 @@ class TestCodeInTheRunTimeSection:
             "unknown"
             in runtime_markdown({"full": (header("full"), [], {"seconds": 1.0})}).split("Code")[1]
         )
+
+
+# ---- leakage controls (add-on) ----------------------------------------------------------
+
+NEIGHBOUR = ["transversetemporal-rh", "cuneus-lh", "pericalcarine-lh"]  # leakage_adjacent: Z, X, Y
+
+
+def scored(matrix):
+    return {"auroc": 1.0, "direction_accuracy": 1.0, "separation": 2.0, "scores": matrix}
+
+
+def neighbour_record(seed, by_estimator, *, scenario="leakage_adjacent"):
+    """``by_estimator[e]`` is (true Z -> X, the strongest false |score|) at the sensor stage."""
+    nan = math.nan
+    result = {}
+    for e, (true, false) in by_estimator.items():
+        matrix = [[nan, true, false], [0.0, nan, 0.0], [0.0, 0.0, nan]]
+        result[e] = {"analysed": NEIGHBOUR, "roi": scored(matrix), "sensor": scored(matrix)}
+    return {
+        "type": "task",
+        "status": "ok",
+        "id": f"{scenario}-{seed}",
+        "task": {
+            "scenario": scenario,
+            "snr_db": 10.0,
+            "duration_s": 60.0,
+            "coupling": None,
+            "source_model": "partial",
+            "modality": "eeg",
+            "seed_index": seed,
+        },
+        "seconds": 1.0,
+        "result": result,
+    }
+
+
+def region_pair_record(seed, by_estimator):
+    """``by_estimator[e]`` is the (roi, sensor) strength of the pair, put in the x -> y cell."""
+    nan = math.nan
+    return {
+        "type": "task",
+        "status": "ok",
+        "id": f"pair-{seed}",
+        "task": {
+            "scenario": "pair:cuneus-lh:insula-lh",
+            "snr_db": 10.0,
+            "duration_s": 60.0,
+            "coupling": 0.0,
+            "source_model": "partial",
+            "modality": "eeg",
+            "seed_index": seed,
+        },
+        "seconds": 1.0,
+        "result": {
+            e: {
+                "analysed": ["cuneus-lh", "insula-lh"],
+                "roi": scored([[nan, roi], [0.0, nan]]),
+                "sensor": scored([[nan, sensor], [0.0, nan]]),
+            }
+            for e, (roi, sensor) in by_estimator.items()
+        },
+    }
+
+
+class TestLeakageControls:
+    def full(self):
+        return (header("full"), [record(0, 0.0, {"gc/bic": (1, 1, 1)})], {"seconds": 1.0})
+
+    def test_the_add_ons_are_not_mentioned_when_they_did_not_run(self):
+        text = build_report({"full": self.full()})
+        assert "Leakage controls" not in text
+
+    def test_the_published_neighbour_file_gets_no_controls_table(self):
+        records = [
+            neighbour_record(s, {"gc/bic": (1.0, 0.5), "dtf/bic": (1.0, 2.0)}) for s in range(3)
+        ]
+        lines = _leakage_sections(header("leakage_adjacent"), records)
+        assert "## Neighbour leakage (leakage_adjacent)" in lines
+        assert not any("Leakage controls" in line for line in lines)
+
+    def test_the_neighbour_add_on_gets_its_section_and_table(self):
+        records = [
+            neighbour_record(s, {"gc/bic": (1.0, 2.0), "psi/mt": (1.0, 0.5 if s < 4 else 2.0)})
+            for s in range(5)
+        ]
+        add_on = (header("leakage_adjacent_controls"), records, {"seconds": 1.0})
+        text = build_report({"full": self.full(), "leakage_adjacent_controls": add_on})
+        section = text[text.index("## Leakage controls: the neighbour (add-on)") :]
+        assert "### Neighbour leakage (leakage_adjacent)" in section
+        assert "### Leakage controls: the neighbour" in section
+        # PSI fails once where GC fails five times: four rescued, none new, p = 2 * 0.5**4
+        assert (
+            "| leakage_adjacent | eeg | 10 | sensor | psi/mt | 1/5 | 20.0% [3.6, 62.4] | 4 | 0 "
+            "| 0.125 | 0.125 |" in section
+        )
+        assert "| leakage_adjacent | eeg | 10 | sensor | gc/bic | 5/5 |" in section
+
+    def test_every_neighbour_scenario_is_detected(self, monkeypatch):
+        import dirconn.diagnostics.leakage as leakage
+
+        real = leakage.load_scenario
+        monkeypatch.setattr(
+            leakage,
+            "load_scenario",
+            lambda name: (
+                real("leakage_adjacent") if name.startswith("leakage_adjacent") else real(name)
+            ),
+        )
+        records = [
+            neighbour_record(s, {"gc/bic": (1.0, 2.0), "imcoh/mt": (1.0, 0.5)}, scenario=name)
+            for name in ("leakage_adjacent", "leakage_adjacent_temporal_lh")
+            for s in range(2)
+        ]
+        lines = _leakage_sections(header("leakage_adjacent_controls"), records)
+        assert "## Neighbour leakage (leakage_adjacent_temporal_lh)" in lines
+        table = [line for line in lines if line.startswith("| leakage_adjacent_temporal_lh |")]
+        assert len(table) == 4  # two estimators at two stages
+
+    def test_the_pairs_add_on_gets_its_section_and_table(self):
+        records = [
+            region_pair_record(s, {"gc/bic": (float(s), 100.0), "imcoh/mt": (float(s), 0.1)})
+            for s in range(20)
+        ]
+        h = header("leakage_pairs_controls", protocol_kind="region_pairs")
+        h["settings"] = {"estimators": ["gc/bic", "imcoh/mt"]}
+        add_on = (h, records, {"seconds": 1.0})
+        text = build_report({"full": self.full(), "leakage_pairs_controls": add_on})
+        section = text[text.index("## Leakage controls: region pairs (add-on)") :]
+        assert "### Leakage controls: region pairs" in section
+        # GC flags all 20 pairs at the sensor stage, iCOH none: 20 removed, p = 2 * 0.5**20
+        assert "| eeg | sensor | gc/bic | 20/20 | 100.0% [83.9, 100.0] | - | - | - | - |" in section
+        assert "| eeg | sensor | imcoh/mt | 0/20 | 0.0% [0.0, 16.1] | 20 | 0 | 1.9e-06 " in section
 
 
 def test_the_gitignore_lets_exactly_the_published_and_add_on_results_through():
