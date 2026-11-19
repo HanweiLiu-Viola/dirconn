@@ -44,6 +44,8 @@ BIDS_VERSION = "1.9.0"
 CODE_URL = "https://github.com/HanweiLiu-Viola/dirconn"
 BROADBAND = "broadband"
 EDGE_COLUMNS = ("source", "target", "band", "value", "p", "p_adj", "significant")
+TIME_EDGE_COLUMNS = ("source", "target", "band", "time", "value", "p", "p_adj", "significant")
+"""Columns of the edge table of a time-resolved result: one row per pair, band and time point."""
 _ENTITY_ORDER = ("sub", "ses", "task", "run")
 
 
@@ -203,6 +205,7 @@ def _statistics(tests: Sequence[BandTestLike]) -> list[dict[str, Any]]:
                 "Generator": t.generator,
                 "NSurrogates": t.n_surrogates,
                 "Seed": t.seed,
+                "PValueShape": list(np.shape(t.pvalues)),
                 "ObservedHistory": list(t.observed_history),
             }
         )
@@ -210,9 +213,14 @@ def _statistics(tests: Sequence[BandTestLike]) -> list[dict[str, Any]]:
     ]
 
 
-def _pair_values(conn: Connectivity) -> np.ndarray:
-    """Return the ``(source, target)`` values of a band-reduced result; magnitude if complex."""
-    return np.abs(conn.values[:, :, 0, 0])
+def _test_cell(test: BandTestLike, i: int, j: int, k: int | None) -> dict[str, Any]:
+    """p, p_adj and significant of one cell; ``k`` is the time index of a time-resolved test."""
+    index = (i, j) if k is None else (i, j, 0, k)
+    return {
+        "p": float(np.asarray(test.pvalues)[index]),
+        "p_adj": float(np.asarray(test.adjusted)[index]),
+        "significant": bool(np.asarray(test.significant)[index]),
+    }
 
 
 def _edge_rows(
@@ -223,36 +231,34 @@ def _edge_rows(
     by_band = {t.band or BROADBAND: t for t in tests}
     if bands:
         items = list(bands.items())
-    elif conn.values.shape[2:] == (1, 1):
+    elif conn.values.shape[2] == 1:
         items = [(BROADBAND, conn)]
     else:
         items = []
+    timed = any(bc.values.shape[3] != 1 for _, bc in items)
     rows: list[dict[str, Any]] = []
     for name, bc in items:
-        if bc.values.shape[2:] != (1, 1):
-            # A time-resolved band keeps its time axis: no single value per pair.
-            continue
-        vals = _pair_values(bc)
+        values = np.abs(bc.values[:, :, 0, :])  # (source, target, time); magnitude if complex
         test = by_band.get(name)
+        if timed and test is not None and np.shape(test.pvalues) != bc.values.shape:
+            # The test was fitted on another time axis (block shuffling re-segments the record
+            # into blocks), so its p-values belong to no time point of this result.
+            test = None
+        times = np.asarray(bc.times, dtype=float) if timed else [None]
         for i, s in enumerate(bc.source):
             for j, t in enumerate(bc.target):
                 if i == j:
                     continue
-                row: dict[str, Any] = {
-                    "source": s,
-                    "target": t,
-                    "band": name,
-                    "value": float(vals[i, j]),
-                    "p": None,
-                    "p_adj": None,
-                    "significant": None,
-                }
-                if test is not None:
-                    row["p"] = float(np.asarray(test.pvalues)[i, j])
-                    row["p_adj"] = float(np.asarray(test.adjusted)[i, j])
-                    row["significant"] = bool(np.asarray(test.significant)[i, j])
-                rows.append(row)
-    df = pd.DataFrame(rows, columns=list(EDGE_COLUMNS))
+                for k, time in enumerate(times):
+                    row: dict[str, Any] = {"source": s, "target": t, "band": name}
+                    if timed:
+                        row["time"] = float(time)
+                    row["value"] = float(values[i, j, k])
+                    row.update({"p": None, "p_adj": None, "significant": None})
+                    if test is not None:
+                        row.update(_test_cell(test, i, j, k if timed else None))
+                    rows.append(row)
+    df = pd.DataFrame(rows, columns=list(TIME_EDGE_COLUMNS if timed else EDGE_COLUMNS))
     df["p"] = df["p"].astype("float64")
     df["p_adj"] = df["p_adj"].astype("float64")
     return df
@@ -301,8 +307,11 @@ def write_result(
     long_table : bool
         Whether to write ``_edges.tsv``. Complex values are written as magnitudes
         (``ValueIsMagnitude`` in the sidecar). A result without bands is tabulated only when it
-        has no frequency or time axis, and a band only when it has no time axis; otherwise the
-        table has the header only.
+        has no frequency axis (otherwise the table has the header only). A time-resolved result
+        gives one row per pair, band and time point, with a ``time`` column in seconds
+        (`TIME_EDGE_COLUMNS`); its test columns are ``n/a`` when the test's p-values do not have
+        the band's shape (``PValueShape`` in the sidecar), as after block shuffling, which fits
+        the observed value on blocks of the record.
     node_kinds : sequence of str, optional
         Node kind of each entry of ``conn.source`` (``NodeKinds`` in the sidecar); omitted when
         ``None``.

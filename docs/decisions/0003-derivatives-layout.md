@@ -55,8 +55,9 @@ Names follow the BEP017 draft where it has an equivalent (`Measure`, `Directed`,
 
 `_edges.tsv` has one row per ordered pair and band with the columns
 `source target band value p p_adj significant`. A measure without bands uses `band = broadband`. A
-missing p-value or decision (no test run) is `n/a`. A time-resolved result has no single value per
-pair and band, so its table has the header only. The table exists for people who open results in a
+missing p-value or decision (no test run) is `n/a`. A time-resolved result has one row per pair,
+band and time point, with a `time` column (seconds) after `band` (from 0.2.0.dev2; before, its
+table had the header only and its test was not kept). The table exists for people who open results in a
 spreadsheet or `pandas` and for group-level tools that want a flat file; the NetCDF file remains the
 source of truth.
 

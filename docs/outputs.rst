@@ -129,8 +129,13 @@ Each method gives three files per recording.
 
    The test columns are ``n/a`` without a test (``statistics.test = "none"``, and always for
    ``desc-trgc``). :func:`dirconn.io.derivatives.read_edges` reads the table with ``n/a`` as NaN. A
-   frequency-resolved result without bands, or a time-resolved one (``adtf``, ``tpdc``, ``wdtf``),
-   gives a table with the header only; the NetCDF file has the values.
+   time-resolved result (``adtf``, ``tpdc``, ``wdtf``) has one row per pair, band and time point,
+   with a ``time`` column (seconds) after ``band``; its correction runs over pairs and time points
+   together. Its test columns stay ``n/a`` when the test ran on another time axis: block shuffling
+   (the default for continuous records) fits the observed value on 5 s blocks, whose time points
+   are not those of the result; ``PValueShape`` in the sidecar's ``Statistics`` shows the shape the
+   test had. A frequency-resolved result without bands gives a table with the header only; the
+   NetCDF file has the values.
 
    The three files are written in the order ``_conn.nc``, ``_edges.tsv``, ``_conn.json``. The
    sidecar is written last and atomically: its ``TaskKey`` marks the result as complete, so a task
