@@ -431,7 +431,7 @@ def run_unit_task(
     unit, method = payload.unit, payload.method
     ts = _prepared(unit, cfg, work_dir)
     est = estimate(ts, method, cfg.estimation)
-    estimator = build_estimator(method, cfg.estimation)
+    estimator = build_estimator(method, cfg.estimation, ts)
     tests = test_significance(
         ts, estimator, est, cfg.statistics, seed=seed + int(task.key[:8], 16) % 10**6
     )

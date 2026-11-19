@@ -141,3 +141,49 @@ def test_masked_data_with_unsupported_method_gets_a_clear_error(ts):
     out = time_reversal_control(masked, _cfg(), ControlsConfig(time_reversal=True))
     assert out is not None
     assert out.provenance.details["masks"]["n_valid"] < masked.n_times * masked.n_trials
+
+
+@pytest.mark.parametrize("method", ["mtgc", "imcoh", "psi", "wdtf"])
+def test_methods_without_library_defaults_run_on_continuous_data(ts, method):
+    est = estimate(ts, method, _cfg())
+    assert set(est.bands) == set(BANDS)
+
+
+def test_pipeline_defaults_depend_on_the_segmentation(ts):
+    from dirconn.workflows.steps.estimate import method_kwargs
+
+    assert method_kwargs("imcoh", _cfg(), ts)["segment_length"] == 2.0
+    assert method_kwargs("wdtf", _cfg(), ts)["window"] == 2.0
+    epoched = TimeSeries.from_array(
+        np.zeros((3, 4, 200)), sfreq=250.0, names=list(ts.names), segmentation="epoched"
+    )
+    assert epoched.segmentation == "epoched"
+    assert "segment_length" not in method_kwargs("imcoh", _cfg(), epoched)
+    assert method_kwargs("wdtf", _cfg(), epoched)["window"] == 0.5
+    assert "segment_length" not in method_kwargs("imcoh", _cfg())  # no record: no defaults
+
+
+def test_params_override_pipeline_defaults(ts):
+    from dirconn.workflows.steps.estimate import method_kwargs
+
+    cfg = _cfg(methods=("imcoh",), params={"imcoh": {"segment_length": 4.0}})
+    assert method_kwargs("imcoh", cfg, ts)["segment_length"] == 4.0
+
+
+def test_psi_gets_the_configured_bands(ts):
+    from dirconn import PSI
+
+    est = estimate(ts, "psi", _cfg())
+    direct = PSI(segment_length=2.0, bands=[BANDS["theta"], BANDS["beta"]]).fit(ts)
+    np.testing.assert_allclose(est.bands["theta"].values[:, :, 0, 0], direct.values[:, :, 0, 0])
+    np.testing.assert_allclose(est.bands["beta"].values[:, :, 0, 0], direct.values[:, :, 1, 0])
+
+
+def test_psi_refuses_a_band_holding_two_centres(ts):
+    with pytest.raises(ValueError, match="band centres"):
+        estimate(ts, "psi", _cfg(bands={"wide": (4.0, 30.0), "beta": (13.0, 30.0)}))
+
+
+def test_psi_bands_in_params_are_refused():
+    with pytest.raises(ValueError, match="estimation.bands"):
+        EstimationConfig(methods=("psi",), params={"psi": {"bands": [[8.0, 12.0]]}})
