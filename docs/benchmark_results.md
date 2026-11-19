@@ -1,9 +1,8 @@
-# Benchmark conclusions (written by hand)
+# Benchmark conclusions
 
-Written after the final run of the ten published protocols (code `0de0d7f`, every task finished, none
-failed). Every sentence below was compared with the generated tables that follow it. This is a list of
-what was seen, in which cell, with how many simulations; it is not a ranking of methods, and a
-statement that no table supports is not in it. A "why" that no control run could refute is under
+These conclusions are from the final run of the ten published protocols at code `0de0d7f`; every task
+finished and none failed. They state what was observed, in which cell and with how many simulations.
+They are not a ranking of methods. Explanations that no control run tested are listed under
 *Not established*.
 
 How to read the numbers. AUROC is the mean over the simulations of a cell (1.0: every true edge scores
@@ -12,37 +11,38 @@ seeds in `full`, `order` and `leakage_adjacent`; twenty (ten seeds, two data len
 tables of `coupling`, `extent` and `size`; four in `inverse`; nine (three noise windows) in `noise` and
 `noise_hard`; 25 datasets in `significance` and 40 in `significance_power`; 45 region pairs with one seed each in `leakage_pairs`
 and 150 in `leakage_pairs_controls`; 50 seeds per geometry and modality in `leakage_adjacent_controls`. A difference between
-two settings is taken simulation by simulation (mean, sd of the differences, number of pairs). The cell
-means in the AUROC tables carry no interval; a gap between two estimators in one cell is not a result.
+two settings is paired by simulation and given as the mean, the sd of the differences and the number of
+pairs. The cell means in the AUROC tables have no interval, so a gap between two estimators in one cell
+is not a result.
 
 ## Observed
 
 **The three stages (`full`: EEG, five scenarios, 0, -5 and -10 dB, 30 and 60 s, ten seeds, n = 300
 per estimator setting).**
 
-1. Pooled over all of it, the mean AUROC is 0.864 to 0.891 at the region level, 0.800 to 0.825 at the
+1. Pooled over all cells, the mean AUROC is 0.864 to 0.891 at the region level, 0.800 to 0.825 at the
    source level and 0.608 to 0.652 at the sensor level, over the ten estimator settings. Sensor minus
    region is -0.229 to -0.280 (sd 0.19 to 0.26) and source minus region is -0.051 to -0.088 (sd 0.20 to
-   0.24), all with 300 pairs. The pool mixes saturated and unsaturated cells, so it is not the size of
-   the loss in any one condition.
+   0.24), all with 300 pairs. The pool mixes saturated and unsaturated cells, so it does not give the
+   size of the loss in any one condition.
 2. The order of the stages is not the same in every cell. Chain, coupling 0.1, -10 dB (`coupling`,
    five BIC settings, n = 20): region 0.494 to 0.500, source 0.644 to 0.700, sensor 0.744 to 0.781.
 3. `feedback_loop` at the sensor level: 0.415 to 0.556 in all 60 cells (six conditions, ten settings,
    ten seeds each). At the region level the same scenario spans 0.489 to 0.978 and at the source level
    0.604 to 0.852.
 4. `common_driver` at the sensor level: conditional Granger causality is 0.305 to 0.495 in all twelve
-   cells (six conditions, BIC and fixed order), that is below 0.5; pairwise Granger causality is 0.360 to
+   cells (six conditions, BIC and fixed order), so below 0.5; pairwise Granger causality is 0.360 to
    0.700. Conditional minus pairwise is -0.179 (sd 0.123, n = 120) there, +0.032 (sd 0.075) in the chain
    and +0.084 (sd 0.052) in `random_5` at the sensor level; at the region level it is between -0.011
    and +0.005 in all five scenarios.
 5. `random_5` at the source level: DTF/BIC is 0.352 to 0.447 and PDC/BIC 0.386 to 0.458 in all six
-   conditions (n = 10 each), that is below 0.5.
+   conditions (n = 10 each), so below 0.5.
 
 **BIC order against a fixed order of 0.2 s.**
 
 6. In `full` (100 pairs per method, stage and SNR, scenarios and lengths pooled), fixed minus BIC at the
    region level is +0.062 to +0.080 at -10 dB (sd 0.21 to 0.22), +0.016 to +0.021 at -5 dB and -0.016
-   to -0.023 at 0 dB. At the sensor and source levels it lies between -0.021 and +0.033 in every
+   to -0.023 at 0 dB. At the sensor and source levels it lies between -0.021 and +0.033 for every
    method, stage and SNR.
 7. In `order` (narrow-band coupling and long delays, 40 pairs per scenario, method and stage), fixed
    minus BIC lies between -0.014 and +0.055; the largest is DTF at the sensor level in `band_alpha`
@@ -55,9 +55,10 @@ per estimator setting).**
 9. Chain, sensor level, source models `focal`, `partial` and `patch` (all three SNRs): 0.519 to 0.725,
    0.912 to 1.000 and 0.906 to 1.000. In the collider the sensor level is 0.470 to 0.682 in all three.
    The region-level cells of the same rows also differ (chain, -10 dB, DTF/BIC: 0.731 `focal`, 0.900
-   `partial`, 0.806 `patch`), by up to 0.17. The source model is part of the task and so of its seed,
-   which makes the rows different random draws; whether it also changes the region-level data was not
-   checked, so a gap of this size between rows is not by itself an effect of the source model.
+   `partial`, 0.806 `patch`), by up to 0.17. The source model is part of the task and therefore of its
+   seed, so the rows are different random draws. Whether the source model also changes the region-level
+   data was not checked, so a gap of this size between rows does not by itself show an effect of the
+   source model.
 10. `random_10` against `random_5` has no direction that holds for every stage and SNR. Region level,
     -10 dB: 0.656 to 0.664 against 0.549 to 0.553. Region level, 0 dB: 0.900 to 0.950 against 0.955 to
     0.981. Sensor level, 0 dB: 0.581 to 0.662 against 0.543 to 0.723. Source level, 0 dB: 0.572 to 0.635
@@ -76,8 +77,8 @@ gradiometers, four seeds per cell).**
 
 13. Neighbour (`leakage_adjacent`: Z -> X is the only edge, Y is X's neighbour, 10 dB, ten seeds). With
     EEG at the source level the AUROC is 0.400 (DTF, gPDC, PDC) or 0.800 (conditional and pairwise GC),
-    against 1.000 at the region level for all five. The score of the false edge Z -> Y relative to the
-    true edge is 1.40 to 2.07 on average there (no seed below 1.36). With gradiometers at the source
+    against 1.000 at the region level for all five. There, the score of the false edge Z -> Y relative
+    to the true edge is 1.40 to 2.07 on average (no seed below 1.36). With gradiometers at the source
     level the AUROC is 0.860 to 1.000 and the relative score of false edges 1.03 or lower on average.
     The direction accuracy is 1.000 in all 30 rows.
 14. Region pairs without an edge (`leakage_pairs`, 45 pairs, 90 cells, conditional GC and gPDC at BIC
@@ -90,11 +91,11 @@ gradiometers, four seeds per cell).**
 15. Cells without an edge, rate at the 0.05 level. Analytic test: 0.053 (coupling 0, 10 dB, 150 cells),
     0.047 (coupling 0, 40 dB), 0.150 with interval 0.100 to 0.200 (coupling 0.4, 10 dB, 100 cells) and
     0.030 (coupling 0.4, 40 dB). Phase-randomised surrogates (39): 0.053, 0.053, 0.060 and 0.010. In the
-    row with the 0.150 the share of datasets with a false rejection after Benjamini-Hochberg is 0.400
+    row with the 0.150, the share of datasets with a false rejection after Benjamini-Hochberg is 0.400
     (interval 0.234 to 0.593).
 16. Power at 0.05 is 1.000 for both tests in both coupling-0.4 rows. The surrogate test with Benjamini-
-    Hochberg has power 0.000 there: with 39 surrogates the smallest p-value is 1/40 and three cells are
-    needed at that value, the chain has two true edges.
+    Hochberg has power 0.000 there: with 39 surrogates the smallest p-value is 1/40, three cells are
+    needed at that value, and the chain has only two true edges.
 
 **Noise (`noise`: chain, -10 dB, 30 s, nine seeds = three source draws on each of three noise windows).**
 
@@ -109,36 +110,36 @@ gradiometers, four seeds per cell).**
 18. The saturation guard passed on the chain of `full`. All ten protocols finished with no failed task.
     The measured run time is 2.22 h against the budget of 2 h (table "Run time").
 
-**Add-on protocols, run after the ten (their own sections and the second run-time table are below; they
-ran at later commits, `009c4d1` and `3901193`).**
+**Add-on protocols, run after the ten at later commits (`009c4d1` and `3901193`); their sections and
+the second run-time table are below.**
 
 19. `noise_hard` (the noise study at -15 and -20 dB, same design as `noise`, nine seeds = three windows),
-    gradiometers: the empty-room arm is not lower than the simulated arm at the sensor level. Empty
+    gradiometers: at the sensor level the empty-room arm is not lower than the simulated arm. Empty
     room minus simulated, conditional GC / gPDC: -15 dB +0.042 (sd 0.088) / +0.014 (sd 0.042); -20 dB
     +0.306 (sd 0.226) / +0.264 (sd 0.276). At the source level at -20 dB: +0.069 (sd 0.243) / +0.125
-    (sd 0.280). The region level, which does not see the sensor noise, is identical in the three arms:
-    0.514 at -15 dB and 0.444 at -20 dB, so below the sensor level there.
+    (sd 0.280). The region level does not see the sensor noise and is identical in the three arms:
+    0.514 at -15 dB and 0.444 at -20 dB, which is below the sensor level there.
 20. `noise_hard`, magnetometers, sensor level: empty room minus simulated is -0.222 (sd 0.174) / -0.153
-    (sd 0.104) at -15 dB and -0.194 (sd 0.167) / -0.014 (sd 0.159) at -20 dB. With item 17 that is
-    negative in five of the six SNR and estimator combinations and about zero in the sixth; the sign is
-    the opposite of the gradiometers'. At the magnetometer source level the differences are -0.069 (sd
-    0.141) / -0.125 (sd 0.207) at -15 dB and +0.042 (sd 0.265) / +0.014 (sd 0.321) at -20 dB, the sd
-    being as large as or larger than the mean.
+    (sd 0.104) at -15 dB and -0.194 (sd 0.167) / -0.014 (sd 0.159) at -20 dB. Together with item 17,
+    the difference is negative in five of the six SNR and estimator combinations and about zero in the
+    sixth, the opposite sign to the gradiometers. At the magnetometer source level the differences are
+    -0.069 (sd 0.141) / -0.125 (sd 0.207) at -15 dB and +0.042 (sd 0.265) / +0.014 (sd 0.321) at
+    -20 dB, with an sd as large as or larger than the mean.
 21. `significance_power` (region level, chain, conditional GC at fixed order, 40 datasets, 99 surrogates,
     coupling 0, 0.1, 0.2 and 0.4 at 10 and 40 dB). Null cells, rate at the 0.05 level of the analytic
     test: 0.062 (0, 10 dB), 0.050 (0, 40 dB), 0.075 with interval 0.031 to 0.125 (0.1, 10 dB), 0.044
     (0.1, 40 dB), 0.050 (0.2, 10 dB), 0.062 (0.2, 40 dB), **0.181 with interval 0.131 to 0.231 (0.4, 10
     dB, 160 cells)** and 0.050 (0.4, 40 dB). Only the (0.4, 10 dB) row has an interval that excludes 0.05;
-    the first study had 0.150 in the same world. The surrogate test: 0.058, 0.054, 0.050, 0.044, 0.019, 0.037, 0.069 (0.031
-    to 0.113) and 0.019. In the 0.4 / 10 dB row the share of datasets with a Benjamini-Hochberg false
-    rejection is 0.475 (0.329 to 0.625) for the analytic test and 0.150 (0.071 to 0.291) for the
-    surrogate test.
+    the first study had 0.150 under the same conditions. For the surrogate test: 0.058, 0.054, 0.050,
+    0.044, 0.019, 0.037, 0.069 (0.031 to 0.113) and 0.019. In the 0.4 / 10 dB row the share of datasets
+    with a Benjamini-Hochberg false rejection is 0.475 (0.329 to 0.625) for the analytic test and 0.150
+    (0.071 to 0.291) for the surrogate test.
 22. `significance_power`, true edges (80 edge cells per row): the power at 0.05 is 1.000 for both tests
     in all six rows, down to coupling 0.1 at 10 dB; the power at 0.01 is 1.000 too. With 99 surrogates
     the surrogate test with Benjamini-Hochberg has power 1.000 in all six rows (two cells are needed),
-    where it was 0.000 with 39. The false-discovery proportion of Benjamini-Hochberg is 0.008 to 0.050
+    against 0.000 with 39. The false-discovery proportion of Benjamini-Hochberg is 0.008 to 0.050
     for the surrogate test and 0.017 to 0.175 for the analytic test.
-23. `m5_methods` (the further estimators: TRGC, imaginary coherence, PSI, MTGC, PCMCI and TE, next to conditional GC with BIC; chain, collider, common driver; 0 dB,
+23. `m5_methods` (the additional estimators: TRGC, imaginary coherence, PSI, MTGC, PCMCI and TE, next to conditional GC with BIC; chain, collider, common driver; 0 dB,
     60 s, EEG and gradiometers; five seeds), EEG sensor level, where the sensors mix the regions: in the
     collider the AUROC over seeds is 0.50 to 0.65 for `gc/bic`, 0.80 to 0.95 for `trgc/bic`, 0.95 to 1.00
     for `psi/mt` and 0.88 to 1.00 for `imcoh/mt` (undirected); in the common driver 0.40 to 0.50 for
@@ -155,39 +156,39 @@ ran at later commits, `009c4d1` and `3901193`).**
     and `te/bic`.
 
 **Leakage controls (add-ons `leakage_adjacent_controls` and `leakage_pairs_controls`, issue #9).
-Conditional GC at BIC order (`gc/bic`, the reference) against three estimators built to ignore
-zero-lag mixing: time-reversed GC (`trgc/bic`), imaginary coherence (`imcoh/mt`, undirected) and the
-phase slope index (`psi/mt`); EEG and gradiometers, 10 dB, 60 s, `partial`. They ran at `c06cb5f` with
+Conditional GC at BIC order (`gc/bic`, the reference) is compared with three estimators designed to
+ignore zero-lag mixing: time-reversed GC (`trgc/bic`), imaginary coherence (`imcoh/mt`, undirected) and
+the phase slope index (`psi/mt`); EEG and gradiometers, 10 dB, 60 s, `partial`. They ran at `c06cb5f` with
 Python 3.13.9, numpy 2.5.5 and scipy 1.18.1; the tasks they share with `leakage_adjacent` (seeds 0 to 9) and
 `leakage_pairs` (the first 45 pairs) give the same GC score matrices as the published files.**
 
 25. Region pairs without an edge (`leakage_pairs_controls`, 150 pairs, one seed each). A pair is a false
     positive when its strongest |score| is above the 95th percentile of the same estimator's strongest
-    |score| at the region level, per modality; at the region level this flags 8/150 for every estimator
-    by construction, which says nothing about whether the threshold is right. Sensor and source level,
-    of 150 each: conditional GC 150 and 148 (EEG), 149 and 140 (gradiometers); TRGC 112, 79, 92 and 81;
-    iCOH 4, 7, 3 and 8; PSI 50, 27, 48 and 33.
-26. The same pairs compared with GC one by one (exact McNemar). Of GC's 587 false positives over the
+    |score| at the region level, per modality. At the region level this flags 8/150 for every estimator
+    by construction, so that count says nothing about whether the threshold is right. Sensor and source
+    level, of 150 each: conditional GC 150 and 148 (EEG), 149 and 140 (gradiometers); TRGC 112, 79, 92
+    and 81; iCOH 4, 7, 3 and 8; PSI 50, 27, 48 and 33.
+26. The same pairs, compared with GC pair by pair (exact McNemar). Of GC's 587 false positives over the
     four stage and modality cells, TRGC does not flag 223 (38.0%), iCOH 565 (96.3%) and PSI 429 (73.1%);
-    none of the three flags any of the 13 pair-cells that GC leaves alone. Every Holm-adjusted p is
+    none of the three flags any of the 13 pair-cells that GC does not flag. Every Holm-adjusted p is
     below 1e-11 (the largest 7.3e-12, TRGC, EEG sensor level).
 27. Spearman correlation between the |score| of a false edge and the crosstalk of the pair (300 cells
     per row, percentile bootstrap over pairs), sensor and source level: GC 0.38 to 0.69 (intervals 0.27
     to 0.76; item 14 had 0.44 to 0.68 with 45 pairs), TRGC 0.00 to 0.23 (-0.11 to 0.35), PSI -0.08 to
-    0.06 (-0.19 to 0.18) and iCOH -0.26 to -0.47 (-0.56 to -0.13), that is negative: the more a region
-    leaks into the other's series, the lower the imaginary coherence of the pair. At the region level
-    all four are between -0.12 and 0.04.
+    0.06 (-0.19 to 0.18) and iCOH -0.26 to -0.47 (-0.56 to -0.13). The iCOH correlation is negative: the
+    more a region leaks into the other's series, the lower the imaginary coherence of the pair. At the
+    region level all four are between -0.12 and 0.04.
 28. Neighbour (`leakage_adjacent_controls`: the geometry of `leakage_adjacent` and four more of the same
     family with the same dynamics, `temporal_lh`, `cingulate_lh`, `orbitofrontal_rh` and
     `cingulate_rh`; 50 seeds per geometry and modality). A seed fails when some false edge has a |score|
-    at least as high as the true edge Z -> X; for the net and undirected measures X -> Z is the true
-    pair and does not count. Over the 1000 seed-cells at the sensor and source levels (five geometries,
-    two modalities, 50 seeds, two stages) GC fails in 111. TRGC avoids 13 of them (11.7%), iCOH 31
-    (27.9%) and PSI 25 (22.5%); of the 889 seed-cells in which GC passes, TRGC fails in 62 (7.0%), iCOH
-    in 145 (16.3%) and PSI in 63 (7.1%). No estimator fails at the region level, and no estimator fails
-    in any gradiometer cell at the sensor level. Only |score| is compared, so a net measure whose true
-    edge comes out with the wrong sign is not counted as failing; this happens in 4 seed-cells (PSI,
-    the original geometry, EEG sensor level).
+    at least as high as the true edge Z -> X. For the net and undirected measures X -> Z belongs to the
+    true pair and does not count. Over the 1000 seed-cells at the sensor and source levels (five
+    geometries, two modalities, 50 seeds, two stages) GC fails in 111. TRGC avoids 13 of them (11.7%),
+    iCOH 31 (27.9%) and PSI 25 (22.5%); of the 889 seed-cells in which GC passes, TRGC fails in 62
+    (7.0%), iCOH in 145 (16.3%) and PSI in 63 (7.1%). No estimator fails at the region level, and no
+    estimator fails in any gradiometer cell at the sensor level. Only |score| is compared, so a net
+    measure whose true edge comes out with the wrong sign is not counted as failing; this happens in 4
+    seed-cells (PSI, the original geometry, EEG sensor level).
 29. Neighbour, cell by cell (failures of 50 seeds). Original geometry, EEG: at the source level GC,
     TRGC and PSI 50, iCOH 47; at the sensor level GC and TRGC 0, iCOH and PSI 24 each (Holm p 6.7e-6).
     `temporal_lh`: gradiometer source level GC 48, the controls 35 (iCOH, PSI) to 45 (TRGC); EEG source
@@ -198,41 +199,41 @@ Python 3.13.9, numpy 2.5.5 and scipy 1.18.1; the tasks they share with `leakage_
 30. Neighbour, which false edge wins. At the source level it is Z -> Y in every failing seed of every
     estimator. In the cells with the most failures (`temporal_lh`, source level, both modalities;
     `cingulate_rh`, EEG source level) the median over the 50 seeds of Z -> Y relative to Z -> X is 0.89
-    to 1.09 for every estimator, so the side of 1 on which a seed falls decides it; in the original
-    geometry with EEG at the source level it is 1.03 (iCOH) to 1.41 (GC) and above 1 in 47 to 50 seeds.
-    By construction the series of Y carries part of X at zero lag (the leak) and X receives Z with a
-    delay of 10 ms, so Z -> Y is a lagged relation in the reconstructed data, which none of the controls
-    is built to reject. The controls avoid part of GC's failures in a few cells. The largest is
-    `temporal_lh` with gradiometers at the source level, where GC fails in 48 seeds: PSI avoids 13 and
-    adds none (Holm p 0.013), iCOH avoids 15 and adds 2 (Holm p 0.12), TRGC avoids 4 and adds 1; Z -> Y
-    still wins in the seeds that remain. In `cingulate_lh`, EEG sensor level, all nine failures of GC
-    are X -> Z, the reverse of the true edge (median 1.08 times Z -> X, direction accuracy 0.82); for
-    TRGC and PSI that cell is the true pair (direction accuracy 1.00), so they avoid them, but not
-    significantly after correction (item 29).
-31. Together: the controls remove most of the leakage false positives between regions that are not
-    driven (items 25 to 27); they help little, and in some geometries hurt, when the region that leaks
-    is itself driven with a delay: over all neighbour cells they avoid 12 to 28% of GC's failures and
-    fail in 7 to 16% of the seeds where GC passes (items 28 to 30).
+    to 1.09 for every estimator, so whether a seed fails depends on which side of 1 it falls; in the
+    original geometry with EEG at the source level it is 1.03 (iCOH) to 1.41 (GC) and above 1 in 47 to
+    50 seeds. By construction the series of Y carries part of X at zero lag (the leak), and X receives Z
+    with a delay of 10 ms, so Z -> Y is a lagged relation in the reconstructed data, which none of the
+    controls is designed to reject. The controls avoid part of GC's failures in a few cells. The largest
+    case is `temporal_lh` with gradiometers at the source level, where GC fails in 48 seeds: PSI avoids
+    13 and adds none (Holm p 0.013), iCOH avoids 15 and adds 2 (Holm p 0.12), TRGC avoids 4 and adds 1;
+    Z -> Y still wins in the remaining seeds. In `cingulate_lh`, EEG sensor level, all nine failures of
+    GC are X -> Z, the reverse of the true edge (median 1.08 times Z -> X, direction accuracy 0.82); for
+    TRGC and PSI that edge belongs to the true pair (direction accuracy 1.00), so they avoid these
+    failures, but not significantly after correction (item 29).
+31. In summary, the controls remove most of the leakage false positives between regions that are not
+    driven (items 25 to 27). They help little, and in some geometries hurt, when the leaking region is
+    itself driven with a delay: over all neighbour cells they avoid 12 to 28% of GC's failures and fail
+    in 7 to 16% of the seeds where GC passes (items 28 to 30).
 
 ## Not established
 
 - **Why** the sensor level is lower than the region level in `full`, why `feedback_loop` carries no
   direction information at the sensor level, why conditional GC is below 0.5 for `common_driver` at the
   sensor level, why DTF and PDC are below 0.5 for `random_5` at the source level, and why LCMV is the
-  lowest inverse method. Leakage between regions is a candidate for each; the correlation of item 14
-  shows that false-edge scores follow the crosstalk, not that it causes these results. No run removed
-  the leakage and looked again.
-- Why the empty-room noise hurts the magnetometer sensor level (items 17 and 20) and does not hurt the
+  lowest inverse method. Leakage between regions is a possible cause of each. The correlation of item 14
+  shows that false-edge scores follow the crosstalk, not that the crosstalk causes these results, and no
+  run removed the leakage and repeated the analysis.
+- Why the empty-room noise hurts the magnetometer sensor level (items 17 and 20) but not the
   gradiometers (item 19). The three noise windows are three independent samples, and no control
   separates the shape of the noise in time from its spread across sensors.
 - Whether a fixed order is better than BIC at low SNR in general: item 6 is a pooled difference at the
-  region level and is not repeated at the other stages.
+  region level and is not seen at the other stages.
 - Why the analytic test exceeds its level at coupling 0.4 and 10 dB (items 15 and 21). Item 21 shows
-  the excess is not there at coupling 0.2 with 10 dB or at 0.4 with 40 dB, so the combination matters;
-  the order setting was not varied (the BIC arm was dropped to fit the budget), and what in the data
-  produces the excess was not examined.
-- Whether any estimator is better than another, overall or in a class of conditions. No ranking is made
-  here, and the tables hold no interval for a cell mean.
+  that the excess is absent at coupling 0.2 with 10 dB and at 0.4 with 40 dB, so the combination
+  matters. The order setting was not varied (the BIC arm was dropped to fit the budget), and what in
+  the data produces the excess was not examined.
+- Whether any estimator is better than another, overall or in a class of conditions. No ranking is
+  made, and the tables give no interval for a cell mean.
 - Whether larger networks are harder (item 10 has no consistent direction), and whether any of this
   holds for real recordings.
 - Whether the controls of item 23 are better than conditional GC under sensor mixing in general: two
@@ -240,8 +241,8 @@ Python 3.13.9, numpy 2.5.5 and scipy 1.18.1; the tasks they share with `leakage_
   and source levels do not show the difference. Why `imcoh/mt` stays at 0.50 to 0.70 in the chain at
   every stage was not examined.
 - Whether the failures of the controls in the neighbour geometries (item 30) disappear when the
-  leaking region is not driven: no run removed the edge Z -> X, or the leak of X into Y, and looked
-  again. Why the imaginary coherence of a pair falls as its crosstalk rises (item 27) was not
+  leaking region is not driven: no run removed the edge Z -> X, or the leak of X into Y, and repeated
+  the analysis. Why the imaginary coherence of a pair falls as its crosstalk rises (item 27) was not
   examined.
 
 ## Limits
@@ -258,36 +259,36 @@ Python 3.13.9, numpy 2.5.5 and scipy 1.18.1; the tasks they share with `leakage_
   graph of 20 regions, `focal` and `patch` for random networks, time-varying scenarios (the stage
   protocols refuse them), the empty room together with a simulated brain background, EEG in the noise
   study (the dataset has no empty-room recording for it).
-- The budget is exceeded: 2.22 h measured. `extent`, `size` and `inverse` started with a gate estimate
-  above their share and were run with `--force`; the results header does not record that the flag was
-  used.
+- The run exceeded its budget: 2.22 h measured. `extent`, `size` and `inverse` started with a gate
+  estimate above their share and were run with `--force`; the results header does not record that the
+  flag was used.
 - Power is 1.000 in every row of `significance` and `significance_power` (item 22), so the two studies
-  give no power curve: a weaker coupling or shorter data would be needed to find where it falls. Not run.
+  give no power curve; finding where power falls would need weaker coupling or shorter data. This was
+  not run.
 - The add-ons: `noise_hard` was estimated at 0.05 h and measured 0.03 h. `significance_power` was shrunk
   from 400 tasks with two estimators (gate estimate 1.3 h) to 320 tasks with one (0.21 h), still above its
-  0.1 h budget, and run with `--force` as agreed; it measured 0.06 h. The estimates of the gate for this
-  kind of task are again several times too high (`significance`: 0.06 h against 0.01 h).
+  0.1 h budget, and run with `--force` as agreed; it measured 0.06 h. For this kind of task the gate
+  estimates are again several times too high (`significance`: 0.06 h against 0.01 h).
 - The gate estimate varies between invocations of the same protocol on this machine, so the "estimate"
   column of the run-time table is the estimate at the start of the run that wrote the file. `size` was
   refused at 0.25 h and the run that wrote its file started with 0.14 h; `inverse` was 0.24 h, 0.17 h
-  and 0.29 h in three invocations (and 33 h in one that spanned a sleep of the computer).
+  and 0.29 h in three invocations (and 33 h in one during which the computer went to sleep).
 - The add-on `m5_methods` had a budget of 0.3 h, chosen after a gate estimate of 0.14 h for
   three seeds; with five seeds the gate estimated 0.24 h and the run measured 0.24 h. It was rerun at
   `a0a081d` after PCMCI's default `tau_max` gained a 30 ms floor (0.24 h again): every cell is the
   same, because at 100 Hz the floor is 3 samples and the BIC orders of these tasks are 5 to 7.
 - A first run of `inverse` was discarded because the checkout was switched to another branch while it
-  ran (its header recorded `d2e98d1`, the code that ran was a mixture). The file in the report is a
+  ran (its header recorded `d2e98d1`, but the code that ran was mixed). The file in the report is a
   rerun in a separate worktree at `0de0d7f`.
 - The leakage controls (items 25 to 31): one head model, one SNR (10 dB), one length (60 s), the
-  `partial` source model and the minimum norm. They rank scores, against an empirical threshold
+  `partial` source model and the minimum norm. They rank scores against an empirical threshold
   (pairs) or against the true edge (neighbour); no per-edge significance test was run. The sensor and
   source stages of a seed are one simulation, so the 1000 seed-cells of item 28 are 500 simulations
   counted at two stages, and the 600 pair-cells of item 26 are 300; four of the five geometries share
   Z (`cuneus-rh`) and all share the dynamics. The pooled counts are therefore not independent and
-  carry no interval; the McNemar tests are per cell, with Holm over the sensor and source cells of each
-  protocol. Budgets 3.0 h
-  (`leakage_adjacent_controls`) and 2.0 h (`leakage_pairs_controls`); gate estimates 0.31 h and 0.10 h,
-  measured 0.26 h and 0.10 h.
+  have no interval; the McNemar tests are per cell, with Holm over the sensor and source cells of each
+  protocol. Budgets 3.0 h (`leakage_adjacent_controls`) and 2.0 h (`leakage_pairs_controls`); gate
+  estimates 0.31 h and 0.10 h, measured 0.26 h and 0.10 h.
 
 # Benchmark results (generated)
 

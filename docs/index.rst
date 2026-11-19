@@ -54,8 +54,8 @@ How the methods were validated
 Every method is scored on simulated networks with a known truth. :doc:`method_validation` covers
 small region-level networks (chain, common driver, collider, feedback loop, zero-lag coupling, hidden
 driver, observation noise); :doc:`benchmark` describes the benchmark through the head models of the
-MNE ``sample`` subject, :doc:`benchmark_results` holds what they do and do not show, written by hand,
-in front of its tables, which are generated from the saved results. :doc:`timevarying` and
+MNE ``sample`` subject, and :doc:`benchmark_results` states what the results do and do not show,
+followed by tables generated from the saved results. :doc:`timevarying` and
 :doc:`nonstationary_validation` do the same for the time-varying methods.
 
 .. toctree::

@@ -4,12 +4,12 @@ What each method can and cannot see on networks whose truth is known. Generated 
 
 ## Findings
 
-Read from the tables below (10 seeds, 10000 samples, region-level series). They describe these
-scenarios and settings, not every dataset; re-run `tools/validate_methods.py` after any change.
+These findings are from the tables below (10 seeds, 10000 samples, region-level series). They describe
+these scenarios and settings, not every dataset; rerun `tools/validate_methods.py` after any change.
 
 1. **Ranking is easy, specificity is not.** In the simple topologies (chain, common driver,
    collider, bidirectional pair, feedback loop) every method puts the true edges first, so AUROC is
-   about 1 almost everywhere and says little. The separation shows the difference: in the chain,
+   about 1 almost everywhere and says little. The separation shows the difference. In the chain,
    conditional Granger causality (`gc`) and `gpdc` keep the strongest spurious edge more than 300
    times below the weakest true one, `pdc` at least 9 times, but pairwise Granger causality
    (`gc_pairwise`) only 1.3 to 1.4 times and `dtf` below 1 (0.39 to 0.42).
@@ -38,15 +38,15 @@ scenarios and settings, not every dataset; re-run `tools/validate_methods.py` af
    1.06 depending on the method): a spurious edge is as strong as the weakest true one although the
    median AUROC is still 0.97. At -15 dB the median AUROC is 0.82 with a minimum of 0.5 (chance) and
    the selected order drops to 1. The only diagnostic that reacts is the order-stability check (added
-   after the first version of this report): it warns in 6 of the 10 seeds at -15 dB, never at -10 dB;
-   the sampling, stability and order-boundary checks did not warn in any run of this report. A
-   clean-looking checklist is therefore no evidence that the data were clean.
-7. **The six methods fail together under noise** because they share the same VAR fit: the choice
-   between them does not repair a bad model, only the way the model is read.
+   after the first version of this validation): it warns in 6 of the 10 seeds at -15 dB, never at
+   -10 dB. The sampling, stability and order-boundary checks did not warn in any run here, so a
+   clean-looking checklist is no evidence that the data were clean.
+7. **The six methods fail together under noise** because they share the same VAR fit: choosing
+   between them changes only how the model is read; it does not repair a bad model.
 
-The controls for zero-delay mixing (`trgc`, `imcoh`, `psi`) are scored here on the same
-region-level series, which contain no mixing; these items say what they do when there is nothing
-to control for. `trgc` and `psi` are net flows and are scored against the net truth, `imcoh` is
+The controls for zero-delay mixing (`trgc`, `imcoh`, `psi`) are scored on the same region-level
+series, which contain no mixing. The next items therefore show what they do when there is nothing to
+control for. `trgc` and `psi` are net flows and are scored against the net truth, `imcoh` is
 undirected (see Setup).
 
 8. **TRGC keeps the direct-path behaviour of conditional Granger causality, with a smaller
@@ -73,8 +73,8 @@ undirected (see Setup).
     above 360 for `gc_pairwise`), because an estimated spectrum leaves a positive floor on every
     non-edge. Under strong observation noise it held up better in these runs: at -15 dB its median
     separation is 0.90 and its median AUROC 0.95, against 0.18 and 0.82 for `gc_pairwise`, whose BIC
-    order drops to 1 there; why is not established here (no model order to collapse is one
-    candidate).
+    order drops to 1 there. The reason is not established; one candidate is that it has no model order
+    that can collapse.
 13. **PCMCI conditions away indirect and shared influence, and tests only lags up to `tau_max`.**
     In the chain, common-driver and collider networks its separation is 6.1 to 17.5 with AUROC 1 in
     every seed: the selected parents remove the indirect path and the shared-driver pair, as
@@ -92,8 +92,8 @@ undirected (see Setup).
     sample on these oscillating regions got the direction wrong in most runs (direction accuracy 0 in
     the bidirectional pair and under the hidden driver, three seeds), which is why the default is the
     BIC order and not 1. Under strong observation noise the BIC order drops to 1 and the same failure
-    returns: at -15 dB the median AUROC is 0.23 (0.1 to 0.6), worse than chance, i.e. the ranking is
-    inverted, and at -10 dB it is 0.55. The raw estimate can also be slightly negative for a true edge.
+    returns: at -15 dB the median AUROC is 0.23 (0.1 to 0.6), worse than chance (the ranking is
+    inverted), and at -10 dB it is 0.55. The raw estimate can also be slightly negative for a true edge.
 15. **The renormalised PDC (`rpdc`) reads the VAR fit like `gc` and `gpdc`, not like `pdc`.** It is
     the direct influence at a frequency over its estimation error, not a share of an outflow, so
     the normalisation that hurts `pdc` is gone: in the common-driver network its median separation
@@ -103,7 +103,7 @@ undirected (see Setup).
     separation 0.90 at -10 dB, 0.19 at -15 dB). Its asymptotic threshold is calibrated in
     `docs/statistics.md`.
 
-Not covered here, and covered elsewhere: mixing and leakage through a forward model (sensor level and
+Covered elsewhere, not here: mixing and leakage through a forward model (sensor level and
 inverse-estimated regions: the simulation benchmark, and tutorial 9 for the controls), non-stationary
 coupling (time-varying methods: the non-stationary validation), non-linear coupling and
 conditional-independence methods (tutorials 11, 12 and 15).

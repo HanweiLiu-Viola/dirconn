@@ -37,7 +37,7 @@ autodoc_member_order = "bysource"
 napoleon_numpy_docstring = True
 napoleon_google_docstring = False
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
-# the *_findings.md files and benchmark_conclusions.md are the hand-written parts that the
+# the *_findings.md files and benchmark_conclusions.md are the text parts that the
 # report scripts put in front of the generated pages, so they are not pages of their own
 exclude_patterns = [
     "_build",
