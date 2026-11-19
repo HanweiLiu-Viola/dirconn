@@ -114,8 +114,8 @@ conditional-independence methods (tutorials 11, 12 and 15).
 - Region-level series (no forward model, no mixing). Four oscillating regions of 10 to 25 Hz unless a scenario says otherwise.
 - Time-domain measures are scored as they are; the spectral measures are averaged over 1 to 80 Hz first. `imcoh` is undirected: its magnitude is scored against an edge in either direction, without direction accuracy. `trgc` and `psi` are net flows: a pair coupled both ways is left out (in `bidirectional` only C -> D is scored), and a true edge whose net flow points the other way counts as 0 in the separation. `pcmci` is signed (a partial correlation): its magnitude is scored.
 - Estimators (the VAR-based ones and `pcmci`'s `tau_max` choose the order once by BIC, at most 12 lags; `imcoh`, `psi` and `mtgc` use 2 s multitaper segments):
-  - `gc`: `GC(order='bic', max_order=12, conditional=True, ridge=0.0, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True)`
-  - `gc_pairwise`: `GC(order='bic', max_order=12, conditional=False, ridge=0.0, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True)`
+  - `gc`: `GC(order='bic', max_order=12, conditional=True, method='refit', ridge=0.0, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True)`
+  - `gc_pairwise`: `GC(order='bic', max_order=12, conditional=False, method='refit', ridge=0.0, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True)`
   - `dtf`: `DTF(order='bic', max_order=12, n_freqs=128, fmax=None, freqs=None, ridge=0.0, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True, standardize=True)`
   - `pdc`: `PDC(order='bic', max_order=12, n_freqs=128, fmax=None, freqs=None, ridge=0.0, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True, squared=True, standardize=True)`
   - `rpdc`: `RPDC(order='bic', max_order=12, n_freqs=128, fmax=None, freqs=None, demean=True, n_folds=5, check_order_stability=True, check_whiteness=True)`
