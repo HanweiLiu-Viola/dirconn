@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from dirconn.data.timeseries import TimeSeries
@@ -15,7 +16,7 @@ from dirconn.stats.analytic import (
     analytic_pdc_test,
     analytic_rpdc_test,
 )
-from dirconn.stats.surrogate_test import SurrogateTestResult, surrogate_test
+from dirconn.stats.surrogate_test import SurrogateTestResult, surrogate_test, surrogate_tests
 from dirconn.stats.surrogates import (
     AAFT,
     IAAFT,
@@ -121,11 +122,7 @@ def significance_test(
         return analytic_gc_test(estimator, data, alpha=alpha)  # type: ignore[arg-type]
 
     assert n_surrogates is not None and seed is not None
-    if test == "block_perm":
-        assert block_size is not None
-        generator: SurrogateGenerator = BlockShuffle(block_size=block_size)
-    else:
-        generator = _generator(surrogate)
+    generator = _resampling_generator(test, surrogate, block_size)
     return surrogate_test(
         estimator,
         data,
@@ -135,6 +132,67 @@ def significance_test(
         reduce=reduce,
         alpha=alpha,
     )
+
+
+def significance_tests(
+    estimator: Estimator,
+    data: TimeSeries,
+    *,
+    test: str,
+    reduces: Mapping[str, Reduction],
+    n_surrogates: int,
+    seed: int,
+    surrogate: SurrogateGenerator | str | None = None,
+    block_size: int | None = None,
+    alpha: float = 0.05,
+) -> dict[str, SurrogateTestResult]:
+    """Several resampling tests of one estimator that share their surrogates and fits.
+
+    The resampling counterpart of :func:`significance_test` for several reductions at once, for
+    example one per frequency band: each surrogate is drawn and fitted once
+    (:func:`dirconn.stats.surrogate_test.surrogate_tests`), which divides the cost by the number
+    of reductions. The results are not independent of each other.
+
+    Parameters
+    ----------
+    estimator, data, surrogate, n_surrogates, block_size, seed, alpha
+        As for :func:`significance_test`.
+    test : {"surrogate", "block_perm"}
+        The resampling test; ``"surrogate"`` needs ``surrogate``, ``"block_perm"`` needs
+        ``block_size``.
+    reduces : mapping of str to reduction
+        Named reductions; one result per name.
+
+    Returns
+    -------
+    dict of str to SurrogateTestResult
+    """
+    if test not in ("surrogate", "block_perm"):
+        raise ValueError(f'test must be "surrogate" or "block_perm", got {test!r}.')
+    if test == "surrogate" and block_size is not None:
+        raise ValueError("block_size is not used by test='surrogate'; remove it.")
+    if test == "block_perm" and surrogate is not None:
+        raise ValueError("surrogate is not used by test='block_perm'; remove it.")
+    generator = _resampling_generator(test, surrogate, block_size)
+    return surrogate_tests(
+        estimator,
+        data,
+        generator,
+        n_surrogates=n_surrogates,
+        seed=seed,
+        reduces=reduces,
+        alpha=alpha,
+    )
+
+
+def _resampling_generator(
+    test: str, surrogate: SurrogateGenerator | str | None, block_size: int | None
+) -> SurrogateGenerator:
+    if test == "block_perm":
+        if block_size is None:
+            raise ValueError("test='block_perm' needs block_size.")
+        return BlockShuffle(block_size=block_size)
+    return _generator(surrogate)
 
 
 def _generator(surrogate: SurrogateGenerator | str | None) -> SurrogateGenerator:
