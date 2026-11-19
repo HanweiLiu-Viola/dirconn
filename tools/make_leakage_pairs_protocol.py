@@ -56,7 +56,7 @@ def _controls_description(n: int, min_visibility: float) -> str:
         "Conditional Granger causality as the reference and the three controls against leakage: "
         "time-reversed GC (BIC order), imaginary coherence and the phase slope index "
         "(multitaper), one seed per pair. A pair is a false positive of an estimator when its "
-        "strongest |score| at source level is above the 95th percentile of the same estimator's "
+        "strongest |score| at sensor or source level is above the 95th percentile of the same estimator's "
         "strongest |score| at region level; the controls are compared with GC pair by pair "
         "(McNemar). The scores are kept. The regions are those with a visibility of at least "
         f"{min_visibility:g} on all three modalities (tools/make_leakage_pairs_protocol.py "

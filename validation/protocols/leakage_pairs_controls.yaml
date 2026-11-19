@@ -5,9 +5,9 @@ description: 'The leakage controls (issue #9), an add-on to leakage_pairs: 150 r
   same pair seed, so the first 45 pairs are those of leakage_pairs. Conditional Granger causality as the
   reference and the three controls against leakage: time-reversed GC (BIC order), imaginary coherence
   and the phase slope index (multitaper), one seed per pair. A pair is a false positive of an estimator
-  when its strongest |score| at source level is above the 95th percentile of the same estimator''s strongest
-  |score| at region level; the controls are compared with GC pair by pair (McNemar). The scores are kept.
-  The regions are those with a visibility of at least 0.5 on all three modalities (tools/make_leakage_pairs_protocol.py
+  when its strongest |score| at sensor or source level is above the 95th percentile of the same estimator''s
+  strongest |score| at region level; the controls are compared with GC pair by pair (McNemar). The scores
+  are kept. The regions are those with a visibility of at least 0.5 on all three modalities (tools/make_leakage_pairs_protocol.py
   --name leakage_pairs_controls).'
 kind: region_pairs
 pairs:
