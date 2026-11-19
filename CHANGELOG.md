@@ -113,9 +113,22 @@ All notable changes to dirconn are listed here. The format follows
 
 ### Changed
 
+- Pipeline speed: a criterion (`estimation.order = "bic"`, ...) selects the VAR order once per
+  recording, and every method with an order, TRGC and the surrogate fits use it (before, each
+  method and each surrogate selected again); the tests of all bands share their surrogates,
+  so each surrogate is fitted once instead of once per band. The null distribution no longer
+  includes the variability of the order selection. New `dirconn.stats.surrogate_test.surrogate_tests`
+  and `dirconn.stats.significance.significance_tests` (several reductions, one set of fits).
+- Pipeline defaults for the options the library leaves open: `segment_length = 2.0` s for
+  mtgc, imcoh and psi on continuous records, `window` 2.0 s (continuous) or 0.5 s (epoched)
+  for wdtf; psi takes `estimation.bands` (its tasks failed before).
+- The edge table of a time-resolved result (adtf, tpdc, wdtf) has one row per pair, band and
+  time point with a `time` column, and keeps the test (before: header only, the test was
+  lost). After block shuffling the test ran on another time axis and its columns stay `n/a`.
 - The version is `0.2.0.devN` until the 0.2.0 release; it is part of the pipeline's task keys, of
   the prepared-data cache key and of the `DirconnVersion` of every result. A change to what a
-  pipeline step computes bumps `N` (`0.2.0.dev1` for the edge cropping in resampling), so results
+  pipeline step computes bumps `N` (`0.2.0.dev1` for the edge cropping in resampling,
+  `0.2.0.dev2` for the shared order selection and surrogates), so results
   and caches written before are recomputed instead of reused.
 - `MethodInfo` gains `report_kind` (`"matrix"`, `"spectrum"`, `"time_frequency"` or `"control"`, how
   a report draws the result) and `citations` (bibliography keys); both have defaults, so existing

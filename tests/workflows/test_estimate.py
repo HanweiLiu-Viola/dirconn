@@ -82,13 +82,13 @@ def test_time_reversal_control_returns_trgc(ts):
     assert out.provenance.method == "trgc"
 
 
-def test_surrogate_test_per_band_with_distinct_seeds(ts):
+def test_surrogate_test_of_every_band_shares_the_surrogates(ts):
     cfg = _cfg()
     est = estimate(ts, "rpdc", cfg)
     stats = StatisticsConfig(test="surrogate", n_surrogates=10)
     tests = run_significance(ts, build_estimator("rpdc", cfg), est, stats, seed=7)
     assert [t.band for t in tests] == ["theta", "beta"]
-    assert [t.seed for t in tests] == [7, 8]
+    assert [t.seed for t in tests] == [7, 7]
     for t in tests:
         assert t.test == "surrogate" and t.n_surrogates == 10
         assert t.pvalues.shape == t.adjusted.shape == t.significant.shape == (4, 4)
@@ -187,3 +187,50 @@ def test_psi_refuses_a_band_holding_two_centres(ts):
 def test_psi_bands_in_params_are_refused():
     with pytest.raises(ValueError, match="estimation.bands"):
         EstimationConfig(methods=("psi",), params={"psi": {"bands": [[8.0, 12.0]]}})
+
+
+def test_one_order_selection_serves_every_var_method(ts):
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    cfg = _cfg(order="bic", order_max=8)
+    selection = select_shared_order(ts, cfg)
+    assert selection is not None and 1 <= selection.order <= 8
+    for method in ("gc", "dtf", "pdc", "adtf"):
+        est = estimate(ts, method, cfg, selection)
+        prov = est.full.provenance
+        assert prov.model_order == selection.order
+        assert prov.details["order_selection"]["criterion"] == "bic"
+        assert prov.history[-1]["step"] == "shared_order_selection"
+        assert prov.assumptions.get("order_selection") is not None
+
+
+def test_shared_order_gives_the_same_result_as_the_estimator_own_selection(ts):
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    cfg = _cfg(order="bic", order_max=8)
+    shared = estimate(ts, "pdc", cfg, select_shared_order(ts, cfg))
+    own = estimate(ts, "pdc", cfg)
+    assert shared.full.provenance.model_order == own.full.provenance.model_order
+    np.testing.assert_allclose(shared.full.values, own.full.values)
+
+
+def test_the_estimator_for_the_surrogates_has_a_fixed_order(ts):
+    cfg = _cfg(order="bic")
+    assert build_estimator("gc", cfg, ts, order=7).order == 7
+    fixed = _cfg(order="bic", methods=("gc",), params={"gc": {"order": 3}})
+    assert build_estimator("gc", fixed, ts, order=7).order == 3
+    assert "order" not in build_estimator("imcoh", cfg, ts, order=7).__dataclass_fields__
+
+
+def test_a_fixed_order_needs_no_selection():
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    assert select_shared_order(None, _cfg(order=4)) is None  # type: ignore[arg-type]
+
+
+def test_methods_without_an_order_keep_their_provenance(ts):
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    cfg = _cfg(order="bic", order_max=8)
+    est = estimate(ts, "imcoh", cfg, select_shared_order(ts, cfg))
+    assert "order_selection" not in est.full.provenance.details

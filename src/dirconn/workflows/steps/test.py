@@ -1,4 +1,4 @@
-"""Significance tests of an estimate, one per band, with multiple-comparison correction."""
+"""Significance tests of an estimate, one per band on shared surrogates, with correction."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import numpy as np
 from dirconn.data.timeseries import TimeSeries
 from dirconn.methods.base import Estimator
 from dirconn.stats.correction import adjust_pvalues
-from dirconn.stats.significance import significance_test
+from dirconn.stats.significance import significance_test, significance_tests
 from dirconn.stats.surrogate_test import SurrogateTestResult
 from dirconn.workflows.config import StatisticsConfig
 from dirconn.workflows.steps.estimate import Estimate
@@ -113,7 +113,8 @@ def test_significance(
         Test kind, surrogate (``"auto"`` is block shuffling for continuous records and trial
         shuffling for epoched ones), block length, number of surrogates, level and correction.
     seed : int
-        Seed of the first band's test; band ``i`` uses ``seed + i``.
+        Seed of the surrogates. All bands share them: each surrogate is fitted once and reduced
+        to every band (:func:`dirconn.stats.significance.significance_tests`).
 
     Returns
     -------
@@ -141,18 +142,19 @@ def test_significance(
     else:
         kind = {"test": "surrogate", "surrogate": surrogate}
     names: list[str | None] = list(est.bands) if est.bands else [None]
+    reduces = {(name or ""): (None if name is None else _band_limits(est, name)) for name in names}
+    results = significance_tests(
+        estimator,
+        ts,
+        reduces=reduces,
+        n_surrogates=cfg.n_surrogates,
+        seed=seed,
+        alpha=cfg.alpha,
+        **kind,
+    )
     out = []
-    for i, name in enumerate(names):
-        reduce = None if name is None else _band_limits(est, name)
-        result = significance_test(
-            estimator,
-            ts,
-            n_surrogates=cfg.n_surrogates,
-            seed=seed + i,
-            reduce=reduce,
-            alpha=cfg.alpha,
-            **kind,
-        )
+    for name in names:
+        result = results[name or ""]
         assert isinstance(result, SurrogateTestResult)
         out.append(
             _band_test(
@@ -160,7 +162,7 @@ def test_significance(
                 result.pvalues,
                 cfg,
                 cfg.n_surrogates,
-                seed + i,
+                seed,
                 dict(result.generator),
                 _history(result),
             )

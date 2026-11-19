@@ -179,7 +179,12 @@ recorded in the data history that every result carries in its provenance.
    * - ``estimation.order``
      - integer >= 1, or ``"aic"``, ``"bic"``, ``"hqc"``, ``"cv"``
      - ``"bic"``
-     - Model order of the model-based methods, or the criterion that selects it.
+     - Model order of the model-based methods, or the criterion that selects it. A
+       criterion selects the order **once per recording**, on the prepared record, and
+       every method with an order (and TRGC) uses it, also on the surrogates of its test;
+       the null distribution therefore does not include the variability of the
+       selection. The selection (criterion curves) is in each result's provenance and in
+       the recording's diagnostics file. An ``order`` in a method's sub-table wins.
    * - ``estimation.order_max``
      - integer >= 1
      - ``30``
@@ -188,7 +193,9 @@ recorded in the data history that every result carries in its provenance.
      - ``[low, high]`` in Hz, ``0 <= low < high``
      - ``theta = [4.0, 8.0]``, ``beta_low = [13.0, 20.0]``, ``beta_high = [20.0, 30.0]``
      - Named frequency bands; at least one. A frequency-resolved result is reduced to one value
-       per band and tested per band. Giving ``[estimation.bands]`` replaces the default bands.
+       per band and tested per band; the tests of all bands use the same surrogates (each
+       surrogate is fitted once and reduced to every band). Giving ``[estimation.bands]``
+       replaces the default bands.
    * - ``estimation.reduce``
      - ``"mean"``, ``"median"``, ``"max"`` or ``"peak_freq"``
      - ``"mean"``
