@@ -11,6 +11,23 @@ from dirconn.simulation.scenario import (
 )
 
 Z, X, Y = "transversetemporal-rh", "cuneus-lh", "pericalcarine-lh"
+# the leakage_adjacent family, (Z, X, Y) in node order: the original is the leakiest pair, the
+# four geometries of the leakage controls (issue #9) are pairs 1 to 4 of tools/pick_regions.py
+LEAKAGE = {
+    "leakage_adjacent": (Z, X, Y),
+    "leakage_adjacent_temporal_lh": (
+        "transversetemporal-rh",
+        "transversetemporal-lh",
+        "superiortemporal-lh",
+    ),
+    "leakage_adjacent_cingulate_lh": ("cuneus-rh", "paracentral-lh", "posteriorcingulate-lh"),
+    "leakage_adjacent_orbitofrontal_rh": (
+        "cuneus-rh",
+        "medialorbitofrontal-rh",
+        "lateralorbitofrontal-rh",
+    ),
+    "leakage_adjacent_cingulate_rh": ("cuneus-rh", "paracentral-rh", "posteriorcingulate-rh"),
+}
 R1, R2, R3 = "transversetemporal-rh", "cuneus-rh", "transversetemporal-lh"
 DISTANCE = {
     "distance_near": ("parsorbitalis-rh", "temporalpole-rh"),
@@ -19,7 +36,7 @@ DISTANCE = {
 }
 # scenario -> the edges that must exist, in (source, target) form
 EDGES = {
-    "leakage_adjacent": {(Z, X)},
+    **{name: {(z, x)} for name, (z, x, _) in LEAKAGE.items()},
     "stimulation_artifact": {(R1, R2), (R2, R3)},
     **{name: {pair} for name, pair in DISTANCE.items()},
 }
@@ -57,16 +74,29 @@ class TestEveryScenario:
         assert len(load_scenario(name).description) > 80
 
 
+@pytest.mark.parametrize("name", sorted(LEAKAGE))
 class TestLeakageAdjacent:
-    def test_the_driven_node_has_no_edge_into_its_neighbour(self):
-        spec = load_scenario("leakage_adjacent")
-        assert spec.network.names == (Z, X, Y)
-        assert not any(e.target == Y or e.source == Y for e in spec.network.edges)
+    def test_the_driven_node_has_no_edge_into_its_neighbour(self, name):
+        spec = load_scenario(name)
+        z, x, y = LEAKAGE[name]
+        assert spec.network.names == (z, x, y)
+        assert not any(e.target == y or e.source == y for e in spec.network.edges)
 
-    def test_the_neighbour_oscillates_at_its_own_frequency(self):
-        spec = load_scenario("leakage_adjacent")
+    def test_the_neighbour_oscillates_at_its_own_frequency(self, name):
+        spec = load_scenario(name)
         freqs = {n: d.freq_hz for n, d in spec.dynamics.items()}
         assert len(set(freqs.values())) == 3
+
+    def test_only_the_regions_differ_from_the_original(self, name):
+        spec, original = load_scenario(name), load_scenario("leakage_adjacent")
+        assert list(spec.dynamics.values()) == list(original.dynamics.values())
+        assert [(e.strength, e.delay_ms) for e in spec.network.edges] == [(0.4, 10.0)]
+        for field in ("sfreq", "n_background", "background_fraction", "hidden", "artifact"):
+            assert getattr(spec, field) == getattr(original, field), field
+
+    def test_the_description_names_its_regions(self, name):
+        description = load_scenario(name).description
+        assert all(region in description for region in LEAKAGE[name][1:])
 
 
 class TestDistanceScenarios:
@@ -139,9 +169,13 @@ class TestOnTheSampleHead:
         visibility, distances = geometry
         names = heads["eeg"].roi_names
         matrices = {m: crosstalk(heads[m], seed=0).matrix for m in ("eeg", "grad")}
-        best = leakage_pairs(matrices, visibility)[0]
-        z = distant_region((best.source, best.receiver), matrices, visibility, distances)
-        assert (names[z], names[best.source], names[best.receiver]) == (Z, X, Y)
+        pairs = leakage_pairs(matrices, visibility)
+        assert len(pairs) == 8
+        found = []
+        for pair in pairs[:5]:  # the original and the four geometries of the controls
+            z = distant_region((pair.source, pair.receiver), matrices, visibility, distances)
+            found.append((names[z], names[pair.source], names[pair.receiver]))
+        assert found == list(LEAKAGE.values())
 
     def test_the_distance_scenarios_are_what_the_rules_give(self, heads, geometry):
         from dirconn.diagnostics.regions import distance_strata

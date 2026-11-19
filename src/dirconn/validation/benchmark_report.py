@@ -44,10 +44,13 @@ ADDONS: tuple[str, ...] = (
     "significance_power",
     "m5_methods",
     "asymptotic_calibration",
+    "leakage_adjacent_controls",
+    "leakage_pairs_controls",
 )
-"""Protocols run after the published run. Each has a budget of its own (at most 0.1 h, except
-``m5_methods`` with 0.3 h and ``asymptotic_calibration`` with 1.5 h, set from the gate estimates
-of its design) and is listed apart
+"""Protocols run after the published run. Each has a budget of its own, set from the gate
+estimates of its design (at most 0.1 h, except ``m5_methods`` with 0.3 h,
+``asymptotic_calibration`` with 1.5 h and the two leakage controls, whose budgets are in their
+protocol files), and is listed apart
 from the total of the ten; the report takes them when their results file exists and does not
 need them."""
 STAGES: tuple[str, ...] = ("roi", "sensor", "source")
@@ -651,6 +654,8 @@ def _study_sections(published: Published) -> list[str]:
         ("noise_hard", "Noise: harder SNR (add-on)"),
         ("significance_power", "Significance tests: power and weak coupling (add-on)"),
         ("asymptotic_calibration", "Asymptotic PDC and rPDC tests: calibration (add-on)"),
+        ("leakage_adjacent_controls", "Leakage controls: the neighbour (add-on)"),
+        ("leakage_pairs_controls", "Leakage controls: region pairs (add-on)"),
     ):
         if name in ADDONS and name not in published:
             continue  # an add-on is optional: no section and no "not run" line

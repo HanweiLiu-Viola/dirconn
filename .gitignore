@@ -36,3 +36,5 @@ validation/results/*
 !validation/results/significance_power.jsonl
 !validation/results/m5_methods.jsonl
 !validation/results/asymptotic_calibration.jsonl
+!validation/results/leakage_adjacent_controls.jsonl
+!validation/results/leakage_pairs_controls.jsonl

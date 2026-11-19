@@ -10,7 +10,8 @@ How to read the numbers. AUROC is the mean over the simulations of a cell (1.0: 
 above every false edge; 0.5: no information). *n* is the number of simulations behind a cell: ten
 seeds in `full`, `order` and `leakage_adjacent`; twenty (ten seeds, two data lengths pooled) in the
 tables of `coupling`, `extent` and `size`; four in `inverse`; nine (three noise windows) in `noise` and
-`noise_hard`; 25 datasets in `significance` and 40 in `significance_power`; 45 region pairs with one seed each in `leakage_pairs`. A difference between
+`noise_hard`; 25 datasets in `significance` and 40 in `significance_power`; 45 region pairs with one seed each in `leakage_pairs`
+and 150 in `leakage_pairs_controls`; 50 seeds per geometry and modality in `leakage_adjacent_controls`. A difference between
 two settings is taken simulation by simulation (mean, sd of the differences, number of pairs). The cell
 means in the AUROC tables carry no interval; a gap between two estimators in one cell is not a result.
 
@@ -153,6 +154,66 @@ ran at later commits, `009c4d1` and `3901193`).**
     defined, except in the EEG collider at the sensor level: 0.50 for `gc/bic` and 0.80 for `pcmci/bic`
     and `te/bic`.
 
+**Leakage controls (add-ons `leakage_adjacent_controls` and `leakage_pairs_controls`, issue #9).
+Conditional GC at BIC order (`gc/bic`, the reference) against three estimators built to ignore
+zero-lag mixing: time-reversed GC (`trgc/bic`), imaginary coherence (`imcoh/mt`, undirected) and the
+phase slope index (`psi/mt`); EEG and gradiometers, 10 dB, 60 s, `partial`. They ran at `c06cb5f` with
+Python 3.13.9, numpy 2.5.5 and scipy 1.18.1; the tasks they share with `leakage_adjacent` (seeds 0 to 9) and
+`leakage_pairs` (the first 45 pairs) give the same GC score matrices as the published files.**
+
+25. Region pairs without an edge (`leakage_pairs_controls`, 150 pairs, one seed each). A pair is a false
+    positive when its strongest |score| is above the 95th percentile of the same estimator's strongest
+    |score| at the region level, per modality; at the region level this flags 8/150 for every estimator
+    by construction, which says nothing about whether the threshold is right. Sensor and source level,
+    of 150 each: conditional GC 150 and 148 (EEG), 149 and 140 (gradiometers); TRGC 112, 79, 92 and 81;
+    iCOH 4, 7, 3 and 8; PSI 50, 27, 48 and 33.
+26. The same pairs compared with GC one by one (exact McNemar). Of GC's 587 false positives over the
+    four stage and modality cells, TRGC does not flag 223 (38.0%), iCOH 565 (96.3%) and PSI 429 (73.1%);
+    none of the three flags any of the 13 pair-cells that GC leaves alone. Every Holm-adjusted p is
+    below 1e-11 (the largest 7.3e-12, TRGC, EEG sensor level).
+27. Spearman correlation between the |score| of a false edge and the crosstalk of the pair (300 cells
+    per row, percentile bootstrap over pairs), sensor and source level: GC 0.38 to 0.69 (intervals 0.27
+    to 0.76; item 14 had 0.44 to 0.68 with 45 pairs), TRGC 0.00 to 0.23 (-0.11 to 0.35), PSI -0.08 to
+    0.06 (-0.19 to 0.18) and iCOH -0.26 to -0.47 (-0.56 to -0.13), that is negative: the more a region
+    leaks into the other's series, the lower the imaginary coherence of the pair. At the region level
+    all four are between -0.12 and 0.04.
+28. Neighbour (`leakage_adjacent_controls`: the geometry of `leakage_adjacent` and four more of the same
+    family with the same dynamics, `temporal_lh`, `cingulate_lh`, `orbitofrontal_rh` and
+    `cingulate_rh`; 50 seeds per geometry and modality). A seed fails when some false edge has a |score|
+    at least as high as the true edge Z -> X; for the net and undirected measures X -> Z is the true
+    pair and does not count. Over the 1000 seed-cells at the sensor and source levels (five geometries,
+    two modalities, 50 seeds, two stages) GC fails in 111. TRGC avoids 13 of them (11.7%), iCOH 31
+    (27.9%) and PSI 25 (22.5%); of the 889 seed-cells in which GC passes, TRGC fails in 62 (7.0%), iCOH
+    in 145 (16.3%) and PSI in 63 (7.1%). No estimator fails at the region level, and no estimator fails
+    in any gradiometer cell at the sensor level. Only |score| is compared, so a net measure whose true
+    edge comes out with the wrong sign is not counted as failing; this happens in 4 seed-cells (PSI,
+    the original geometry, EEG sensor level).
+29. Neighbour, cell by cell (failures of 50 seeds). Original geometry, EEG: at the source level GC,
+    TRGC and PSI 50, iCOH 47; at the sensor level GC and TRGC 0, iCOH and PSI 24 each (Holm p 6.7e-6).
+    `temporal_lh`: gradiometer source level GC 48, the controls 35 (iCOH, PSI) to 45 (TRGC); EEG source
+    level GC 0, TRGC 13, PSI 27, iCOH 38. `cingulate_rh`, EEG source level: GC 4, TRGC 42 (Holm p
+    4.4e-10). `cingulate_lh`: EEG sensor level GC 9, TRGC and iCOH 0, PSI 1 (Holm p 0.19 to 0.35, not
+    significant after the correction); iCOH 24 at the source level with both modalities, where GC fails
+    in none. `orbitofrontal_rh`: at most 2 for any estimator.
+30. Neighbour, which false edge wins. At the source level it is Z -> Y in every failing seed of every
+    estimator. In the cells with the most failures (`temporal_lh`, source level, both modalities;
+    `cingulate_rh`, EEG source level) the median over the 50 seeds of Z -> Y relative to Z -> X is 0.89
+    to 1.09 for every estimator, so the side of 1 on which a seed falls decides it; in the original
+    geometry with EEG at the source level it is 1.03 (iCOH) to 1.41 (GC) and above 1 in 47 to 50 seeds.
+    By construction the series of Y carries part of X at zero lag (the leak) and X receives Z with a
+    delay of 10 ms, so Z -> Y is a lagged relation in the reconstructed data, which none of the controls
+    is built to reject. The controls avoid part of GC's failures in a few cells. The largest is
+    `temporal_lh` with gradiometers at the source level, where GC fails in 48 seeds: PSI avoids 13 and
+    adds none (Holm p 0.013), iCOH avoids 15 and adds 2 (Holm p 0.12), TRGC avoids 4 and adds 1; Z -> Y
+    still wins in the seeds that remain. In `cingulate_lh`, EEG sensor level, all nine failures of GC
+    are X -> Z, the reverse of the true edge (median 1.08 times Z -> X, direction accuracy 0.82); for
+    TRGC and PSI that cell is the true pair (direction accuracy 1.00), so they avoid them, but not
+    significantly after correction (item 29).
+31. Together: the controls remove most of the leakage false positives between regions that are not
+    driven (items 25 to 27); they help little, and in some geometries hurt, when the region that leaks
+    is itself driven with a delay: over all neighbour cells they avoid 12 to 28% of GC's failures and
+    fail in 7 to 16% of the seeds where GC passes (items 28 to 30).
+
 ## Not established
 
 - **Why** the sensor level is lower than the region level in `full`, why `feedback_loop` carries no
@@ -178,6 +239,10 @@ ran at later commits, `009c4d1` and `3901193`).**
   topologies, one SNR and five seeds, EEG only (the gradiometer cells are saturated), and the region
   and source levels do not show the difference. Why `imcoh/mt` stays at 0.50 to 0.70 in the chain at
   every stage was not examined.
+- Whether the failures of the controls in the neighbour geometries (item 30) disappear when the
+  leaking region is not driven: no run removed the edge Z -> X, or the leak of X into Y, and looked
+  again. Why the imaginary coherence of a pair falls as its crosstalk rises (item 27) was not
+  examined.
 
 ## Limits
 
@@ -213,6 +278,16 @@ ran at later commits, `009c4d1` and `3901193`).**
 - A first run of `inverse` was discarded because the checkout was switched to another branch while it
   ran (its header recorded `d2e98d1`, the code that ran was a mixture). The file in the report is a
   rerun in a separate worktree at `0de0d7f`.
+- The leakage controls (items 25 to 31): one head model, one SNR (10 dB), one length (60 s), the
+  `partial` source model and the minimum norm. They rank scores, against an empirical threshold
+  (pairs) or against the true edge (neighbour); no per-edge significance test was run. The sensor and
+  source stages of a seed are one simulation, so the 1000 seed-cells of item 28 are 500 simulations
+  counted at two stages, and the 600 pair-cells of item 26 are 300; four of the five geometries share
+  Z (`cuneus-rh`) and all share the dynamics. The pooled counts are therefore not independent and
+  carry no interval; the McNemar tests are per cell, with Holm over the sensor and source cells of each
+  protocol. Budgets 3.0 h
+  (`leakage_adjacent_controls`) and 2.0 h (`leakage_pairs_controls`); gate estimates 0.31 h and 0.10 h,
+  measured 0.26 h and 0.10 h.
 
 # Benchmark results (generated)
 
@@ -242,10 +317,15 @@ Add-on protocols (each has a budget of its own and is not in the total above):
 | significance_power | 320 | 0.21 | 0.06 | 6 |
 | m5_methods | 30 | 0.23 | 0.24 | 6 |
 | asymptotic_calibration | 200 | 1.20 | 1.00 | 6 |
+| leakage_adjacent_controls | 500 | 0.31 | 0.26 | 6 |
+| leakage_pairs_controls | 300 | 0.10 | 0.10 | 6 |
 
-Environment of every results file: Python 3.11.16; numpy 2.4.6, scipy 1.17.1, mne 1.13.2, statsmodels 0.15.0, joblib 1.6.0, dirconn 0.0.1.dev0.
+The versions of dirconn differ between the files: full 0.0.1.dev0; order 0.0.1.dev0; inverse 0.0.1.dev0; coupling 0.0.1.dev0; extent 0.0.1.dev0; size 0.0.1.dev0; leakage_adjacent 0.0.1.dev0; leakage_pairs 0.0.1.dev0; significance 0.0.1.dev0; noise 0.0.1.dev0; noise_hard 0.0.1.dev0; significance_power 0.0.1.dev0; m5_methods 0.0.1.dev0; asymptotic_calibration 0.0.1.dev0; leakage_adjacent_controls 0.2.0.dev1; leakage_pairs_controls 0.2.0.dev1.
+The versions of numpy differ between the files: full 2.4.6; order 2.4.6; inverse 2.4.6; coupling 2.4.6; extent 2.4.6; size 2.4.6; leakage_adjacent 2.4.6; leakage_pairs 2.4.6; significance 2.4.6; noise 2.4.6; noise_hard 2.4.6; significance_power 2.4.6; m5_methods 2.4.6; asymptotic_calibration 2.4.6; leakage_adjacent_controls 2.5.5; leakage_pairs_controls 2.5.5.
+The versions of python differ between the files: full 3.11.16; order 3.11.16; inverse 3.11.16; coupling 3.11.16; extent 3.11.16; size 3.11.16; leakage_adjacent 3.11.16; leakage_pairs 3.11.16; significance 3.11.16; noise 3.11.16; noise_hard 3.11.16; significance_power 3.11.16; m5_methods 3.11.16; asymptotic_calibration 3.11.16; leakage_adjacent_controls 3.13.9; leakage_pairs_controls 3.13.9.
+The versions of scipy differ between the files: full 1.17.1; order 1.17.1; inverse 1.17.1; coupling 1.17.1; extent 1.17.1; size 1.17.1; leakage_adjacent 1.17.1; leakage_pairs 1.17.1; significance 1.17.1; noise 1.17.1; noise_hard 1.17.1; significance_power 1.17.1; m5_methods 1.17.1; asymptotic_calibration 1.17.1; leakage_adjacent_controls 1.18.1; leakage_pairs_controls 1.18.1.
 
-Code: the commits differ between the files: full 0de0d7f; order 0de0d7f; inverse 0de0d7f; coupling 0de0d7f; extent 0de0d7f; size 0de0d7f; leakage_adjacent 0de0d7f; leakage_pairs 0de0d7f; significance 0de0d7f; noise 0de0d7f; noise_hard 009c4d1; significance_power 3901193; m5_methods a0a081d; asymptotic_calibration d3537a1.
+Code: the commits differ between the files: full 0de0d7f; order 0de0d7f; inverse 0de0d7f; coupling 0de0d7f; extent 0de0d7f; size 0de0d7f; leakage_adjacent 0de0d7f; leakage_pairs 0de0d7f; significance 0de0d7f; noise 0de0d7f; noise_hard 009c4d1; significance_power 3901193; m5_methods a0a081d; asymptotic_calibration d3537a1; leakage_adjacent_controls c06cb5f; leakage_pairs_controls c06cb5f.
 
 ## Recovery by stage
 
@@ -1467,6 +1547,421 @@ Power, pairs with a true edge:
 | chain | 0.4 | 40 | 30 | rpdc/low | surrogate:phase_randomize | 25 | all | 51 | 50 | n/a | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] |
 | chain | 0.4 | 40 | 30 | rpdc/low | surrogate:phase_randomize | 25 | alpha | 6 | 50 | n/a | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] |
 | chain | 0.4 | 40 | 30 | rpdc/low | surrogate:phase_randomize | 25 | beta | 18 | 50 | n/a | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] |
+
+## Leakage controls: the neighbour (add-on)
+
+
+### Neighbour leakage (leakage_adjacent)
+
+Z -> X is the only edge; Y is X's neighbour. Relative scores are the score of an edge into Y over the score of Z -> X (mean over seeds, [min, max]).
+
+| estimator | modality | SNR | stage | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.01] | 0.00 [0.00, 0.01] |
+| gc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.63 [0.57, 0.66] | 0.31 [0.26, 0.37] |
+| gc/bic | eeg | 10 | source | 50 | 0.800 | 1.000 | 1.41 [1.33, 1.54] | 0.62 [0.53, 0.72] |
+| gc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.00] | 0.00 [0.00, 0.00] |
+| gc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.32 [0.27, 0.37] | 0.59 [0.46, 0.77] |
+| gc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.39 [0.28, 0.46] | 0.57 [0.48, 0.71] |
+| imcoh/mt | eeg | 10 | roi | 50 | 1.000 | nan | 0.42 [0.25, 0.58] | 0.42 [0.27, 0.66] |
+| imcoh/mt | eeg | 10 | sensor | 50 | 0.760 | nan | 1.00 [0.82, 1.18] | 0.31 [0.18, 0.53] |
+| imcoh/mt | eeg | 10 | source | 50 | 0.530 | nan | 1.04 [0.97, 1.17] | 0.15 [0.10, 0.24] |
+| imcoh/mt | grad | 10 | roi | 50 | 1.000 | nan | 0.40 [0.24, 0.63] | 0.39 [0.24, 0.66] |
+| imcoh/mt | grad | 10 | sensor | 50 | 1.000 | nan | 0.81 [0.68, 0.97] | 0.39 [0.26, 0.53] |
+| imcoh/mt | grad | 10 | source | 50 | 1.000 | nan | 0.78 [0.64, 0.87] | 0.25 [0.16, 0.35] |
+| psi/mt | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.11, 0.11] | 0.01 [-0.10, 0.17] |
+| psi/mt | eeg | 10 | sensor | 50 | 0.852 | 0.920 | 0.73 [-0.71, 2.54] | 0.09 [-3.23, 3.78] |
+| psi/mt | eeg | 10 | source | 50 | 0.800 | 1.000 | 1.30 [1.07, 1.58] | 0.01 [-0.22, 0.24] |
+| psi/mt | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.01 [-0.08, 0.12] | 0.01 [-0.11, 0.17] |
+| psi/mt | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.45 [0.28, 0.63] | -0.08 [-0.42, 0.13] |
+| psi/mt | grad | 10 | source | 50 | 1.000 | 1.000 | 0.52 [0.35, 0.68] | -0.01 [-0.13, 0.14] |
+| trgc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.02, 0.03] | -0.00 [-0.03, 0.02] |
+| trgc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.64 [0.48, 0.87] | -0.01 [-0.22, 0.23] |
+| trgc/bic | eeg | 10 | source | 50 | 0.800 | 1.000 | 1.44 [1.14, 1.99] | -0.03 [-0.40, 0.59] |
+| trgc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.02, 0.02] | -0.00 [-0.02, 0.01] |
+| trgc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.24 [0.07, 0.49] | -0.18 [-0.61, 0.14] |
+| trgc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.26 [0.13, 0.43] | -0.11 [-0.33, 0.08] |
+
+Source minus region level, paired by seed (mean, sd over seeds):
+
+| estimator | modality | SNR | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | 50 | -0.20 (0.00) | 0.00 (0.00) | 1.41 (0.04) | 0.62 (0.04) |
+| gc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.39 (0.04) | 0.57 (0.06) |
+| imcoh/mt | eeg | 10 | 50 | -0.47 (0.12) | nan (nan) | 0.63 (0.08) | -0.26 (0.07) |
+| imcoh/mt | grad | 10 | 50 | 0.00 (0.00) | nan (nan) | 0.38 (0.11) | -0.14 (0.07) |
+| psi/mt | eeg | 10 | 50 | -0.20 (0.00) | 0.00 (0.00) | 1.30 (0.11) | 0.00 (0.12) |
+| psi/mt | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.50 (0.09) | -0.02 (0.09) |
+| trgc/bic | eeg | 10 | 50 | -0.20 (0.00) | 0.00 (0.00) | 1.44 (0.19) | -0.03 (0.19) |
+| trgc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.26 (0.07) | -0.11 (0.09) |
+
+### Neighbour leakage (leakage_adjacent_cingulate_lh)
+
+Z -> X is the only edge; Y is X's neighbour. Relative scores are the score of an edge into Y over the score of Z -> X (mean over seeds, [min, max]).
+
+| estimator | modality | SNR | stage | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.01] | 0.00 [0.00, 0.01] |
+| gc/bic | eeg | 10 | sensor | 50 | 0.960 | 0.820 | 0.58 [0.47, 0.73] | 0.70 [0.53, 1.07] |
+| gc/bic | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.76 [0.74, 0.79] | 0.40 [0.34, 0.45] |
+| gc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.01] | 0.00 [0.00, 0.01] |
+| gc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.73 [0.66, 0.80] | 0.54 [0.47, 0.64] |
+| gc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.73 [0.70, 0.78] | 0.42 [0.38, 0.47] |
+| imcoh/mt | eeg | 10 | roi | 50 | 1.000 | nan | 0.41 [0.22, 0.59] | 0.39 [0.25, 0.62] |
+| imcoh/mt | eeg | 10 | sensor | 50 | 1.000 | nan | 0.70 [0.52, 0.84] | 0.47 [0.31, 0.60] |
+| imcoh/mt | eeg | 10 | source | 50 | 0.760 | nan | 1.00 [0.94, 1.08] | 0.16 [0.10, 0.20] |
+| imcoh/mt | grad | 10 | roi | 50 | 1.000 | nan | 0.40 [0.25, 0.56] | 0.39 [0.25, 0.54] |
+| imcoh/mt | grad | 10 | sensor | 50 | 1.000 | nan | 0.90 [0.83, 1.00] | 0.19 [0.12, 0.29] |
+| imcoh/mt | grad | 10 | source | 50 | 0.760 | nan | 1.00 [0.89, 1.09] | 0.17 [0.10, 0.24] |
+| psi/mt | eeg | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.11, 0.08] | -0.01 [-0.11, 0.11] |
+| psi/mt | eeg | 10 | sensor | 50 | 0.996 | 1.000 | 0.57 [0.24, 1.38] | 0.08 [-0.15, 0.33] |
+| psi/mt | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.81 [0.60, 0.86] | -0.01 [-0.11, 0.05] |
+| psi/mt | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.01 [-0.09, 0.14] | 0.01 [-0.15, 0.13] |
+| psi/mt | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.68 [0.10, 0.98] | 0.01 [-0.57, 0.33] |
+| psi/mt | grad | 10 | source | 50 | 1.000 | 1.000 | 0.80 [0.71, 0.92] | -0.01 [-0.12, 0.07] |
+| trgc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.05, 0.02] | 0.00 [-0.02, 0.03] |
+| trgc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.13 [-0.05, 0.36] | -0.13 [-0.39, 0.10] |
+| trgc/bic | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.58 [0.36, 0.76] | -0.10 [-0.30, 0.09] |
+| trgc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.02, 0.03] | 0.00 [-0.02, 0.02] |
+| trgc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.76 [0.58, 0.95] | 0.04 [-0.22, 0.27] |
+| trgc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.58 [0.44, 0.74] | -0.07 [-0.35, 0.14] |
+
+Source minus region level, paired by seed (mean, sd over seeds):
+
+| estimator | modality | SNR | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.76 (0.01) | 0.40 (0.02) |
+| gc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.73 (0.02) | 0.42 (0.02) |
+| imcoh/mt | eeg | 10 | 50 | -0.24 (0.25) | nan (nan) | 0.59 (0.09) | -0.23 (0.08) |
+| imcoh/mt | grad | 10 | 50 | -0.24 (0.25) | nan (nan) | 0.60 (0.08) | -0.22 (0.08) |
+| psi/mt | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.81 (0.05) | -0.00 (0.07) |
+| psi/mt | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.79 (0.07) | -0.02 (0.07) |
+| trgc/bic | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.58 (0.07) | -0.10 (0.09) |
+| trgc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.58 (0.08) | -0.07 (0.11) |
+
+### Neighbour leakage (leakage_adjacent_cingulate_rh)
+
+Z -> X is the only edge; Y is X's neighbour. Relative scores are the score of an edge into Y over the score of Z -> X (mean over seeds, [min, max]).
+
+| estimator | modality | SNR | stage | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.00] | 0.00 [0.00, 0.01] |
+| gc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.86 [0.71, 0.95] | 0.52 [0.40, 0.67] |
+| gc/bic | eeg | 10 | source | 50 | 0.984 | 1.000 | 0.97 [0.91, 1.03] | 0.40 [0.32, 0.47] |
+| gc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.01] | 0.00 [0.00, 0.00] |
+| gc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.54 [0.49, 0.58] | 0.72 [0.62, 0.83] |
+| gc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.84 [0.80, 0.87] | 0.47 [0.41, 0.52] |
+| imcoh/mt | eeg | 10 | roi | 50 | 1.000 | nan | 0.38 [0.24, 0.46] | 0.39 [0.26, 0.55] |
+| imcoh/mt | eeg | 10 | sensor | 50 | 1.000 | nan | 0.74 [0.58, 0.89] | 0.37 [0.26, 0.53] |
+| imcoh/mt | eeg | 10 | source | 50 | 1.000 | nan | 0.91 [0.82, 0.98] | 0.16 [0.10, 0.25] |
+| imcoh/mt | grad | 10 | roi | 50 | 1.000 | nan | 0.38 [0.27, 0.54] | 0.39 [0.28, 0.57] |
+| imcoh/mt | grad | 10 | sensor | 50 | 1.000 | nan | 0.85 [0.78, 0.95] | 0.20 [0.11, 0.28] |
+| imcoh/mt | grad | 10 | source | 50 | 0.970 | nan | 0.94 [0.89, 1.03] | 0.13 [0.08, 0.19] |
+| psi/mt | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.15, 0.09] | 0.00 [-0.11, 0.12] |
+| psi/mt | eeg | 10 | sensor | 50 | 0.996 | 1.000 | 0.70 [0.47, 1.13] | 0.05 [-0.33, 0.53] |
+| psi/mt | eeg | 10 | source | 50 | 0.992 | 1.000 | 0.88 [0.76, 1.04] | 0.01 [-0.23, 0.20] |
+| psi/mt | grad | 10 | roi | 50 | 1.000 | 1.000 | -0.01 [-0.09, 0.06] | -0.01 [-0.17, 0.11] |
+| psi/mt | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.61 [0.51, 0.75] | -0.01 [-0.14, 0.08] |
+| psi/mt | grad | 10 | source | 50 | 1.000 | 1.000 | 0.86 [0.78, 0.95] | 0.01 [-0.12, 0.11] |
+| trgc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.01, 0.02] | -0.00 [-0.03, 0.03] |
+| trgc/bic | eeg | 10 | sensor | 50 | 0.960 | 1.000 | 0.83 [0.40, 1.30] | -0.26 [-0.72, 0.25] |
+| trgc/bic | eeg | 10 | source | 50 | 0.832 | 1.000 | 1.08 [0.83, 1.47] | 0.13 [-0.14, 0.56] |
+| trgc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.04, 0.04] | 0.00 [-0.03, 0.01] |
+| trgc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.30 [0.19, 0.46] | -0.26 [-0.65, 0.01] |
+| trgc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.75 [0.64, 0.88] | 0.02 [-0.28, 0.26] |
+
+Source minus region level, paired by seed (mean, sd over seeds):
+
+| estimator | modality | SNR | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | 50 | -0.02 (0.05) | 0.00 (0.00) | 0.97 (0.02) | 0.40 (0.03) |
+| gc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.84 (0.01) | 0.47 (0.03) |
+| imcoh/mt | eeg | 10 | 50 | 0.00 (0.00) | nan (nan) | 0.53 (0.06) | -0.23 (0.08) |
+| imcoh/mt | grad | 10 | 50 | -0.03 (0.12) | nan (nan) | 0.55 (0.08) | -0.26 (0.06) |
+| psi/mt | eeg | 10 | 50 | -0.01 (0.04) | 0.00 (0.00) | 0.88 (0.08) | 0.00 (0.13) |
+| psi/mt | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.86 (0.06) | 0.02 (0.07) |
+| trgc/bic | eeg | 10 | 50 | -0.17 (0.07) | 0.00 (0.00) | 1.07 (0.11) | 0.13 (0.15) |
+| trgc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.76 (0.05) | 0.02 (0.12) |
+
+### Neighbour leakage (leakage_adjacent_orbitofrontal_rh)
+
+Z -> X is the only edge; Y is X's neighbour. Relative scores are the score of an edge into Y over the score of Z -> X (mean over seeds, [min, max]).
+
+| estimator | modality | SNR | stage | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.01] | 0.00 [0.00, 0.01] |
+| gc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.04 [0.02, 0.07] | 0.10 [0.06, 0.14] |
+| gc/bic | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.81 [0.77, 0.84] | 0.45 [0.38, 0.49] |
+| gc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.00] | 0.00 [0.00, 0.01] |
+| gc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.37 [0.29, 0.41] | 0.67 [0.52, 0.77] |
+| gc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.88 [0.85, 0.92] | 0.43 [0.38, 0.49] |
+| imcoh/mt | eeg | 10 | roi | 50 | 1.000 | nan | 0.41 [0.28, 0.61] | 0.38 [0.24, 0.61] |
+| imcoh/mt | eeg | 10 | sensor | 50 | 1.000 | nan | 0.62 [0.44, 0.83] | 0.47 [0.30, 0.73] |
+| imcoh/mt | eeg | 10 | source | 50 | 0.990 | nan | 0.94 [0.90, 1.01] | 0.10 [0.07, 0.16] |
+| imcoh/mt | grad | 10 | roi | 50 | 1.000 | nan | 0.39 [0.24, 0.60] | 0.40 [0.25, 0.58] |
+| imcoh/mt | grad | 10 | sensor | 50 | 1.000 | nan | 0.80 [0.70, 0.95] | 0.24 [0.17, 0.31] |
+| imcoh/mt | grad | 10 | source | 50 | 0.980 | nan | 0.95 [0.90, 1.01] | 0.07 [0.05, 0.13] |
+| psi/mt | eeg | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.10, 0.10] | 0.00 [-0.09, 0.14] |
+| psi/mt | eeg | 10 | sensor | 50 | 1.000 | 1.000 | -0.06 [-0.33, 0.41] | -0.18 [-0.68, 0.31] |
+| psi/mt | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.87 [0.79, 0.95] | -0.00 [-0.12, 0.09] |
+| psi/mt | grad | 10 | roi | 50 | 1.000 | 1.000 | -0.01 [-0.15, 0.18] | -0.00 [-0.14, 0.14] |
+| psi/mt | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.55 [0.41, 0.69] | -0.01 [-0.16, 0.18] |
+| psi/mt | grad | 10 | source | 50 | 1.000 | 1.000 | 0.90 [0.82, 0.96] | 0.01 [-0.06, 0.08] |
+| trgc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.02, 0.02] | 0.00 [-0.02, 0.02] |
+| trgc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.02 [-0.08, 0.14] | 0.02 [-0.09, 0.16] |
+| trgc/bic | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.76 [0.66, 0.87] | -0.02 [-0.11, 0.11] |
+| trgc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | -0.00 [-0.02, 0.03] | -0.00 [-0.02, 0.02] |
+| trgc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.22 [0.10, 0.46] | -0.24 [-0.49, 0.07] |
+| trgc/bic | grad | 10 | source | 50 | 1.000 | 1.000 | 0.84 [0.75, 0.92] | 0.01 [-0.09, 0.15] |
+
+Source minus region level, paired by seed (mean, sd over seeds):
+
+| estimator | modality | SNR | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.81 (0.01) | 0.45 (0.03) |
+| gc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.88 (0.01) | 0.43 (0.02) |
+| imcoh/mt | eeg | 10 | 50 | -0.01 (0.07) | nan (nan) | 0.54 (0.08) | -0.29 (0.07) |
+| imcoh/mt | grad | 10 | 50 | -0.02 (0.10) | nan (nan) | 0.56 (0.08) | -0.33 (0.07) |
+| psi/mt | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.88 (0.06) | -0.01 (0.07) |
+| psi/mt | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.91 (0.05) | 0.01 (0.07) |
+| trgc/bic | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.76 (0.04) | -0.02 (0.05) |
+| trgc/bic | grad | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.84 (0.04) | 0.01 (0.05) |
+
+### Neighbour leakage (leakage_adjacent_temporal_lh)
+
+Z -> X is the only edge; Y is X's neighbour. Relative scores are the score of an edge into Y over the score of Z -> X (mean over seeds, [min, max]).
+
+| estimator | modality | SNR | stage | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.01] | 0.00 [0.00, 0.01] |
+| gc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.50 [0.45, 0.55] | 0.22 [0.15, 0.27] |
+| gc/bic | eeg | 10 | source | 50 | 1.000 | 1.000 | 0.94 [0.91, 0.96] | 0.04 [0.02, 0.14] |
+| gc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [0.00, 0.00] | 0.00 [0.00, 0.00] |
+| gc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.58 [0.49, 0.64] | 0.67 [0.56, 0.79] |
+| gc/bic | grad | 10 | source | 50 | 0.808 | 1.000 | 1.02 [0.99, 1.03] | 0.05 [0.01, 0.13] |
+| imcoh/mt | eeg | 10 | roi | 50 | 1.000 | nan | 0.41 [0.26, 0.63] | 0.40 [0.25, 0.60] |
+| imcoh/mt | eeg | 10 | sensor | 50 | 0.730 | nan | 1.01 [0.85, 1.13] | 0.25 [0.13, 0.33] |
+| imcoh/mt | eeg | 10 | source | 50 | 0.620 | nan | 1.02 [0.98, 1.07] | 0.09 [0.06, 0.14] |
+| imcoh/mt | grad | 10 | roi | 50 | 1.000 | nan | 0.39 [0.24, 0.56] | 0.39 [0.26, 0.59] |
+| imcoh/mt | grad | 10 | sensor | 50 | 1.000 | nan | 0.82 [0.59, 0.96] | 0.25 [0.15, 0.36] |
+| imcoh/mt | grad | 10 | source | 50 | 0.650 | nan | 1.00 [0.99, 1.02] | 0.02 [0.01, 0.03] |
+| psi/mt | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.01 [-0.13, 0.15] | 0.02 [-0.08, 0.12] |
+| psi/mt | eeg | 10 | sensor | 50 | 0.960 | 1.000 | 0.88 [0.52, 1.90] | -0.11 [-3.75, 0.39] |
+| psi/mt | eeg | 10 | source | 50 | 0.892 | 1.000 | 1.01 [0.93, 1.14] | 0.01 [-0.19, 0.25] |
+| psi/mt | grad | 10 | roi | 50 | 1.000 | 1.000 | -0.01 [-0.11, 0.09] | -0.00 [-0.10, 0.15] |
+| psi/mt | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.66 [0.51, 0.86] | -0.01 [-0.16, 0.18] |
+| psi/mt | grad | 10 | source | 50 | 0.860 | 1.000 | 1.01 [0.99, 1.02] | 0.00 [-0.02, 0.02] |
+| trgc/bic | eeg | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.03, 0.02] | 0.00 [-0.01, 0.02] |
+| trgc/bic | eeg | 10 | sensor | 50 | 1.000 | 1.000 | 0.58 [0.46, 0.85] | -0.07 [-0.29, 0.24] |
+| trgc/bic | eeg | 10 | source | 50 | 0.948 | 1.000 | 0.98 [0.85, 1.11] | 0.01 [-0.14, 0.11] |
+| trgc/bic | grad | 10 | roi | 50 | 1.000 | 1.000 | 0.00 [-0.02, 0.01] | -0.00 [-0.02, 0.01] |
+| trgc/bic | grad | 10 | sensor | 50 | 1.000 | 1.000 | 0.42 [0.15, 0.70] | -0.08 [-0.46, 0.37] |
+| trgc/bic | grad | 10 | source | 50 | 0.820 | 1.000 | 1.02 [0.99, 1.07] | 0.01 [-0.05, 0.07] |
+
+Source minus region level, paired by seed (mean, sd over seeds):
+
+| estimator | modality | SNR | n | AUROC | direction | Z -> Y | X -> Y |
+|---|---|---|---|---|---|---|---|
+| gc/bic | eeg | 10 | 50 | 0.00 (0.00) | 0.00 (0.00) | 0.94 (0.01) | 0.04 (0.02) |
+| gc/bic | grad | 10 | 50 | -0.19 (0.04) | 0.00 (0.00) | 1.02 (0.01) | 0.05 (0.03) |
+| imcoh/mt | eeg | 10 | 50 | -0.38 (0.22) | nan (nan) | 0.61 (0.08) | -0.31 (0.08) |
+| imcoh/mt | grad | 10 | 50 | -0.35 (0.23) | nan (nan) | 0.61 (0.07) | -0.37 (0.08) |
+| psi/mt | eeg | 10 | 50 | -0.11 (0.10) | 0.00 (0.00) | 1.00 (0.07) | -0.00 (0.12) |
+| psi/mt | grad | 10 | 50 | -0.14 (0.09) | 0.00 (0.00) | 1.01 (0.04) | 0.01 (0.05) |
+| trgc/bic | eeg | 10 | 50 | -0.05 (0.09) | 0.00 (0.00) | 0.98 (0.05) | 0.01 (0.07) |
+| trgc/bic | grad | 10 | 50 | -0.18 (0.06) | 0.00 (0.00) | 1.02 (0.02) | 0.01 (0.02) |
+
+### Leakage controls: the neighbour
+
+A seed fails when some false edge has a |score| at least as high as the true edge Z -> X. Rates with Wilson 95% intervals. Against `gc/bic` on the same seeds: its failures that the estimator avoids (rescued), the failures it adds (new), exact McNemar p and Holm p over the sensor and source rows of all scenarios.
+
+| scenario | modality | SNR | stage | estimator | failures | rate [95% CI] | rescued | new | McNemar p | Holm p |
+|---|---|---|---|---|---|---|---|---|---|---|
+| leakage_adjacent | eeg | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent | eeg | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent | eeg | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent | eeg | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent | eeg | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent | eeg | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | eeg | 10 | sensor | imcoh/mt | 24/50 | 48.0% [34.8, 61.5] | 0 | 24 | 1.2e-07 | 6.7e-06 |
+| leakage_adjacent | eeg | 10 | sensor | psi/mt | 24/50 | 48.0% [34.8, 61.5] | 0 | 24 | 1.2e-07 | 6.7e-06 |
+| leakage_adjacent | eeg | 10 | source | gc/bic | 50/50 | 100.0% [92.9, 100.0] | - | - | - | - |
+| leakage_adjacent | eeg | 10 | source | trgc/bic | 50/50 | 100.0% [92.9, 100.0] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | eeg | 10 | source | imcoh/mt | 47/50 | 94.0% [83.8, 97.9] | 3 | 0 | 0.250 | 1.000 |
+| leakage_adjacent | eeg | 10 | source | psi/mt | 50/50 | 100.0% [92.9, 100.0] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | grad | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent | grad | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent | grad | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent | grad | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent | grad | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent | grad | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | grad | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | grad | 10 | sensor | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | grad | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent | grad | 10 | source | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | grad | 10 | source | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent | grad | 10 | source | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | eeg | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_lh | eeg | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_lh | eeg | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_lh | eeg | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_lh | eeg | 10 | sensor | gc/bic | 9/50 | 18.0% [9.8, 30.8] | - | - | - | - |
+| leakage_adjacent_cingulate_lh | eeg | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 9 | 0 | 0.004 | 0.188 |
+| leakage_adjacent_cingulate_lh | eeg | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 9 | 0 | 0.004 | 0.188 |
+| leakage_adjacent_cingulate_lh | eeg | 10 | sensor | psi/mt | 1/50 | 2.0% [0.4, 10.5] | 8 | 0 | 0.008 | 0.352 |
+| leakage_adjacent_cingulate_lh | eeg | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_lh | eeg | 10 | source | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | eeg | 10 | source | imcoh/mt | 24/50 | 48.0% [34.8, 61.5] | 0 | 24 | 1.2e-07 | 6.7e-06 |
+| leakage_adjacent_cingulate_lh | eeg | 10 | source | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | grad | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_lh | grad | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_lh | grad | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_lh | grad | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_lh | grad | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_lh | grad | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | grad | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | grad | 10 | sensor | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | grad | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_lh | grad | 10 | source | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_lh | grad | 10 | source | imcoh/mt | 24/50 | 48.0% [34.8, 61.5] | 0 | 24 | 1.2e-07 | 6.7e-06 |
+| leakage_adjacent_cingulate_lh | grad | 10 | source | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | eeg | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_rh | eeg | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_rh | eeg | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_rh | eeg | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_rh | eeg | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_rh | eeg | 10 | sensor | trgc/bic | 10/50 | 20.0% [11.2, 33.0] | 0 | 10 | 0.002 | 0.098 |
+| leakage_adjacent_cingulate_rh | eeg | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | eeg | 10 | sensor | psi/mt | 1/50 | 2.0% [0.4, 10.5] | 0 | 1 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | eeg | 10 | source | gc/bic | 4/50 | 8.0% [3.2, 18.8] | - | - | - | - |
+| leakage_adjacent_cingulate_rh | eeg | 10 | source | trgc/bic | 42/50 | 84.0% [71.5, 91.7] | 0 | 38 | 7.3e-12 | 4.4e-10 |
+| leakage_adjacent_cingulate_rh | eeg | 10 | source | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 4 | 0 | 0.125 | 1.000 |
+| leakage_adjacent_cingulate_rh | eeg | 10 | source | psi/mt | 2/50 | 4.0% [1.1, 13.5] | 4 | 2 | 0.688 | 1.000 |
+| leakage_adjacent_cingulate_rh | grad | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_rh | grad | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_rh | grad | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_rh | grad | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_cingulate_rh | grad | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_rh | grad | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | grad | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | grad | 10 | sensor | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | grad | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_cingulate_rh | grad | 10 | source | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_cingulate_rh | grad | 10 | source | imcoh/mt | 3/50 | 6.0% [2.1, 16.2] | 0 | 3 | 0.250 | 1.000 |
+| leakage_adjacent_cingulate_rh | grad | 10 | source | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | sensor | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | source | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | source | imcoh/mt | 1/50 | 2.0% [0.4, 10.5] | 0 | 1 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | eeg | 10 | source | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | sensor | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | source | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | source | imcoh/mt | 2/50 | 4.0% [1.1, 13.5] | 0 | 2 | 0.500 | 1.000 |
+| leakage_adjacent_orbitofrontal_rh | grad | 10 | source | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_temporal_lh | eeg | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_temporal_lh | eeg | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_temporal_lh | eeg | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_temporal_lh | eeg | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_temporal_lh | eeg | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_temporal_lh | eeg | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_temporal_lh | eeg | 10 | sensor | imcoh/mt | 27/50 | 54.0% [40.4, 67.0] | 0 | 27 | 1.5e-08 | 8.6e-07 |
+| leakage_adjacent_temporal_lh | eeg | 10 | sensor | psi/mt | 9/50 | 18.0% [9.8, 30.8] | 0 | 9 | 0.004 | 0.188 |
+| leakage_adjacent_temporal_lh | eeg | 10 | source | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_temporal_lh | eeg | 10 | source | trgc/bic | 13/50 | 26.0% [15.9, 39.6] | 0 | 13 | 2.4e-04 | 0.013 |
+| leakage_adjacent_temporal_lh | eeg | 10 | source | imcoh/mt | 38/50 | 76.0% [62.6, 85.7] | 0 | 38 | 7.3e-12 | 4.4e-10 |
+| leakage_adjacent_temporal_lh | eeg | 10 | source | psi/mt | 27/50 | 54.0% [40.4, 67.0] | 0 | 27 | 1.5e-08 | 8.6e-07 |
+| leakage_adjacent_temporal_lh | grad | 10 | roi | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_temporal_lh | grad | 10 | roi | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_temporal_lh | grad | 10 | roi | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_temporal_lh | grad | 10 | roi | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | - |
+| leakage_adjacent_temporal_lh | grad | 10 | sensor | gc/bic | 0/50 | 0.0% [0.0, 7.1] | - | - | - | - |
+| leakage_adjacent_temporal_lh | grad | 10 | sensor | trgc/bic | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_temporal_lh | grad | 10 | sensor | imcoh/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_temporal_lh | grad | 10 | sensor | psi/mt | 0/50 | 0.0% [0.0, 7.1] | 0 | 0 | 1.000 | 1.000 |
+| leakage_adjacent_temporal_lh | grad | 10 | source | gc/bic | 48/50 | 96.0% [86.5, 98.9] | - | - | - | - |
+| leakage_adjacent_temporal_lh | grad | 10 | source | trgc/bic | 45/50 | 90.0% [78.6, 95.7] | 4 | 1 | 0.375 | 1.000 |
+| leakage_adjacent_temporal_lh | grad | 10 | source | imcoh/mt | 35/50 | 70.0% [56.2, 80.9] | 15 | 2 | 0.002 | 0.115 |
+| leakage_adjacent_temporal_lh | grad | 10 | source | psi/mt | 35/50 | 70.0% [56.2, 80.9] | 13 | 0 | 2.4e-04 | 0.013 |
+
+## Leakage controls: region pairs (add-on)
+
+
+### Leakage and crosstalk
+
+Region pairs without any edge. Spearman correlation between the score of a false edge x -> y and the leak of x into the series of y (the crosstalk matrix of the header), over the cells of all pairs; 95% percentile bootstrap over pairs. The region-level stage has no leakage and is the control.
+
+| estimator | modality | stage | pairs | cells | Spearman | 95% interval |
+|---|---|---|---|---|---|---|
+| gc/bic | eeg | roi | 150 | 300 | 0.00 | [-0.10, 0.11] |
+| gc/bic | eeg | sensor | 150 | 300 | 0.38 | [0.27, 0.48] |
+| gc/bic | eeg | source | 150 | 300 | 0.63 | [0.54, 0.71] |
+| gc/bic | grad | roi | 150 | 300 | -0.05 | [-0.16, 0.06] |
+| gc/bic | grad | sensor | 150 | 300 | 0.49 | [0.40, 0.58] |
+| gc/bic | grad | source | 150 | 300 | 0.69 | [0.62, 0.76] |
+| imcoh/mt | eeg | roi | 150 | 300 | 0.04 | [-0.07, 0.16] |
+| imcoh/mt | eeg | sensor | 150 | 300 | -0.26 | [-0.38, -0.13] |
+| imcoh/mt | eeg | source | 150 | 300 | -0.47 | [-0.56, -0.37] |
+| imcoh/mt | grad | roi | 150 | 300 | -0.09 | [-0.22, 0.04] |
+| imcoh/mt | grad | sensor | 150 | 300 | -0.33 | [-0.44, -0.21] |
+| imcoh/mt | grad | source | 150 | 300 | -0.43 | [-0.53, -0.32] |
+| psi/mt | eeg | roi | 150 | 300 | 0.03 | [-0.10, 0.15] |
+| psi/mt | eeg | sensor | 150 | 300 | 0.04 | [-0.08, 0.15] |
+| psi/mt | eeg | source | 150 | 300 | -0.08 | [-0.19, 0.05] |
+| psi/mt | grad | roi | 150 | 300 | -0.12 | [-0.23, 0.00] |
+| psi/mt | grad | sensor | 150 | 300 | 0.06 | [-0.06, 0.18] |
+| psi/mt | grad | source | 150 | 300 | 0.04 | [-0.09, 0.15] |
+| trgc/bic | eeg | roi | 150 | 300 | -0.07 | [-0.18, 0.04] |
+| trgc/bic | eeg | sensor | 150 | 300 | 0.00 | [-0.11, 0.13] |
+| trgc/bic | eeg | source | 150 | 300 | 0.18 | [0.08, 0.29] |
+| trgc/bic | grad | roi | 150 | 300 | -0.03 | [-0.14, 0.09] |
+| trgc/bic | grad | sensor | 150 | 300 | 0.18 | [0.07, 0.28] |
+| trgc/bic | grad | source | 150 | 300 | 0.23 | [0.11, 0.35] |
+
+### Leakage controls: region pairs
+
+A pair is a false positive when its strongest |score| is above the 95th percentile of the same estimator's strongest |score| at the region level (no leakage there; about 5% flagged by construction), per modality. Rates with Wilson 95% intervals. Against `gc/bic` on the same pairs: its false positives that the estimator does not flag (removed), the ones it adds (added), exact McNemar p and Holm p over the sensor and source rows.
+
+| modality | stage | estimator | false positives | rate [95% CI] | removed | added | McNemar p | Holm p |
+|---|---|---|---|---|---|---|---|---|
+| eeg | roi | gc/bic | 8/150 | 5.3% [2.7, 10.2] | - | - | - | - |
+| eeg | roi | trgc/bic | 8/150 | 5.3% [2.7, 10.2] | 4 | 4 | 1.000 | - |
+| eeg | roi | imcoh/mt | 8/150 | 5.3% [2.7, 10.2] | 7 | 7 | 1.000 | - |
+| eeg | roi | psi/mt | 8/150 | 5.3% [2.7, 10.2] | 8 | 8 | 1.000 | - |
+| eeg | sensor | gc/bic | 150/150 | 100.0% [97.5, 100.0] | - | - | - | - |
+| eeg | sensor | trgc/bic | 112/150 | 74.7% [67.2, 81.0] | 38 | 0 | 7.3e-12 | 7.3e-12 |
+| eeg | sensor | imcoh/mt | 4/150 | 2.7% [1.0, 6.7] | 146 | 0 | 2.2e-44 | 2.7e-43 |
+| eeg | sensor | psi/mt | 50/150 | 33.3% [26.3, 41.2] | 100 | 0 | 1.6e-30 | 7.9e-30 |
+| eeg | source | gc/bic | 148/150 | 98.7% [95.3, 99.6] | - | - | - | - |
+| eeg | source | trgc/bic | 79/150 | 52.7% [44.7, 60.5] | 69 | 0 | 3.4e-21 | 1.4e-20 |
+| eeg | source | imcoh/mt | 7/150 | 4.7% [2.3, 9.3] | 141 | 0 | 7.2e-43 | 7.2e-42 |
+| eeg | source | psi/mt | 27/150 | 18.0% [12.7, 24.9] | 121 | 0 | 7.5e-37 | 6.0e-36 |
+| grad | roi | gc/bic | 8/150 | 5.3% [2.7, 10.2] | - | - | - | - |
+| grad | roi | trgc/bic | 8/150 | 5.3% [2.7, 10.2] | 3 | 3 | 1.000 | - |
+| grad | roi | imcoh/mt | 8/150 | 5.3% [2.7, 10.2] | 5 | 5 | 1.000 | - |
+| grad | roi | psi/mt | 8/150 | 5.3% [2.7, 10.2] | 8 | 8 | 1.000 | - |
+| grad | sensor | gc/bic | 149/150 | 99.3% [96.3, 99.9] | - | - | - | - |
+| grad | sensor | trgc/bic | 92/150 | 61.3% [53.3, 68.8] | 57 | 0 | 1.4e-17 | 2.8e-17 |
+| grad | sensor | imcoh/mt | 3/150 | 2.0% [0.7, 5.7] | 146 | 0 | 2.2e-44 | 2.7e-43 |
+| grad | sensor | psi/mt | 48/150 | 32.0% [25.1, 39.8] | 101 | 0 | 7.9e-31 | 4.7e-30 |
+| grad | source | gc/bic | 140/150 | 93.3% [88.2, 96.3] | - | - | - | - |
+| grad | source | trgc/bic | 81/150 | 54.0% [46.0, 61.8] | 59 | 0 | 3.5e-18 | 1.0e-17 |
+| grad | source | imcoh/mt | 8/150 | 5.3% [2.7, 10.2] | 132 | 0 | 3.7e-40 | 3.3e-39 |
+| grad | source | psi/mt | 33/150 | 22.0% [16.1, 29.3] | 107 | 0 | 1.2e-32 | 8.6e-32 |
 
 ## Further methods on the head models (add-on)
 

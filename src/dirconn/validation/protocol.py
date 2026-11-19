@@ -37,7 +37,14 @@ import yaml
 
 from dirconn.data.network import Network, dk_node
 from dirconn.data.rng import RNGController
-from dirconn.diagnostics.leakage import adjacent_report, leakage_correlation
+from dirconn.diagnostics.leakage import (
+    ADJACENT_PREFIX,
+    adjacent_controls_report,
+    adjacent_report,
+    is_pair_measure,
+    leakage_correlation,
+    pairs_controls_report,
+)
 from dirconn.simulation import SOURCE_MODELS, NodeDynamics
 from dirconn.simulation.headmodel import MODALITIES
 from dirconn.simulation.inverse import INVERSE_METHODS
@@ -1085,6 +1092,10 @@ def render_summary(
     return "\n".join(lines) + "\n"
 
 
+CONTROLS_REFERENCE = "gc/bic"
+"""The estimator the leakage controls (undirected and net measures) are compared with."""
+
+
 def _fmt(value: float, digits: int = 3) -> str:
     return "nan" if value is None or not math.isfinite(value) else f"{value:.{digits}f}"
 
@@ -1117,12 +1128,20 @@ def _leakage_sections(header: Mapping[str, Any], records: Sequence[Mapping[str, 
                     f"| {r['estimator']} | {r['modality']} | {r['stage']} | {r['n_pairs']} "
                     f"| {r['n_cells']} | {_fmt(r['spearman'], 2)} | {interval} |"
                 )
-    if any(r.get("task", {}).get("scenario") == "leakage_adjacent" for r in records):
-        rows = adjacent_report(records)
+        lines += _pairs_controls_section(header, records)
+    neighbours = sorted(
+        {
+            str(r.get("task", {}).get("scenario"))
+            for r in records
+            if str(r.get("task", {}).get("scenario", "")).startswith(ADJACENT_PREFIX)
+        }
+    )
+    for scenario in neighbours:
+        rows = adjacent_report(records, scenario=scenario)
         if rows:
             lines += [
                 "",
-                "## Neighbour leakage (leakage_adjacent)",
+                f"## Neighbour leakage ({scenario})",
                 "",
                 "Z -> X is the only edge; Y is X's neighbour. Relative scores are the score of an "
                 "edge into Y over the score of Z -> X (mean over seeds, [min, max]).",
@@ -1147,7 +1166,7 @@ def _leakage_sections(header: Mapping[str, Any], records: Sequence[Mapping[str, 
                 "| estimator | modality | SNR | n | AUROC | direction | Z -> Y | X -> Y |",
                 "|---|---|---|---|---|---|---|---|",
             ]
-            for r in adjacent_report(records, paired=True):
+            for r in adjacent_report(records, scenario=scenario, paired=True):
 
                 def diff(m: Mapping[str, float]) -> str:
                     return f"{_fmt(m['mean'], 2)} ({_fmt(m['sd'], 2)})"
@@ -1157,6 +1176,99 @@ def _leakage_sections(header: Mapping[str, Any], records: Sequence[Mapping[str, 
                     f"| {diff(r['auroc'])} | {diff(r['direction_accuracy'])} "
                     f"| {diff(r['z_to_y'])} | {diff(r['x_to_y'])} |"
                 )
+    if neighbours:
+        lines += _adjacent_controls_section(records)
+    return lines
+
+
+def _has_controls(estimators: Iterable[str], reference: str = CONTROLS_REFERENCE) -> bool:
+    """Whether the reference and at least one undirected or net estimator were run."""
+    found = set(estimators)
+    return reference in found and any(is_pair_measure(e) for e in found)
+
+
+def _estimators_of(records: Sequence[Mapping[str, Any]]) -> set[str]:
+    return {e for r in records if r.get("status") == "ok" for e in r.get("result", {})}
+
+
+def _p(value: float) -> str:
+    """Format a p-value: three decimals, scientific below 0.001, a dash when undefined."""
+    if value is None or not math.isfinite(value):
+        return "-"
+    return f"{value:.1e}" if value < 0.001 else f"{value:.3f}"
+
+
+def _rate(row: Mapping[str, Any]) -> str:
+    """Format a rate with its Wilson interval, in percent."""
+    if not math.isfinite(row["rate"]):
+        return "-"
+    return f"{100 * row['rate']:.1f}% [{100 * row['ci_low']:.1f}, {100 * row['ci_high']:.1f}]"
+
+
+def _count(value: int | None) -> str:
+    return "-" if value is None else str(value)
+
+
+def _pairs_controls_section(
+    header: Mapping[str, Any], records: Sequence[Mapping[str, Any]]
+) -> list[str]:
+    """Return the Markdown of the region-pair false positives against the reference."""
+    if not _has_controls(_estimators_of(records)):
+        return []
+    rows = pairs_controls_report(header, records, reference=CONTROLS_REFERENCE)
+    if not rows:
+        return []
+    lines = [
+        "",
+        "## Leakage controls: region pairs",
+        "",
+        f"A pair is a false positive when its strongest |score| is above the 95th percentile of "
+        f"the same estimator's strongest |score| at the region level (no leakage there; about 5% "
+        f"flagged by construction), per modality. Rates with Wilson 95% intervals. Against "
+        f"`{CONTROLS_REFERENCE}` on the same pairs: its false positives that the estimator does "
+        f"not flag (removed), the ones it adds (added), exact McNemar p and Holm p over the "
+        f"sensor and source rows.",
+        "",
+        "| modality | stage | estimator | false positives | rate [95% CI] | removed | added "
+        "| McNemar p | Holm p |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        lines.append(
+            f"| {r['modality']} | {r['stage']} | {r['estimator']} "
+            f"| {r['false_positives']}/{r['n_pairs']} | {_rate(r)} | {_count(r['removed'])} "
+            f"| {_count(r['added'])} | {_p(r['mcnemar_p'])} | {_p(r['holm_p'])} |"
+        )
+    return lines
+
+
+def _adjacent_controls_section(records: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Return the Markdown of the neighbour failures against the reference."""
+    if not _has_controls(_estimators_of(records)):
+        return []
+    rows = adjacent_controls_report(records, reference=CONTROLS_REFERENCE)
+    if not rows:
+        return []
+    lines = [
+        "",
+        "## Leakage controls: the neighbour",
+        "",
+        f"A seed fails when some false edge has a |score| at least as high as the true edge "
+        f"Z -> X. Rates with Wilson 95% intervals. Against `{CONTROLS_REFERENCE}` on the same "
+        f"seeds: its failures that the estimator avoids (rescued), the failures it adds (new), "
+        f"exact McNemar p and Holm p over the sensor and source rows of all scenarios.",
+        "",
+        "| scenario | modality | SNR | stage | estimator | failures | rate [95% CI] | rescued "
+        "| new | McNemar p | Holm p |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for r in rows:
+        lines.append(
+            f"| {r['scenario']} | {r['modality']} | {r['snr_db']:g} | {r['stage']} "
+            f"| {r['estimator']} | {r['failures']}/{r['n']} | {_rate(r)} "
+            f"| {_count(r['rescued'])} | {_count(r['new_failures'])} "
+            f"| {_p(r['mcnemar_p'])} | {_p(r['holm_p'])} |"
+        )
     return lines
 
 

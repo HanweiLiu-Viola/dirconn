@@ -5,7 +5,7 @@ description: 'What leaks between regions: 45 random pairs of regions without any
   is leakage (the region level is the control); the score of the false edge x -> y is correlated with
   the leak of x into the series of y (crosstalk matrix in the results header). Conditional Granger causality
   and gPDC, BIC order, one seed per pair; 45 pairs because the gate estimated 0.23 h for 150. The regions
-  are those with a visibility of at least 0.5 on all three modalities (scripts/make_leakage_pairs_protocol.py).'
+  are those with a visibility of at least 0.5 on all three modalities (tools/make_leakage_pairs_protocol.py).'
 kind: region_pairs
 pairs:
   n: 45

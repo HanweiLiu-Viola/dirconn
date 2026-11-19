@@ -9,6 +9,9 @@ from dirconn.validation.protocol import VAR_ESTIMATOR_NAMES, expand, load_protoc
 
 PROTOCOL_DIR = Path(__file__).resolve().parents[2] / "validation" / "protocols"
 FILES = sorted(PROTOCOL_DIR.glob("*.yaml"))
+# the leakage controls of issue #9: add-ons with a budget of their own (the gate estimates)
+CONTROLS = {"leakage_adjacent_controls": 3.0, "leakage_pairs_controls": 2.0}
+CONTROL_ESTIMATORS = ("gc/bic", "trgc/bic", "imcoh/mt", "psi/mt")
 
 
 def test_there_are_protocol_files():
@@ -70,7 +73,7 @@ class TestBudgetShares:
         shares = {
             p.stem: load_protocol(p).budget_hours
             for p in FILES
-            if p.stem != "quick" and p.stem not in ADDONS
+            if p.stem != "quick" and p.stem not in ADDONS and p.stem not in CONTROLS
         }
         # shares are the gate estimates rounded up with a little room (docs/benchmark.md)
         assert sum(shares.values()) <= 2.0 + 1e-9, shares  # the gate estimates sum to about 1.83 h
@@ -119,6 +122,61 @@ class TestLeakageProtocols:
     def test_neither_asks_for_the_saturation_guard(self):
         for name in ("leakage_adjacent", "leakage_pairs"):
             assert load_protocol(PROTOCOL_DIR / f"{name}.yaml").saturation_guard is False
+
+
+class TestLeakageControls:
+    """Issue #9: GC against TRGC, iCOH and PSI on more neighbour geometries and more pairs."""
+
+    def protocol(self, name):
+        return load_protocol(PROTOCOL_DIR / f"{name}.yaml")
+
+    def test_the_neighbour_controls_are_five_geometries_with_50_seeds(self):
+        protocol = self.protocol("leakage_adjacent_controls")
+        assert protocol.scenarios == (
+            "leakage_adjacent",
+            "leakage_adjacent_temporal_lh",
+            "leakage_adjacent_cingulate_lh",
+            "leakage_adjacent_orbitofrontal_rh",
+            "leakage_adjacent_cingulate_rh",
+        )
+        assert protocol.estimators == CONTROL_ESTIMATORS
+        assert protocol.settings == {"store_scores": True}
+        tasks = expand(protocol)
+        assert len(tasks) == 5 * 2 * 50  # geometries x modalities x seeds
+        assert {t.modality for t in tasks} == {"eeg", "grad"}
+        grid = {(t.snr_db, t.duration_s, t.source_model) for t in tasks}
+        assert grid == {(10.0, 60.0, "partial")}
+
+    def test_the_neighbour_controls_repeat_the_ten_published_seeds(self):
+        # task ids and seeds depend on the task, not on the protocol
+        published = {t.task_id for t in expand(self.protocol("leakage_adjacent"))}
+        controls = expand(self.protocol("leakage_adjacent_controls"))
+        repeated = [t for t in controls if t.task_id in published]
+        assert len(repeated) == len(published) == 2 * 10
+        assert {(t.scenario, t.seed_index < 10) for t in repeated} == {("leakage_adjacent", True)}
+
+    def test_the_pair_controls_are_150_pairs_of_the_same_regions_and_seed(self):
+        protocol, base = self.protocol("leakage_pairs_controls"), self.protocol("leakage_pairs")
+        assert protocol.kind == "region_pairs" and protocol.settings == {"store_scores": True}
+        assert protocol.pairs["n"] == 150
+        assert protocol.pairs["seed"] == base.pairs["seed"] == 14
+        assert protocol.pairs["regions"] == base.pairs["regions"]
+        assert protocol.estimators == CONTROL_ESTIMATORS and protocol.n_seeds == 1
+        for field in ("snr_db", "duration_s", "source_model", "modality"):
+            assert getattr(protocol, field) == getattr(base, field), field
+        tasks = expand(protocol)
+        assert len(tasks) == 150 * 2
+        assert all(t.zero_network and t.n_nodes == 2 for t in tasks)
+
+    def test_the_first_45_pairs_are_the_published_ones(self):
+        published = [t.task_id for t in expand(self.protocol("leakage_pairs"))]
+        controls = [t.task_id for t in expand(self.protocol("leakage_pairs_controls"))]
+        assert controls[: len(published)] == published
+
+    def test_their_budgets_and_no_guard(self):
+        for name, hours in CONTROLS.items():
+            assert self.protocol(name).budget_hours == hours, name
+            assert self.protocol(name).saturation_guard is False, name
 
 
 class TestSignificanceProtocol:
@@ -180,7 +238,7 @@ class TestAddOnProtocols:
         for name in ADDONS:
             assert (PROTOCOL_DIR / f"{name}.yaml").is_file(), name
             # at most 0.1 h each; m5_methods 0.3 h, the calibration the gate estimates of its design
-            limit = {"m5_methods": 0.3, "asymptotic_calibration": 1.5}.get(name, 0.1)
+            limit = {"m5_methods": 0.3, "asymptotic_calibration": 1.5, **CONTROLS}.get(name, 0.1)
             assert 0 < self.protocol(name).budget_hours <= limit, name
             assert self.protocol(name).saturation_guard is False, name
 
@@ -232,6 +290,21 @@ def test_the_pairs_protocol_is_what_the_script_writes():
     shipped = yaml.safe_load((PROTOCOL_DIR / "leakage_pairs.yaml").read_text(encoding="utf-8"))
     regions = module.candidate_regions(module.MIN_VISIBILITY)
     assert shipped == module.build(regions)
+
+
+@pytest.mark.sample_data
+def test_the_pair_controls_protocol_is_what_the_script_writes():
+    import importlib.util
+
+    import yaml
+
+    path = PROTOCOL_DIR.parents[1] / "tools" / "make_leakage_pairs_protocol.py"
+    spec = importlib.util.spec_from_file_location("make_leakage_pairs_protocol", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    shipped = (PROTOCOL_DIR / "leakage_pairs_controls.yaml").read_text(encoding="utf-8")
+    regions = module.candidate_regions(module.MIN_VISIBILITY)
+    assert yaml.safe_load(shipped) == module.build(regions, name="leakage_pairs_controls")
 
 
 class TestSlices:

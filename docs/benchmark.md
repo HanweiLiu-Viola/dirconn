@@ -190,6 +190,14 @@ the series of region `y`, relative to the response of that series to its own reg
   (1.6 against 1.0). Only 8 ordered pairs qualified (of 4556, with both regions at visibility 1.0 or more). Z is the most visible region with a
   visibility inside the pool window (at most 1.8) that is at least 60 mm from both and leaks into
   neither above the 90th percentile: `transversetemporal-rh` (76 and 78 mm).
+- `leakage_adjacent_temporal_lh`, `_cingulate_lh`, `_orbitofrontal_rh`, `_cingulate_rh`: four more
+  geometries of the same family with the same dynamics, for the leakage controls (issue #9). They are
+  pairs 1 to 4 of the list `tools/pick_regions.py leakage` prints (pair 0 is `leakage_adjacent`), each
+  with the far, quiet region it prints as Z: `transversetemporal-lh` -> `superiortemporal-lh` (12 mm,
+  leak 3.12 on EEG and 5.30 on gradiometers, Z `transversetemporal-rh`), `paracentral-lh` ->
+  `posteriorcingulate-lh` (21 mm, 2.42 and 2.28), `medialorbitofrontal-rh` -> `lateralorbitofrontal-rh`
+  (20 mm, 2.45 and 1.53) and `paracentral-rh` -> `posteriorcingulate-rh` (25 mm, 2.18 and 1.78), the
+  last three with Z `cuneus-rh`.
 - `distance_near`/`distance_mid`/`distance_far`: eligible regions have visibility 0.9 to 1.5 (23 of
   68); the distances of the 121 same-hemisphere pairs among them split at 45 and 67 mm; from each third
   the pair closest to the third's median is used: `parsorbitalis-rh` -> `temporalpole-rh` (34 mm),
@@ -348,6 +356,24 @@ pairs are drawn uniformly, so the strongly leaking end is thin (the median leak 
 regions are and how strong their activity is, which was not controlled, so the correlation says that
 false edges follow the crosstalk matrix, not that the leak alone causes them; one head model.
 
+**Controls against leakage** (add-ons for issue #9: `leakage_adjacent_controls` and
+`leakage_pairs_controls`). Conditional GC at BIC order is compared with three estimators that are
+built to ignore zero-lag mixing: time-reversed GC (`trgc/bic`), imaginary coherence (`imcoh/mt`) and
+the phase slope index (`psi/mt`); EEG and gradiometers, 10 dB, 60 s, `partial`, minimum norm.
+`leakage_adjacent_controls` has the geometry of `leakage_adjacent` and four more of the same family
+and dynamics (`leakage_adjacent_temporal_lh`, `_cingulate_lh`, `_orbitofrontal_rh`, `_cingulate_rh`:
+pairs 1 to 4 of `tools/pick_regions.py leakage`, each with its far, quiet region as Z), 50 seeds each;
+a seed fails when some false edge has a |score| at least as high as the true edge `Z -> X`.
+`leakage_pairs_controls` has 150 pairs of the same regions with the same pair seed (the first 45 are
+those of `leakage_pairs`; `tools/make_leakage_pairs_protocol.py --name leakage_pairs_controls`); a pair
+is a false positive when its strongest |score| is above the 95th percentile of the same estimator's
+strongest |score| at the region level. Each estimator is compared with GC on the same simulations
+(`dirconn.diagnostics.leakage.adjacent_controls_report` and `pairs_controls_report`): rates with Wilson
+95% intervals, the discordant counts, exact McNemar p and Holm-adjusted p over the sensor and source
+rows of the protocol. The tables are in the add-on sections of `docs/benchmark_results.md`; what they
+show is items 25 to 31 of `docs/benchmark_conclusions.md`. `leakage_correlation` reads |score|, so
+the signed net measures (TRGC, PSI) are read by strength.
+
 ### Significance study
 
 `significance` (`kind: significance`, `dirconn.validation.significance_study`) applies the tests of
@@ -487,13 +513,16 @@ run. The same table is generated into `docs/benchmark_results.md` from the resul
 | **all ten** | | **1.99 h** | | **2.22 h** |
 
 **Add-on protocols**, run after the ten (decided on 2026-10-05): they do not count against
-the 2 h, each has a budget of its own of at most 0.1 h, and the results of the ten were not touched. They
+the 2 h, each has a budget of its own (at most 0.1 h for the first two, set in its protocol file for
+the leakage controls), and the results of the ten were not touched. They
 ran at later commits than the ten (the report says so).
 
 | protocol | tasks | budget | estimate | measured | what it adds |
 |---|---|---|---|---|---|
 | `noise_hard` | 108 | 0.1 h | 0.05 h | 0.03 h | the noise study at -15 and -20 dB (`noise` has -10 dB, where most cells were at 1.000) |
 | `significance_power` | 320 | 0.1 h | 0.21 h (forced) | 0.06 h | the significance study with coupling 0.1 and 0.2, 40 datasets and 99 surrogates (so that Benjamini-Hochberg can reject with two true edges) |
+| `leakage_adjacent_controls` | 500 | 3.0 h | 0.31 h | 0.26 h | the neighbour with four more geometries and 50 seeds, GC against TRGC, iCOH and PSI (issue #9) |
+| `leakage_pairs_controls` | 300 | 2.0 h | 0.10 h | 0.10 h | 150 region pairs instead of 45, GC against TRGC, iCOH and PSI (issue #9) |
 
 `significance_power` was first drafted with 50 datasets and two estimators (400 tasks, gate estimate
 1.3 h), then shrunk to 40 datasets and `gc/fixed` only (gate estimate 0.22 h, still above the budget).

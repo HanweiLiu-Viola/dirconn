@@ -97,6 +97,19 @@ All notable changes to dirconn are listed here. The format follows
   `dirconn.viz.PLOT_KINDS`.
 - `import-linter` in CI (`lint-imports`) checks the dependency direction between the subpackages.
 - Decision record 0002 on the package layout.
+- The leakage controls, a benchmark add-on (issue #9): how often time-reversed GC, imaginary
+  coherence and the phase slope index remove the leakage false positives of conditional GC, and
+  how often they add their own. Four more neighbour scenarios (`leakage_adjacent_temporal_lh`,
+  `leakage_adjacent_cingulate_lh`, `leakage_adjacent_orbitofrontal_rh`,
+  `leakage_adjacent_cingulate_rh`); the protocols `leakage_adjacent_controls` (five geometries, 50
+  seeds) and `leakage_pairs_controls` (150 region pairs) with their results; in
+  `dirconn.diagnostics.leakage`, `pairs_controls_report` and `adjacent_controls_report` (each
+  estimator against the reference on the same simulations) with `adjacent_roles` and
+  `is_pair_measure`; `dirconn.stats.counts.wilson_interval`, `dirconn.stats.counts.mcnemar_exact`
+  and `dirconn.stats.correction.holm`. The benchmark report has a section for each add-on, and the
+  conclusions items 25 to 31. `tools/pick_regions.py leakage` prints the far, quiet region of every
+  pair, and `tools/make_leakage_pairs_protocol.py` takes `--name` (a preset) and `--n`,
+  `--estimators` and `--budget-hours`; its default output is unchanged.
 
 ### Changed
 
@@ -128,6 +141,13 @@ All notable changes to dirconn are listed here. The format follows
   `dirconn.viz.matrices._select`).
 - Repository directories: `scripts/` is now `tools/`, `protocols/` is now `validation/protocols/`,
   and `benchmark_results/` is now `validation/results/`. `tests/` mirrors the subpackages.
+
+### Fixed
+
+- `dirconn.diagnostics.leakage.leakage_correlation` ranks |score|, so the signed net measures (TRGC,
+  PSI) are read by strength and not by sign. The published results are unchanged: their estimators
+  have no negative scores.
+- The description of the `leakage_pairs` protocol names `tools/`, where its generator lives.
 
 ## [0.1.0] - 2026-11-07
 

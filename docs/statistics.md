@@ -37,6 +37,19 @@ There is no default test. Choosing one is choosing a null hypothesis.
 array. Benjamini-Hochberg is valid for independent or positively dependent tests; connectivity cells
 that share a channel are dependent, so treat FDR control as approximate.
 
+`dirconn.stats.correction.holm` gives Holm (step-down Bonferroni) adjusted p-values over the defined
+cells of any array; it controls the family-wise error rate under any dependence. It is kept apart from
+`adjust_pvalues`, whose methods are also choices of the pipeline configuration.
+
+## Counts
+
+`dirconn.stats.counts` has two helpers for rates counted over simulations or units, used by the
+leakage controls of the benchmark (`dirconn.diagnostics.leakage`). `wilson_interval(k, n)` is the
+Wilson score interval of `k / n`; it stays inside [0, 1] and keeps its coverage for small `n` and
+rates near 0 or 1, where the normal (Wald) interval fails. `mcnemar_exact(b, c)` is the exact
+two-sided McNemar test of two rates measured on the same units, from the two discordant counts
+(binomial with probability 1/2 on `b + c`).
+
 ## Condition contrast and baseline
 
 `contrast_test(estimator, data_a, data_b, n_permutations=, seed=)` relabels the pooled trials (group
