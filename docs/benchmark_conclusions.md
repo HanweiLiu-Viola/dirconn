@@ -10,7 +10,8 @@ How to read the numbers. AUROC is the mean over the simulations of a cell (1.0: 
 above every false edge; 0.5: no information). *n* is the number of simulations behind a cell: ten
 seeds in `full`, `order` and `leakage_adjacent`; twenty (ten seeds, two data lengths pooled) in the
 tables of `coupling`, `extent` and `size`; four in `inverse`; nine (three noise windows) in `noise` and
-`noise_hard`; 25 datasets in `significance` and 40 in `significance_power`; 45 region pairs with one seed each in `leakage_pairs`. A difference between
+`noise_hard`; 25 datasets in `significance` and 40 in `significance_power`; 45 region pairs with one seed each in `leakage_pairs`
+and 150 in `leakage_pairs_controls`; 50 seeds per geometry and modality in `leakage_adjacent_controls`. A difference between
 two settings is taken simulation by simulation (mean, sd of the differences, number of pairs). The cell
 means in the AUROC tables carry no interval; a gap between two estimators in one cell is not a result.
 
@@ -153,6 +154,60 @@ ran at later commits, `009c4d1` and `3901193`).**
     defined, except in the EEG collider at the sensor level: 0.50 for `gc/bic` and 0.80 for `pcmci/bic`
     and `te/bic`.
 
+**Leakage controls (add-ons `leakage_adjacent_controls` and `leakage_pairs_controls`, issue #9).
+Conditional GC at BIC order (`gc/bic`, the reference) against three estimators built to ignore
+zero-lag mixing: time-reversed GC (`trgc/bic`), imaginary coherence (`imcoh/mt`, undirected) and the
+phase slope index (`psi/mt`); EEG and gradiometers, 10 dB, 60 s, `partial`. They ran at `c06cb5f` with
+Python 3.13.9 and numpy 2.5.5; the tasks they share with `leakage_adjacent` (seeds 0 to 9) and
+`leakage_pairs` (the first 45 pairs) give the same GC score matrices as the published files.**
+
+25. Region pairs without an edge (`leakage_pairs_controls`, 150 pairs, one seed each). A pair is a false
+    positive when its strongest |score| is above the 95th percentile of the same estimator's strongest
+    |score| at the region level, per modality; at the region level this flags 8/150 for every estimator
+    by construction, which says nothing about whether the threshold is right. Sensor and source level,
+    of 150 each: conditional GC 150 and 148 (EEG), 149 and 140 (gradiometers); TRGC 112, 79, 92 and 81;
+    iCOH 4, 7, 3 and 8; PSI 50, 27, 48 and 33.
+26. The same pairs compared with GC one by one (exact McNemar). Of GC's 587 false positives over the
+    four stage and modality cells, TRGC does not flag 223 (38.0%), iCOH 565 (96.3%) and PSI 429 (73.1%);
+    none of the three flags any of the 13 pair-cells that GC leaves alone. Every Holm-adjusted p is
+    below 1e-11 (the largest 7.3e-12, TRGC, EEG sensor level).
+27. Spearman correlation between the |score| of a false edge and the crosstalk of the pair (300 cells
+    per row, percentile bootstrap over pairs), sensor and source level: GC 0.38 to 0.69 (intervals 0.27
+    to 0.76; item 14 had 0.44 to 0.68 with 45 pairs), TRGC 0.00 to 0.23 (-0.11 to 0.35), PSI -0.08 to
+    0.06 (-0.19 to 0.18) and iCOH -0.26 to -0.47 (-0.56 to -0.13), that is negative: the more a region
+    leaks into the other's series, the lower the imaginary coherence of the pair. At the region level
+    all four are between -0.12 and 0.04.
+28. Neighbour (`leakage_adjacent_controls`: the geometry of `leakage_adjacent` and four more of the same
+    family with the same dynamics, `temporal_lh`, `cingulate_lh`, `orbitofrontal_rh` and
+    `cingulate_rh`; 50 seeds per geometry and modality). A seed fails when some false edge has a |score|
+    at least as high as the true edge Z -> X; for the net and undirected measures X -> Z is the true
+    pair and does not count. Over the 1000 seed-cells at the sensor and source levels (five geometries,
+    two modalities, 50 seeds, two stages) GC fails in 111. TRGC avoids 13 of them (11.7%), iCOH 31
+    (27.9%) and PSI 25 (22.5%); of the 889 seed-cells in which GC passes, TRGC fails in 62 (7.0%), iCOH
+    in 145 (16.3%) and PSI in 63 (7.1%). No estimator fails at the region level, and no estimator fails
+    in any gradiometer cell at the sensor level.
+29. Neighbour, cell by cell (failures of 50 seeds). Original geometry, EEG: at the source level GC,
+    TRGC and PSI 50, iCOH 47; at the sensor level GC and TRGC 0, iCOH and PSI 24 each (Holm p 6.7e-6).
+    `temporal_lh`: gradiometer source level GC 48, the controls 35 (iCOH, PSI) to 45 (TRGC); EEG source
+    level GC 0, TRGC 13, PSI 27, iCOH 38. `cingulate_rh`, EEG source level: GC 4, TRGC 42 (Holm p
+    4.4e-10). `cingulate_lh`: EEG sensor level GC 9, TRGC and iCOH 0, PSI 1 (Holm p 0.19 to 0.35, not
+    significant after the correction); iCOH 24 at the source level with both modalities, where GC fails
+    in none. `orbitofrontal_rh`: at most 2 for any estimator.
+30. Neighbour, which false edge wins. At the source level it is Z -> Y in every failing seed of every
+    estimator. In the cells with the most failures (`temporal_lh`, source level, both modalities;
+    `cingulate_rh`, EEG source level) the median over the 50 seeds of Z -> Y relative to Z -> X is 0.89
+    to 1.09 for every estimator, so the side of 1 on which a seed falls decides it; in the original
+    geometry with EEG at the source level it is 1.03 (iCOH) to 1.41 (GC) and above 1 in 47 to 50 seeds.
+    By construction the series of Y carries part of X at zero lag (the leak) and X receives Z with a
+    delay of 10 ms, so Z -> Y is a lagged relation in the reconstructed data, which none of the controls
+    is built to reject. The one cell where the controls rescue GC is `cingulate_lh`, EEG sensor level:
+    all nine failures of GC are X -> Z, the reverse of the true edge (median 1.08 times Z -> X, direction
+    accuracy 0.82); for TRGC and PSI that cell is the true pair, and their direction accuracy is 1.00
+    there.
+31. Together: the controls remove most of the leakage false positives between regions that are not
+    driven (items 25 to 27); they do not help, and in some geometries hurt, when the region that leaks
+    is itself driven with a delay (items 28 to 30).
+
 ## Not established
 
 - **Why** the sensor level is lower than the region level in `full`, why `feedback_loop` carries no
@@ -178,6 +233,10 @@ ran at later commits, `009c4d1` and `3901193`).**
   topologies, one SNR and five seeds, EEG only (the gradiometer cells are saturated), and the region
   and source levels do not show the difference. Why `imcoh/mt` stays at 0.50 to 0.70 in the chain at
   every stage was not examined.
+- Whether the failures of the controls in the neighbour geometries (item 30) disappear when the
+  leaking region is not driven: no run removed the edge Z -> X, or the leak of X into Y, and looked
+  again. Why the imaginary coherence of a pair falls as its crosstalk rises (item 27) was not
+  examined.
 
 ## Limits
 
@@ -213,3 +272,13 @@ ran at later commits, `009c4d1` and `3901193`).**
 - A first run of `inverse` was discarded because the checkout was switched to another branch while it
   ran (its header recorded `d2e98d1`, the code that ran was a mixture). The file in the report is a
   rerun in a separate worktree at `0de0d7f`.
+- The leakage controls (items 25 to 31): one head model, one SNR (10 dB), one length (60 s), the
+  `partial` source model and the minimum norm. They rank scores, against an empirical threshold
+  (pairs) or against the true edge (neighbour); no per-edge significance test was run. The sensor and
+  source stages of a seed are one simulation, so the 1000 seed-cells of item 28 are 500 simulations
+  counted at two stages, and the 600 pair-cells of item 26 are 300; four of the five geometries share
+  Z (`cuneus-rh`) and all share the dynamics. The pooled counts are therefore not independent and
+  carry no interval; the McNemar tests are per cell, with Holm over the sensor and source cells of each
+  protocol. Budgets 3.0 h
+  (`leakage_adjacent_controls`) and 2.0 h (`leakage_pairs_controls`); gate estimates 0.31 h and 0.10 h,
+  measured 0.26 h and 0.10 h.
