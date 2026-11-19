@@ -234,3 +234,50 @@ def test_methods_without_an_order_keep_their_provenance(ts):
     cfg = _cfg(order="bic", order_max=8)
     est = estimate(ts, "imcoh", cfg, select_shared_order(ts, cfg))
     assert "order_selection" not in est.full.provenance.details
+
+
+def test_time_resolved_result_is_not_block_shuffled(ts):
+    from dirconn.workflows.steps.test import untested_reason
+
+    cfg = _cfg(order=2, methods=("adtf",), params={"adtf": {"n_freqs": 8, "fmax": 40.0}})
+    est = estimate(ts, "adtf", cfg)
+    assert est.full.values.shape[3] > 1
+    stats = StatisticsConfig(test="surrogate", n_surrogates=5)
+    assert "block shuffling" in untested_reason(ts, est, stats)
+    assert run_significance(ts, build_estimator("adtf", cfg, ts), est, stats, seed=0) == ()
+    # another surrogate keeps the time axis, so the test runs
+    other = StatisticsConfig(test="surrogate", surrogate="circular_shift", n_surrogates=5)
+    assert untested_reason(ts, est, other) is None
+
+
+def test_pcmci_uses_its_own_p_values(ts):
+    pytest.importorskip("tigramite")
+    cfg = _cfg(methods=("pcmci",), params={"pcmci": {"tau_max": 2}})
+    est = estimate(ts, "pcmci", cfg)
+    stats = StatisticsConfig(test="surrogate", n_surrogates=5)
+    (test,) = run_significance(ts, build_estimator("pcmci", cfg, ts), est, stats, seed=0)
+    assert test.test == "builtin" and test.band is None
+    assert test.n_surrogates is None and test.seed is None
+    assert test.generator["name"] == "builtin"
+    expected = np.array(est.full.provenance.details["pvalues"], dtype=float)
+    np.testing.assert_array_equal(test.pvalues, expected)
+
+
+def test_multivariate_te_uses_its_own_p_values(ts):
+    import dataclasses
+
+    from dirconn.workflows.steps.estimate import Estimate
+
+    # A stand-in for a multivariate TE result (a real fit takes minutes): the test step only
+    # reads the p-values from the provenance and fits nothing.
+    gc = estimate(ts, "gc", _cfg()).full
+    n = len(gc.source)
+    p_values = [[None if i == j else 0.01 * (i + j) for j in range(n)] for i in range(n)]
+    details = {"mode": "multivariate", "p_values": p_values}
+    prov = dataclasses.replace(gc.provenance, details=details)
+    est = Estimate("te", gc.with_provenance(prov), {})
+    stats = StatisticsConfig(test="surrogate", n_surrogates=2)
+    (test,) = run_significance(ts, None, est, stats, seed=0)
+    assert test.test == "builtin"
+    np.testing.assert_array_equal(test.pvalues, np.array(p_values, dtype=float))
+    assert np.isnan(np.diag(test.pvalues)).all()

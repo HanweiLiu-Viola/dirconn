@@ -57,7 +57,7 @@ from dirconn.workflows.steps.control import time_reversal_control
 from dirconn.workflows.steps.diagnose import diagnose
 from dirconn.workflows.steps.estimate import build_estimator, estimate, select_shared_order
 from dirconn.workflows.steps.prepare import prepare
-from dirconn.workflows.steps.test import test_significance
+from dirconn.workflows.steps.test import test_significance, untested_reason
 
 __all__ = [
     "CONTROLS",
@@ -325,6 +325,7 @@ def _write(
     conn: Connectivity,
     bands: Mapping[str, Connectivity],
     tests: Sequence[Any],
+    statistics_note: str | None = None,
 ) -> ResultFiles:
     """Write one result; node kinds and sampling rate come from the prepared series ``ts``."""
     kinds = {ch.name: ch.node_kind for ch in ts.channels}
@@ -343,6 +344,7 @@ def _write(
         long_table=cfg.output.long_table,
         node_kinds=node_kinds,
         sfreq=ts.sfreq,
+        statistics_note=statistics_note,
     )
 
 
@@ -451,6 +453,7 @@ def run_unit_task(
         conn=est.full,
         bands=est.bands,
         tests=tests,
+        statistics_note=untested_reason(ts, est, cfg.statistics),
     )
 
 

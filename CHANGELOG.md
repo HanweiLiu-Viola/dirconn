@@ -124,7 +124,13 @@ All notable changes to dirconn are listed here. The format follows
   for wdtf; psi takes `estimation.bands` (its tasks failed before).
 - The edge table of a time-resolved result (adtf, tpdc, wdtf) has one row per pair, band and
   time point with a `time` column, and keeps the test (before: header only, the test was
-  lost). After block shuffling the test ran on another time axis and its columns stay `n/a`.
+  lost). On a continuous record the default block shuffling fits the observed value on blocks,
+  which have no time points of the result, so a time-resolved result is not tested there
+  (`StatisticsNote` in the sidecar; this also saves its surrogate fits); epoched records are
+  tested per time point with trial shuffling.
+- `pcmci` and multivariate `te` are tested with their own p-values (PCMCI's MCI test, TE's
+  permutation tests; test `"builtin"` in the sidecar) instead of surrogates around the whole
+  method. Pairwise and conditional `te` have no test of their own and keep the surrogate test.
 - The version is `0.2.0.devN` until the 0.2.0 release; it is part of the pipeline's task keys, of
   the prepared-data cache key and of the `DirconnVersion` of every result. A change to what a
   pipeline step computes bumps `N` (`0.2.0.dev1` for the edge cropping in resampling,

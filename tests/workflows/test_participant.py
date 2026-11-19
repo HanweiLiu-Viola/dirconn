@@ -438,7 +438,7 @@ time_reversal = false
 """
 
 
-def test_time_varying_method_keeps_its_test_in_the_edges_table(
+def test_time_varying_method_on_a_continuous_record_is_not_tested(
     bids_tiny_copy: Path, tmp_path: Path
 ) -> None:
     cfg = _config(tmp_path, base=TIME_VARYING_CONFIG)
@@ -451,11 +451,12 @@ def test_time_varying_method_keeps_its_test_in_the_edges_table(
     n_times = edges["time"].nunique()
     assert n_times > 1
     assert len(edges) == 12 * len(edges["band"].unique()) * n_times
-    # block shuffling fitted the test on 2 s blocks: another time axis, so no p-values
+    # block shuffling would fit the test on 2 s blocks, another time axis: not tested
     assert edges["p"].isna().all()
     (sidecar,) = run.root.rglob("*_desc-adtf_conn.json")
     meta = json.loads(sidecar.read_text(encoding="utf-8"))
-    assert meta["Statistics"]
+    assert meta["Statistics"] == []
+    assert "block shuffling" in meta["StatisticsNote"]
 
 
 EPOCHED_SENSOR_CONFIG = """\

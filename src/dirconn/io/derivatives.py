@@ -279,6 +279,7 @@ def write_result(
     long_table: bool,
     node_kinds: Sequence[str] | None = None,
     sfreq: float | None = None,
+    statistics_note: str | None = None,
 ) -> ResultFiles:
     """Write the NetCDF file, the (optional) long edge table and the sidecar of one result.
 
@@ -318,6 +319,8 @@ def write_result(
     sfreq : float, optional
         Sampling rate in Hz of the series the result was estimated on (``SamplingFrequency``);
         omitted when ``None``.
+    statistics_note : str, optional
+        Why the result was not tested (``StatisticsNote``); omitted when ``None``.
 
     Returns
     -------
@@ -368,6 +371,8 @@ def write_result(
         meta["NodeKinds"] = list(node_kinds)
     if sfreq is not None:
         meta["SamplingFrequency"] = float(sfreq)
+    if statistics_note is not None:
+        meta["StatisticsNote"] = statistics_note
     if np.iscomplexobj(conn.values):
         meta["ValueIsMagnitude"] = True
     _write_json_atomic(sidecar, _plain(meta))

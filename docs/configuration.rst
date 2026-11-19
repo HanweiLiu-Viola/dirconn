@@ -233,7 +233,14 @@ Every test is corrected over the pairs of its band; the choice of test and surro
        fails for estimators without one); ``"none"`` runs no test (the p-value columns of the
        edge table are ``n/a``). The pipeline runs the analytic test only for methods without
        frequency resolution (one test, no band): a configuration that combines it with a
-       frequency-resolved method is refused.
+       frequency-resolved method is refused. ``pcmci`` and ``te`` (in its default multivariate
+       mode) are not resampled: with ``"surrogate"`` or ``"analytic"`` their own p-values are
+       used (PCMCI's MCI test, TE's permutation tests), recorded as test ``"builtin"``. A
+       time-resolved method (``adtf``, ``tpdc``, ``wdtf``) is not tested with block shuffling,
+       whose observed value is fitted on blocks of the record and has no time points of the
+       result: on a continuous record with ``surrogate = "auto"`` it stays descriptive
+       (``StatisticsNote`` in the sidecar); on epoched records trial shuffling tests every time
+       point.
    * - ``statistics.surrogate``
      - ``"auto"`` or a generator name
      - ``"auto"``
