@@ -158,7 +158,7 @@ ran at later commits, `009c4d1` and `3901193`).**
 Conditional GC at BIC order (`gc/bic`, the reference) against three estimators built to ignore
 zero-lag mixing: time-reversed GC (`trgc/bic`), imaginary coherence (`imcoh/mt`, undirected) and the
 phase slope index (`psi/mt`); EEG and gradiometers, 10 dB, 60 s, `partial`. They ran at `c06cb5f` with
-Python 3.13.9 and numpy 2.5.5; the tasks they share with `leakage_adjacent` (seeds 0 to 9) and
+Python 3.13.9, numpy 2.5.5 and scipy 1.18.1; the tasks they share with `leakage_adjacent` (seeds 0 to 9) and
 `leakage_pairs` (the first 45 pairs) give the same GC score matrices as the published files.**
 
 25. Region pairs without an edge (`leakage_pairs_controls`, 150 pairs, one seed each). A pair is a false
@@ -185,7 +185,9 @@ Python 3.13.9 and numpy 2.5.5; the tasks they share with `leakage_adjacent` (see
     two modalities, 50 seeds, two stages) GC fails in 111. TRGC avoids 13 of them (11.7%), iCOH 31
     (27.9%) and PSI 25 (22.5%); of the 889 seed-cells in which GC passes, TRGC fails in 62 (7.0%), iCOH
     in 145 (16.3%) and PSI in 63 (7.1%). No estimator fails at the region level, and no estimator fails
-    in any gradiometer cell at the sensor level.
+    in any gradiometer cell at the sensor level. Only |score| is compared, so a net measure whose true
+    edge comes out with the wrong sign is not counted as failing; this happens in 4 seed-cells (PSI,
+    the original geometry, EEG sensor level).
 29. Neighbour, cell by cell (failures of 50 seeds). Original geometry, EEG: at the source level GC,
     TRGC and PSI 50, iCOH 47; at the sensor level GC and TRGC 0, iCOH and PSI 24 each (Holm p 6.7e-6).
     `temporal_lh`: gradiometer source level GC 48, the controls 35 (iCOH, PSI) to 45 (TRGC); EEG source
@@ -200,13 +202,17 @@ Python 3.13.9 and numpy 2.5.5; the tasks they share with `leakage_adjacent` (see
     geometry with EEG at the source level it is 1.03 (iCOH) to 1.41 (GC) and above 1 in 47 to 50 seeds.
     By construction the series of Y carries part of X at zero lag (the leak) and X receives Z with a
     delay of 10 ms, so Z -> Y is a lagged relation in the reconstructed data, which none of the controls
-    is built to reject. The one cell where the controls rescue GC is `cingulate_lh`, EEG sensor level:
-    all nine failures of GC are X -> Z, the reverse of the true edge (median 1.08 times Z -> X, direction
-    accuracy 0.82); for TRGC and PSI that cell is the true pair, and their direction accuracy is 1.00
-    there.
+    is built to reject. The controls avoid part of GC's failures in a few cells. The largest is
+    `temporal_lh` with gradiometers at the source level, where GC fails in 48 seeds: PSI avoids 13 and
+    adds none (Holm p 0.013), iCOH avoids 15 and adds 2 (Holm p 0.12), TRGC avoids 4 and adds 1; Z -> Y
+    still wins in the seeds that remain. In `cingulate_lh`, EEG sensor level, all nine failures of GC
+    are X -> Z, the reverse of the true edge (median 1.08 times Z -> X, direction accuracy 0.82); for
+    TRGC and PSI that cell is the true pair (direction accuracy 1.00), so they avoid them, but not
+    significantly after correction (item 29).
 31. Together: the controls remove most of the leakage false positives between regions that are not
-    driven (items 25 to 27); they do not help, and in some geometries hurt, when the region that leaks
-    is itself driven with a delay (items 28 to 30).
+    driven (items 25 to 27); they help little, and in some geometries hurt, when the region that leaks
+    is itself driven with a delay: over all neighbour cells they avoid 12 to 28% of GC's failures and
+    fail in 7 to 16% of the seeds where GC passes (items 28 to 30).
 
 ## Not established
 
