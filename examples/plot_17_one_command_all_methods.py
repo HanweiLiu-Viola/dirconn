@@ -188,9 +188,9 @@ print(edges.to_string(index=False))
 # All methods against the truth
 # -----------------------------
 # For every tested method, the beta-low band (13-20 Hz; ``broadband`` for gc, which has no
-# frequency axis) of subject 01 as a matrix, true influences framed. The values of different methods are on
-# different scales and mean different things (a share of a spectrum, a variance ratio, a
-# coherence); compare where each method puts its largest values, not the numbers.
+# frequency axis) of subject 01 as a matrix, true influences framed. The values of different
+# methods are on different scales and mean different things (a share of a spectrum, a variance
+# ratio, a coherence); compare where each method puts its largest values, not the numbers.
 tables = {}
 for method in METHODS:
     path = unit / f"sub-01_task-rest_desc-{method}_edges.tsv"
