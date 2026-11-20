@@ -98,46 +98,40 @@ for path in sorted(bids_dir.rglob("*")):
 # The configuration
 # -----------------
 # The analysis is a TOML file (``dirconn-bids validate-config FILE`` checks it; omitted keys keep
-# their defaults, listed in the documentation's configuration page). Three things here are not
-# defaults, and each matters:
+# their defaults, listed in the documentation's configuration page). Two things here are not
+# defaults, and both matter:
 #
 # * **Methods.** Eight of the fourteen directed methods of ``dirconn-bids list-methods``
-#   (``trgc`` is the time-reversal control and runs by itself): every method that finishes in
-#   about a minute per recording. The others are left out for time or, for one, because it fails:
+#   (``trgc`` is the time-reversal control and runs by itself). The other six cost more time or
+#   add little here. With the settings below, on a workstation (4 workers), a run with all of
+#   them but te took 31 min, per recording:
 #
-#   - ``adtf``, ``tpdc``, ``mtgc``, ``pcmci``: with 239 surrogates and 60 s, adtf took about 20 min
-#     and tpdc about 28 min per recording on a workstation (4 workers); mtgc and pcmci had not
-#     finished after 34 min. Add them to ``methods`` (mtgc also needs ``segment_length``, as imcoh
-#     below) when the time is there.
-#   - ``te``: one pairwise fit of these 60 s took more than nine minutes; the surrogate test repeats
-#     it for every surrogate and band. Use it for a chosen hypothesis (tutorials 12, 13, 15).
-#   - ``psi`` returns one value for a band of its own, which dirconn 0.2.0.dev1 then tries to reduce
-#     to every configured band, so its task fails unless the configuration has a single band.
-# * **A fixed model order.** With ``order = "bic"`` each VAR fit selects its order and checks that
-#   the choice is stable, 5 to 8 s per fit here; with a fixed order 0.4 s. The surrogate test
-#   refits every surrogate, so this decides between minutes and an hour. Choose the order once
-#   (tutorial 2) and fix it.
-# * **Parameters without defaults.** The multitaper methods (mtgc, imcoh, psi) need
-#   ``segment_length`` on continuous data, because it sets the frequency resolution; the windowed
-#   DTF needs its window. Without them these tasks fail (and the others still finish, with exit
-#   code 1).
+#   - ``mtgc``: 22 to 26 min. Its surrogate test refits a multitaper spectral factorisation for
+#     every surrogate.
+#   - ``pcmci``: about 3 min for one fit; it is tested with its own p-values, without surrogates.
+#   - ``adtf``, ``tpdc``: about 1 min each. Like ``wdtf`` they are time resolved, and on a
+#     continuous record they are not tested (see the edge tables below).
+#   - ``psi``: 20 s. It is a phase-slope index per band, not a model of the network.
+#   - ``te``: one pairwise fit of these 60 s took more than nine minutes. Use it for a chosen
+#     hypothesis (tutorials 12, 13, 15).
+#
+#   Add them to ``methods`` when the time is there; ``dirconn-bids`` fills in what they need
+#   (segment lengths, windows, psi's bands).
 # * **Enough surrogates.** With 12 directed pairs per band, a corrected test can only reject when
 #   the smallest possible p-value, ``1 / (n_surrogates + 1)``, is below ``0.05 / 12``: at least 239
 #   surrogates. With 19 nothing is ever significant (dirconn warns about it).
+#
+# ``order = "bic"`` (the default) selects the VAR order once per recording, on the prepared
+# record, and every method with an order and the surrogates of its test use it; the selection is
+# in each result's provenance and in the recording's diagnostics file.
 METHODS = ["gc", "dtf", "pdc", "gpdc", "rpdc", "ssgc", "imcoh", "wdtf"]
 config = f"""
 schema_version = 1
 
 [estimation]
 methods = {METHODS!r}
-order = 6
+order = "bic"
 bands = {{ alpha = [8.0, 12.0], beta_low = [13.0, 20.0], beta_high = [20.0, 30.0] }}
-
-[estimation.imcoh]
-segment_length = 2.0
-[estimation.wdtf]
-window = 2.0
-step = 1.0
 
 [statistics]
 n_surrogates = 239
@@ -181,8 +175,11 @@ for path in sorted(root.rglob("*")):
 # The edge tables
 # ---------------
 # One row per directed pair and band (or one ``broadband`` row for methods without a frequency
-# axis): the band value, its p-value, the corrected p-value and the decision. Time-resolved
-# methods (wdtf here; adtf, tpdc) have a header-only table; their values are in ``_conn.nc``.
+# axis): the band value, its p-value, the corrected p-value and the decision. A time-resolved
+# method (wdtf here; adtf, tpdc) has one row per pair, band and time point. On a continuous record
+# it is not tested: the surrogate test shuffles 5 s blocks and fits the observed value on them,
+# which leaves no time points of the result. Its test columns are ``n/a`` and its sidecar says why
+# (``StatisticsNote``); on epoched data each time point is tested against shuffled trials.
 unit = root / "sub-01" / "eeg"
 edges = pd.read_csv(unit / "sub-01_task-rest_desc-gc_edges.tsv", sep="\t")
 print(edges.to_string(index=False))
@@ -190,15 +187,15 @@ print(edges.to_string(index=False))
 # %%
 # All methods against the truth
 # -----------------------------
-# For every method with an edge table, the beta-low band (13-20 Hz; ``broadband`` for gc, which
-# has no frequency axis) of subject 01 as a matrix, true influences framed. The values of different methods are on
+# For every tested method, the beta-low band (13-20 Hz; ``broadband`` for gc, which has no
+# frequency axis) of subject 01 as a matrix, true influences framed. The values of different methods are on
 # different scales and mean different things (a share of a spectrum, a variance ratio, a
 # coherence); compare where each method puts its largest values, not the numbers.
 tables = {}
 for method in METHODS:
     path = unit / f"sub-01_task-rest_desc-{method}_edges.tsv"
     table = pd.read_csv(path, sep="\t")
-    if len(table):
+    if "time" not in table:  # time-resolved results are descriptive here
         band = "beta_low" if "beta_low" in set(table["band"]) else table["band"].iloc[0]
         tables[method] = table[table["band"] == band]
 
@@ -266,15 +263,16 @@ print(progress[["label", "status", "seconds"]].to_string(index=False))
 # %%
 # What this does and does not show
 # --------------------------------
-# * One command ran eight methods on every recording of the dataset, tested each band against
-#   surrogates and wrote results that a second run would skip. It does not choose the methods,
+# * One command ran eight methods on every recording of the dataset, tested each band of the
+#   seven that are not time resolved against surrogates and wrote results that a second run would
+#   skip. It does not choose the methods,
 #   bands or model order for you: the defaults are a starting point, set in ``--config`` or
 #   ``--set``, and the run's ``dirconn.toml`` records what was used.
 # * The comparison above is one short simulation with a known truth, not an evaluation of the
 #   methods (see the benchmark in the documentation). Methods answer different questions: imcoh
 #   is not conditional on the other nodes and is blind to zero-lag coupling, gc is not spectral,
 #   and DTF counts indirect paths (precuneus -> STN here goes through postcentral).
-# * In the full version every method found both true influences significant, and also three or
+# * In the full version every tested method found both true influences significant, and also two to
 #   four pairs that are not true influences: all of them among the three nodes of the chain
 #   (the indirect precuneus -> STN and reversed directions), none involving the unconnected
 #   superiorfrontal. With observation noise the best VAR of coupled signals has small real terms
