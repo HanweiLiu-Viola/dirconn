@@ -70,7 +70,7 @@ packages = ["src/dirconn"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers -m 'not sample_data and not gpu'"
+addopts = "-ra --strict-markers -m 'not sample_data and not gpu and not docker'"
 filterwarnings = [
     "error::RuntimeWarning",
     # Benign ABI notice emitted by Cython extensions (netCDF4) built against an older numpy.
@@ -82,6 +82,7 @@ filterwarnings = [
 markers = [
     "sample_data: needs the MNE sample dataset (~1.5 GB); never run by default",
     "gpu: needs torch with a CUDA device; never run by default (run with -m gpu)",
+    "docker: needs a local Docker daemon and the built image; never run by default (run with -m docker)",
 ]
 
 [tool.ruff]

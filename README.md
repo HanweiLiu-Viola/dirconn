@@ -115,18 +115,35 @@ Options, configuration fields and output files are described in the
 
 ## Reproducible Docker environment
 
-The [Dockerfile](Dockerfile) freezes the whole scientific stack (exact versions in
-[constraints/docker.txt](constraints/docker.txt); the image also carries the full `pip freeze` in
-`/opt/environment-lock.txt`) for analyses whose numbers must be computable again later. It is an
-environment, not a pipeline: there is no entrypoint; mount your scripts or notebooks into `/work`
-and the data read-only into `/data`. It holds no data. The tutorials are in `/opt/dirconn/tutorials`
-as notebooks; 7, 8, 13 and 14 need the MNE `sample` dataset mounted at `/mne_data`.
+The [Dockerfile](Dockerfile) builds one image with two uses. It freezes the whole scientific stack
+(exact versions in [constraints/docker.txt](constraints/docker.txt); the image also carries the full
+`pip freeze` in `/opt/environment-lock.txt`) for analyses whose numbers must be computable again
+later, and its entrypoint is the BIDS App `dirconn-bids`. It holds no data. The tutorials are in
+`/opt/dirconn/tutorials` as notebooks; 7, 8, 13 and 14 need the MNE `sample` dataset mounted at
+`/mne_data`.
+
+**BIDS App.** Mount the BIDS dataset read-only at `/data` and an output directory at `/out`; the
+arguments are those of `dirconn-bids` (`BIDS_DIR OUTPUT_DIR participant`, see `--help`):
 
 ```bash
 docker pull ghcr.io/hanweiliu-viola/dirconn:<tag>
-docker run --rm -it -v /path/to/analysis:/work -v /path/to/data:/data:ro ghcr.io/hanweiliu-viola/dirconn:<tag>
-docker run --rm -p 127.0.0.1:8888:8888 -v /path/to/analysis:/work -v /path/to/data:/data:ro \
-    ghcr.io/hanweiliu-viola/dirconn:<tag> jupyter lab --ip=0.0.0.0 --no-browser
+docker run --rm -v /path/to/bids:/data:ro -v /path/to/out:/out \
+    ghcr.io/hanweiliu-viola/dirconn:<tag> /data /out participant
+```
+
+The reports and the derivatives are written to `/out/dirconn`; each run's `provenance.json` names
+the image tag, and the run directory keeps a copy of `environment-lock.txt`. The image does not
+contain bids-validator: the CLI warns and skips the validation, so `--skip-bids-validation` is not
+needed. Without arguments, `docker run --rm IMAGE` prints the help.
+
+**Environment.** Replace the entrypoint to get a shell or Jupyter; mount your scripts or notebooks
+into `/work` and the data read-only into `/data`:
+
+```bash
+docker run --rm -it --entrypoint bash -v /path/to/analysis:/work -v /path/to/data:/data:ro \
+    ghcr.io/hanweiliu-viola/dirconn:<tag>
+docker run --rm -p 127.0.0.1:8888:8888 --entrypoint jupyter -v /path/to/analysis:/work \
+    -v /path/to/data:/data:ro ghcr.io/hanweiliu-viola/dirconn:<tag> lab --ip=0.0.0.0 --no-browser
 ```
 
 Jupyter listens only on the local machine (`127.0.0.1`); open the URL with the token it prints.
