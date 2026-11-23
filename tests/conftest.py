@@ -3,6 +3,7 @@
 import logging
 import shutil
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -52,7 +53,13 @@ class PipelineRun:
 
 
 def _run_pipeline(
-    bids_tiny: Path, factory: pytest.TempPathFactory, name: str, toml: str, *, only_rest: bool
+    bids_tiny: Path,
+    factory: pytest.TempPathFactory,
+    name: str,
+    toml: str,
+    *,
+    only_rest: bool,
+    max_units: int | None = None,
 ) -> PipelineRun:
     """Run ``run_participant`` over a private copy of ``bids_tiny`` and return the result."""
     from dirconn.data.exceptions import DirconnWarning
@@ -76,6 +83,8 @@ def _run_pipeline(
     )
     if only_rest:
         units = [u for u in units if u.task == "rest"]
+    if max_units is not None:
+        units = units[:max_units]
     out = tmp / "out"
     resources = Resources(nprocs=1, omp_nthreads=1, mem_mb=None, work_dir=out / "work")
     logger = logging.getLogger("dirconn")
@@ -134,3 +143,25 @@ def pipeline_run_epoched(bids_tiny: Path, tmp_path_factory: pytest.TempPathFacto
     from tests.reports._configs import EPOCHED_CONFIG
 
     return _run_pipeline(bids_tiny, tmp_path_factory, "epoched", EPOCHED_CONFIG, only_rest=True)
+
+
+@pytest.fixture(scope="session")
+def make_pipeline_run(
+    bids_tiny: Path, tmp_path_factory: pytest.TempPathFactory
+) -> Callable[..., PipelineRun]:
+    """Factory ``(name, toml, *, only_rest=False, max_units=None) -> PipelineRun`` for extra runs.
+
+    Each call runs `run_participant` over a new private copy of ``bids_tiny`` (keeping the first
+    ``max_units`` units after the ``only_rest`` filter). The environment at call time applies, so a
+    test can set ``DIRCONN_IMAGE_TAG`` with ``monkeypatch`` first. Outputs are read-only for tests
+    that share them; copy them before modifying.
+    """
+
+    def make(
+        name: str, toml: str, *, only_rest: bool = False, max_units: int | None = None
+    ) -> PipelineRun:
+        return _run_pipeline(
+            bids_tiny, tmp_path_factory, name, toml, only_rest=only_rest, max_units=max_units
+        )
+
+    return make
