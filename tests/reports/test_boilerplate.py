@@ -114,7 +114,7 @@ def test_orders_are_summarised() -> None:
     same = make_boilerplate(
         CONFIG, [_facts()], version="1", order_selections={"a": _selection(3), "b": _selection(3)}
     )
-    assert "selected order 3 in all 2 recordings" in _text(same)
+    assert "selected order 3 in both recordings" in _text(same)
     assert "median" not in _text(same)
     one = make_boilerplate(CONFIG, [_facts()], version="1", order_selections={"a": _selection(3)})
     assert "selected order 3 in the one recording" in _text(one)
@@ -132,9 +132,7 @@ def test_orders_are_summarised() -> None:
         version="1",
         order_selections={"a": _selection(6), "b": _selection(6)},
     )
-    assert "selected order 6 in all 2 recordings; this is the largest order searched" in _text(
-        every
-    )
+    assert "selected order 6 in both recordings; this is the largest order searched" in _text(every)
 
     fixed = make_boilerplate(
         CONFIG, [_facts(model_order=4)], version="1", order_selections={"a": None, "b": None}
@@ -151,7 +149,8 @@ def test_untested_and_builtin_are_stated() -> None:
     text = _text(bp)
     assert "time-resolved results on continuous recordings were not tested" in text
     assert "are descriptive" in text
-    assert "use their own p-values (MCI test; permutation test)" in text
+    assert "pcmci uses its own p-values (MCI test)" in text
+    assert "transfer entropy" not in text
     plain = _text(make_boilerplate(CONFIG, [_facts()], version="1"))
     assert "not tested" not in plain
     assert "their own p-values" not in plain
@@ -264,3 +263,97 @@ def test_reference_entries() -> None:
     md = render(bp, "md")
     for n, (text, url) in enumerate(entries, start=1):
         assert f"{n}. {text}" in md and f"<{url}>" in md
+
+
+def test_builtin_sentence_names_only_the_methods_that_ran() -> None:
+    both = _text(
+        make_boilerplate(
+            CONFIG,
+            [_facts("pcmci", tests=("builtin",)), _facts("te", tests=("builtin",))],
+            version="1",
+        )
+    )
+    assert (
+        "pcmci and multivariate transfer entropy use their own p-values "
+        "(MCI test; permutation test)" in both
+    )
+    only_te = _text(make_boilerplate(CONFIG, [_facts("te", tests=("builtin",))], version="1"))
+    assert "multivariate transfer entropy uses its own p-values (permutation test)" in only_te
+    assert "pcmci uses" not in only_te
+
+
+def test_surrogate_sentence_follows_the_recorded_generators() -> None:
+    cont = _text(
+        make_boilerplate(CONFIG, [_facts(generators=(("block_shuffle", 1250),))], version="1")
+    )
+    assert "block shuffle" in cont and "1250 samples" in cont
+    assert "trial shuffle" not in cont
+    epoched = _text(
+        make_boilerplate(CONFIG, [_facts(generators=(("trial_shuffle", None),))], version="1")
+    )
+    assert "trial shuffle" in epoched and "block shuffle" not in epoched
+    mixed = _text(
+        make_boilerplate(
+            CONFIG,
+            [
+                _facts(generators=(("block_shuffle", 1250),)),
+                _facts(generators=(("trial_shuffle", None),)),
+            ],
+            version="1",
+        )
+    )
+    assert "block shuffle" in mixed and "trial shuffle" in mixed
+
+
+def test_collect_facts_records_the_generators(pipeline_run: Any) -> None:
+    facts, _ = collect_facts(pipeline_run.root, ["01"])
+    gc = [f for f in facts if f.method == "gc"]
+    assert gc and all(f.generators == (("block_shuffle", 1250),) for f in gc)
+
+
+def test_psi_is_described_per_band() -> None:
+    config = {**CONFIG, "estimation": {**CONFIG["estimation"], "methods": ["psi"]}}
+    text = _text(make_boilerplate(config, [_facts("psi")], version="1"))
+    assert "reduced" not in text
+    assert "in each of the bands beta (13" in text
+
+
+def test_citation_files_survive_concurrent_writers(pipeline_run: Any, tmp_path: Path) -> None:
+    import threading
+
+    out = tmp_path / "out"
+    shutil.copytree(pipeline_run.root.parent, out)
+    root = out / "dirconn"
+    errors: list[BaseException] = []
+
+    def work() -> None:
+        try:
+            write_citation_files(root)
+        except BaseException as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    threads = [threading.Thread(target=work) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not errors
+    assert not list((root / "logs").glob("*.tmp"))
+
+
+def test_failed_citation_write_leaves_no_temp_file(
+    pipeline_run: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import os
+
+    out = tmp_path / "out"
+    shutil.copytree(pipeline_run.root.parent, out)
+    root = out / "dirconn"
+
+    def broken(src: Any, dst: Any) -> None:
+        raise OSError("disk full")
+
+    monkeypatch.setattr(os, "replace", broken)
+    with pytest.raises(OSError, match="disk full"):
+        write_citation_files(root)
+    assert not list((root / "logs").glob("*.tmp"))

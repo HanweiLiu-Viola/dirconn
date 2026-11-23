@@ -15,6 +15,7 @@ import os
 import re
 import statistics
 import sys
+import tempfile
 import urllib.parse
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -62,6 +63,11 @@ _NAMES = {
     "tpdc": "Time-varying partial directed coherence",
     "wdtf": "Windowed directed transfer function",
 }
+#: Methods with a built-in test: the name used in the text and the test.
+_BUILTIN_TESTS = {
+    "pcmci": ("pcmci", "MCI test"),
+    "te": ("multivariate transfer entropy", "permutation test"),
+}
 _SURROGATES = {
     "auto": "block shuffle on continuous and trial shuffle on epoched recordings",
 }
@@ -86,6 +92,10 @@ class ResultFacts:
         Distinct ``Test`` values of the sidecar ``Statistics`` entries.
     untested : bool
         Whether the sidecar has a ``StatisticsNote`` (the result was not tested).
+    generators : tuple of (str, int or None)
+        Distinct surrogate generators of the ``Statistics`` entries: the generator name and
+        its ``block_size`` in samples (``None`` without one). Built-in and analytic tests
+        have no surrogate generator and are not listed.
     """
 
     method: str
@@ -94,6 +104,7 @@ class ResultFacts:
     parameters: dict[str, Any] = field(default_factory=dict)
     tests: tuple[str, ...] = ()
     untested: bool = False
+    generators: tuple[tuple[str, int | None], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -214,6 +225,13 @@ def _preparation(config: Mapping[str, Any]) -> str:
     return " ".join(parts)
 
 
+def _all_recordings(n: int) -> str:
+    """Phrase for every one of ``n`` recordings: "the one recording", "both ..." or "all N ..."."""
+    if n == 1:
+        return "the one recording"
+    return "both recordings" if n == 2 else f"all {n} recordings"
+
+
 def _orders(
     config: Mapping[str, Any],
     facts: Sequence[ResultFacts],
@@ -234,9 +252,7 @@ def _orders(
     if chosen:
         lo, hi, n = min(chosen), max(chosen), len(chosen)
         if lo == hi:
-            summary = f"selected order {lo} in " + (
-                "the one recording" if n == 1 else f"all {n} recordings"
-            )
+            summary = f"selected order {lo} in " + _all_recordings(n)
         else:
             median = f"{statistics.median(chosen):g}"
             summary = f"selected orders {lo}{_EN_DASH}{hi}, median {median} over {n} recordings"
@@ -292,7 +308,9 @@ def _method_sentence(
     if info is not None and info.frequency_resolved:
         bands = _bands_text(config)
         reduce = _option(config, "estimation", "reduce")
-        if bands:
+        if bands and method == "psi":
+            text += f" in each of the bands {bands}"
+        elif bands:
             text += f" and reduced ({reduce}) to the bands {bands}"
     values: dict[str, list[str]] = {}
     for key in ("segment_length", "window", "step"):
@@ -326,6 +344,24 @@ def _methods(
     return " ".join(sentences)
 
 
+def _generators_text(facts: Sequence[ResultFacts]) -> str:
+    """Describe the surrogate generators recorded in the sidecars; empty when none is recorded."""
+    seen: dict[str, set[int]] = {}
+    for f in facts:
+        for name, block in f.generators:
+            seen.setdefault(name, set())
+            if block is not None:
+                seen[name].add(block)
+    items = []
+    for name, blocks in seen.items():
+        text = name.replace("_", " ")
+        if blocks:
+            sizes = " or ".join(str(b) for b in sorted(blocks))
+            text += f", blocks of {sizes} samples"
+        items.append(text)
+    return " and ".join(items)
+
+
 def _tests(config: Mapping[str, Any], facts: Sequence[ResultFacts], numbering: _Numbering) -> str:
     test = _option(config, "statistics", "test")
     if test == "none":
@@ -335,7 +371,7 @@ def _tests(config: Mapping[str, Any], facts: Sequence[ResultFacts], numbering: _
     if test == "surrogate":
         n = _option(config, "statistics", "n_surrogates")
         gen = str(_option(config, "statistics", "surrogate"))
-        gen_text = _SURROGATES.get(gen, gen.replace("_", " "))
+        gen_text = _generators_text(facts) or _SURROGATES.get(gen, gen.replace("_", " "))
         cite = numbering.cite(("Theiler_1992",))
         parts.append(
             f"Significance was assessed against {n} surrogates ({gen_text})"
@@ -364,11 +400,14 @@ def _tests(config: Mapping[str, Any], facts: Sequence[ResultFacts], numbering: _
             f"For {_join(untested)}, time-resolved results on continuous recordings were not "
             "tested and are descriptive."
         )
-    if any("builtin" in f.tests for f in facts):
-        parts.append(
-            "pcmci and multivariate transfer entropy use their own p-values "
-            "(MCI test; permutation test)."
-        )
+    builtin = [
+        m for m in _BUILTIN_TESTS if any(f.method == m and "builtin" in f.tests for f in facts)
+    ]
+    if builtin:
+        names = _join([_BUILTIN_TESTS[m][0] for m in builtin])
+        tests = "; ".join(_BUILTIN_TESTS[m][1] for m in builtin)
+        verb = "uses its" if len(builtin) == 1 else "use their"
+        parts.append(f"{names} {verb} own p-values ({tests}).")
     return " ".join(parts)
 
 
@@ -677,6 +716,20 @@ def collect_facts(
                         if isinstance(s, dict) and "Test" in s
                     }
                 )
+                generators = []
+                for s in statistics_entries:
+                    gen = s.get("Generator") if isinstance(s, dict) else None
+                    if not isinstance(gen, dict) or gen.get("name") in (
+                        None,
+                        "builtin",
+                        "analytic",
+                    ):
+                        continue
+                    name = gen["name"]
+                    block = (gen.get("params") or {}).get("block_size")
+                    item = (str(name), None if block is None else int(block))
+                    if item not in generators:
+                        generators.append(item)
                 facts.append(
                     ResultFacts(
                         method=desc,
@@ -685,6 +738,7 @@ def collect_facts(
                         parameters=dict(provenance.parameters),
                         tests=tuple(tests),
                         untested=output.statistics_note is not None,
+                        generators=tuple(sorted(generators, key=lambda g: (g[0], g[1] or 0))),
                     )
                 )
     return facts, selections
@@ -724,8 +778,14 @@ def write_citation_files(root: Path) -> list[Path]:
     written = []
     for fmt in ("html", "md", "tex", "bib"):
         target = logs / f"CITATION.{fmt}"
-        temp = logs / f".CITATION.{fmt}.tmp"
-        temp.write_text(render(bp, fmt), encoding="utf-8", newline="\n")
-        os.replace(temp, target)
+        descriptor, name = tempfile.mkstemp(dir=logs, prefix=f".CITATION.{fmt}.", suffix=".tmp")
+        temp = Path(name)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
+                handle.write(render(bp, fmt))
+            os.replace(temp, target)
+        except BaseException:
+            temp.unlink(missing_ok=True)
+            raise
         written.append(target)
     return written
