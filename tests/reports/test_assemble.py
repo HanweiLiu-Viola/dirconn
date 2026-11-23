@@ -48,11 +48,32 @@ def _copy(run: Any, tmp: Path) -> Path:
 
 
 @pytest.fixture(scope="module")
-def report(pipeline_run: Any, tmp_path_factory: pytest.TempPathFactory) -> Report:
+def built_root(reportlets_root: Path, tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Dataset root with both subjects' reports built once, on a copy of ``reportlets_root``.
+
+    The reportlets are already on disk (``reportlets_root`` is built once per session), so
+    ``build_reportlets`` is stubbed here and only the boilerplate and the page are made.
+    Read-only; tests that change files copy it with ``_copy_built``.
+    """
+    root = _copy_built(reportlets_root, tmp_path_factory.mktemp("assemble"))
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(assemble, "build_reportlets", lambda *args, **kwargs: [])
+        for subject in ("01", "02"):
+            build_participant_report(root, subject)
+    return root
+
+
+def _copy_built(root: Path, tmp: Path) -> Path:
+    """Copy of a built dataset root; its reportlets are on disk, so only assembling is left."""
+    shutil.copytree(root.parent, tmp / "out")
+    return tmp / "out" / "dirconn"
+
+
+@pytest.fixture(scope="module")
+def report(built_root: Path) -> Report:
     """Sub-01 of a copy of ``pipeline_run``, built and assembled once."""
-    root = _copy(pipeline_run, tmp_path_factory.mktemp("assemble"))
-    path = build_participant_report(root, "01")
-    return Report(root, path, path.read_text(encoding="utf-8"))
+    path = built_root / "sub-01.html"
+    return Report(built_root, path, path.read_text(encoding="utf-8"))
 
 
 def _parse(text: str) -> Any:
@@ -73,6 +94,10 @@ def test_report_is_written_next_to_the_subject(report: Report) -> None:
     assert report.path == report.root / "sub-01.html"
     assert report.text.startswith("<!DOCTYPE html>")
     assert not list(report.root.glob(".sub-01.html*"))
+
+
+def test_report_is_small(report: Report) -> None:
+    assert report.path.stat().st_size < 5_000_000
 
 
 def test_report_is_valid_html(report: Report) -> None:
@@ -239,9 +264,11 @@ def test_special_characters_are_escaped(pipeline_run: Any, tmp_path: Path) -> No
 
 
 def test_build_participant_report_survives_boilerplate_failure(
-    pipeline_run: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    built_root: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    root = _copy(pipeline_run, tmp_path)
+    root = _copy_built(built_root, tmp_path)
+    # the reportlets of the copy are already on disk; only the boilerplate step is under test
+    monkeypatch.setattr(assemble, "build_reportlets", lambda *args, **kwargs: [])
 
     def boom(*args: Any, **kwargs: Any) -> Any:
         raise RuntimeError("no references today")
@@ -255,9 +282,8 @@ def test_build_participant_report_survives_boilerplate_failure(
     _parse(text)
 
 
-def test_missing_reportlets_are_listed_in_errors(pipeline_run: Any, tmp_path: Path) -> None:
-    root = _copy(pipeline_run, tmp_path)
-    build_participant_report(root, "01")
+def test_missing_reportlets_are_listed_in_errors(built_root: Path, tmp_path: Path) -> None:
+    root = _copy_built(built_root, tmp_path)
     unit = collect_subject(root, "01").units[0]
     victim = unit.figures_dir / f"{unit.label}_desc-gc_tests"
     victim.with_suffix(".json").unlink()
@@ -267,9 +293,8 @@ def test_missing_reportlets_are_listed_in_errors(pipeline_run: Any, tmp_path: Pa
     assert f'id="{unit.label}-gc-tests"' not in path.read_text(encoding="utf-8")
 
 
-def test_assemble_without_boilerplate_still_writes(pipeline_run: Any, tmp_path: Path) -> None:
-    root = _copy(pipeline_run, tmp_path)
-    build_participant_report(root, "02")
+def test_assemble_without_boilerplate_still_writes(built_root: Path, tmp_path: Path) -> None:
+    root = _copy_built(built_root, tmp_path)
     path = assemble_participant(root, "02", boilerplate=None)
     _parse(path.read_text(encoding="utf-8"))
     text = path.read_text(encoding="utf-8")

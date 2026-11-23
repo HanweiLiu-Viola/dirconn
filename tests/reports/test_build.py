@@ -60,14 +60,26 @@ def _slug(band: str) -> str:
 
 
 @pytest.fixture(scope="module")
-def built(pipeline_run: Any) -> dict[str, Keyed]:
+def built_lists(pipeline_run: Any) -> dict[str, list[Reportlet]]:
     """Unit reportlets of every unit of the ``pipeline_run`` fixture, by unit label."""
-    out: dict[str, Keyed] = {}
+    out: dict[str, list[Reportlet]] = {}
     for subject in ("01", "02"):
         outputs = collect_subject(pipeline_run.root, subject)
         for unit in outputs.units:
-            out[unit.label] = _keyed(unit_reportlets(outputs, unit))
+            out[unit.label] = unit_reportlets(outputs, unit)
     return out
+
+
+@pytest.fixture(scope="module")
+def built(built_lists: dict[str, list[Reportlet]]) -> dict[str, Keyed]:
+    """The same reportlets keyed by ``desc/name``."""
+    return {label: _keyed(reports) for label, reports in built_lists.items()}
+
+
+def _subject_reports(
+    built_lists: dict[str, list[Reportlet]], outputs: Any
+) -> dict[str, list[Reportlet]]:
+    return {u.label: built_lists[u.label] for u in outputs.units}
 
 
 @pytest.fixture(scope="module")
@@ -173,7 +185,7 @@ def test_spectrum_method_selects_at_most_max_pairs(
 
 
 def test_untested_time_resolved_result_is_described_not_missing(
-    pipeline_run: Any, built: dict[str, Keyed]
+    pipeline_run: Any, built: dict[str, Keyed], built_lists: dict[str, list[Reportlet]]
 ) -> None:
     keyed = built["sub-01_task-move"]
     tests = keyed["adtf/tests"]
@@ -182,7 +194,9 @@ def test_untested_time_resolved_result_is_described_not_missing(
     assert tests.table is None
     for name in ("significant", "pvalues", "sig-time"):
         assert f"adtf/{name}" not in keyed
-    errors = _keyed(subject_reportlets(collect_subject(pipeline_run.root, "01")))["summary/errors"]
+    outputs = collect_subject(pipeline_run.root, "01")
+    subject = subject_reportlets(outputs, _subject_reports(built_lists, outputs))
+    errors = _keyed(subject)["summary/errors"]
     assert errors.status == "pass"
     assert "adtf" not in json.dumps(errors.table)
 
@@ -320,9 +334,12 @@ def test_failed_task_makes_errors_fail(pipeline_run_with_failure: Any) -> None:
     assert keyed["summary/overview"].status == "fail"
 
 
-def test_summary_overview_lists_every_unit(pipeline_run: Any) -> None:
+def test_summary_overview_lists_every_unit(
+    pipeline_run: Any, built_lists: dict[str, list[Reportlet]]
+) -> None:
     outputs = collect_subject(pipeline_run.root, "01")
-    keyed = _keyed(subject_reportlets(outputs))
+    unit_reports = _subject_reports(built_lists, outputs)
+    keyed = _keyed(subject_reportlets(outputs, unit_reports))
     overview = keyed["summary/overview"]
     assert overview.section == "summary"
     assert overview.table is not None and len(overview.table) == 3
@@ -333,8 +350,8 @@ def test_summary_overview_lists_every_unit(pipeline_run: Any) -> None:
     assert row["image_tag"] == "not recorded" and row["image_revision"] == "not recorded"
     assert row["sha256"] and row["input_files"]
     assert row["started"] and row["finished"] and row["dirconn"]
-    unit_reports = [r for u in outputs.units for r in unit_reportlets(outputs, u)]
-    expected = worst_status([r.status for r in unit_reports] + [keyed["summary/errors"].status])
+    everything = [r for reports in unit_reports.values() for r in reports]
+    expected = worst_status([r.status for r in everything] + [keyed["summary/errors"].status])
     assert overview.status == expected
     assert keyed["summary/errors"].status == "pass"
 
@@ -375,20 +392,28 @@ def test_a_broken_figure_does_not_stop_the_report(
 
     monkeypatch.setattr(build, "band_matrix_svg", broken)
     outputs = collect_subject(pipeline_run.root, "02")
-    unit_results = {u.label: _keyed(unit_reportlets(outputs, u)) for u in outputs.units}
+    unit_lists = {u.label: unit_reportlets(outputs, u) for u in outputs.units}
+    unit_results = {label: _keyed(reports) for label, reports in unit_lists.items()}
     first = unit_results[outputs.units[0].label]
     placeholder = first["gc/matrix-broadband"]
     assert placeholder.status == "fail" and placeholder.svg is None
     assert placeholder.caption == "could not be built: RuntimeError: boom"
     assert placeholder.section == "connectivity"
     assert "pdc/spectra" in first and first["pdc/spectra"].svg
-    subject = _keyed(subject_reportlets(outputs))
+    subject = _keyed(subject_reportlets(outputs, unit_lists))
     errors = subject["summary/errors"]
     assert errors.status == "fail" and errors.table is not None
     built_failures = [r for r in errors.table if r["kind"] == "build failed"]
     assert {r["reportlet"] for r in built_failures} >= {"gc/matrix-broadband"}
     assert all("RuntimeError: boom" in r["reason"] for r in built_failures)
     assert subject["summary/overview"].status == "fail"
+
+
+def test_reportlet_svgs_are_small(reportlets_root: Path) -> None:
+    sizes = {p: p.stat().st_size for p in reportlets_root.rglob("*.svg")}
+    assert sizes
+    too_big = {p.name: size for p, size in sizes.items() if size >= 1_000_000}
+    assert not too_big
 
 
 def test_build_reportlets_writes_files_and_rebuild_overwrites(
