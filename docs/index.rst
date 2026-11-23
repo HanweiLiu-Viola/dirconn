@@ -44,7 +44,7 @@ pyCirclize); the map of the cortical surface needs ``plot-extra`` and MNE's 3D p
 Tutorials that need the MNE sample dataset
 ------------------------------------------
 
-Tutorials 1 to 6, 9 to 12, 15 and 16 use simulated data only. Tutorials 7, 8, 13 and 14 need the MNE
+Tutorials 1 to 6, 9 to 12 and 15 to 18 use simulated data only. Tutorials 7, 8, 13 and 14 need the MNE
 ``sample`` dataset (about 1.5 GB). dirconn **never downloads it without being asked**: the tutorials
 call :func:`dirconn.datasets.require_sample`, which looks for the data locally and, if it is missing,
 stops with the size, the ``MNE_DATA`` setting and the download command.

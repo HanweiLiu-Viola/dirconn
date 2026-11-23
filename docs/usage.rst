@@ -276,7 +276,8 @@ Running in Docker
 The Docker image (see the README) has ``dirconn-bids`` as its entrypoint, so the arguments are those
 above. Mount the BIDS dataset read-only at ``/data`` and an output directory at ``/out``::
 
-   docker run --rm -v /path/to/bids:/data:ro -v /path/to/out:/out        ghcr.io/hanweiliu-viola/dirconn:<tag> /data /out participant --participant-label 01
+   docker run --rm -v /path/to/bids:/data:ro -v /path/to/out:/out \
+     ghcr.io/hanweiliu-viola/dirconn:<tag> /data /out participant --participant-label 01
 
 The report is then ``/path/to/out/dirconn/sub-01.html``, and ``provenance.json`` of the run names the
 image tag and revision (``image``). To rebuild the report from an existing output, give the same

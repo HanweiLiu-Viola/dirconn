@@ -17,8 +17,9 @@ When it is written
   code 0 or 1), for every subject that had a recording in the run, and then the methods text of the
   whole output dataset. A run that skipped every task (a repeat) writes them again.
 * ``dirconn-bids BIDS_DIR OUTPUT_DIR participant --reports-only`` writes them again from the files in
-  ``OUTPUT_DIR/dirconn`` without reading the BIDS dataset or the configuration and without computing
-  anything. Use it after updating dirconn, or to rebuild a report that failed.
+  ``OUTPUT_DIR/dirconn`` without reading the BIDS dataset and without computing anything. It reads
+  the configuration stored in the output dataset (``dirconn.toml``); ``--config`` and ``--set`` are
+  ignored. Use it after updating dirconn, or to rebuild a report that failed.
 * ``--boilerplate-only`` writes only ``logs/CITATION.*``. See :doc:`usage` for both options.
 
 A subject's report covers every recording of that subject in the output dataset, including those of
@@ -50,7 +51,8 @@ builds them; ``<method>`` is a name from ``estimation.methods`` and ``<band>`` a
 
 Summary
    *Which recordings does this report cover, and what produced them?* ``summary/overview``: one row per
-   recording with its input files, the SHA-256 over them, the methods and bands that have results,
+   recording with its input files, the SHA-256 over them (the first 12 hex digits and an ellipsis in the table; the
+   full value is kept in the reportlet file), the methods and bands that have results,
    the start and end of the run that wrote them, the dirconn version, the Docker image tag and
    revision (``not recorded`` outside the image) and the git commit of a source install. The status is
    the worst of every reportlet of the subject.
@@ -77,23 +79,27 @@ Connectivity
    ``<method>/net-<band>``, the net direction ``value(i to j) - value(j to i)`` of the node pairs of
    different kinds (it needs at least two kinds, for example cortical and deep nodes). A method whose
    ``report_kind`` is ``spectrum`` (see ``dirconn-bids list-methods``) also gets
-   ``<method>/spectra`` when its result has at least three frequencies: both directions of up to six
-   node pairs over frequency. A method whose ``report_kind`` is ``time_frequency`` (``adtf``,
+   ``<method>/spectra`` when its full result has at least three frequencies and more frequencies
+   than configured bands (the bands of the sidecar, ``broadband`` not counted): both directions of
+   up to six node pairs over frequency. ``psi`` has one frequency per band, so it gets matrices
+   and net-direction figures but no ``spectra``. A method whose ``report_kind`` is ``time_frequency`` (``adtf``,
    ``tpdc``, ``wdtf``) gets ``<method>/tf``, maps for up to six node pairs, instead of the
    matrices. The pairs are chosen by the rule in the caption:
    significant pairs first, then the largest band values.
 
 Controls
    *Do time-reversed and ordinary Granger causality agree on the direction?* ``trgc/matrix`` is the
-   net time-reversed Granger causality, averaged over frequency. ``trgc/agreement`` compares its sign
+   net time-reversed Granger causality, averaged over frequency, drawn with a diverging colour map
+   centred at zero. ``trgc/agreement`` compares its sign
    with the sign of ``gc(i to j) - gc(j to i)`` for every pair (it needs a ``gc`` result and the
    ``broadband`` rows of its edge table). The section is empty when ``controls.time_reversal`` is off.
 
 Statistics
    *How was each result tested, and what is significant?* ``<method>/tests`` lists the tests that were
-   run: band, test, generator, block size, number of surrogates, seed and the shape of the p-value
+   run: band, test, generator, block (samples), number of surrogates, seed and the shape of the p-value
    array (a built-in test shows its source sentence instead of a generator). ``<method>/significant``
-   lists the significant rows ordered by adjusted p value and then by value, at most 200;
+   lists the significant rows ordered by adjusted p value and then by value, at most 200
+   ("No edge is significant after correction." when there is none);
    ``<method>/pvalues`` is the histogram of the p values; ``<method>/sig-time`` is the number of
    significant pairs over time, for time-resolved results that were tested. Results that were not
    tested are described under "Described, not tested" below.
