@@ -10,9 +10,11 @@ estimates directed connectivity with the configured methods, tests it, runs the 
 derivatives dataset to ``OUTPUT_DIR/dirconn`` (see :doc:`outputs`). What is computed is set by a TOML
 file (see :doc:`configuration`); the command line selects the inputs and the resources.
 
-Only the participant level exists in dirconn 0.2.0. The group level, ``--reports-only`` and
-``--boilerplate-only`` arrive in dirconn 0.3.0; until then they stop with exit code 2 and the message
-"available in dirconn 0.3.0".
+Only the participant level exists in dirconn 0.2.0; the group level arrives in dirconn 0.3.0 (until
+then it stops with exit code 2 and the message "available in dirconn 0.3.0"). After every participant
+run the command writes a report page ``sub-XX.html`` for each subject of the run and the methods
+boilerplate ``logs/CITATION.*`` into the output dataset. ``--reports-only`` and ``--boilerplate-only``
+write them again from existing outputs without computing anything.
 
 Install
 -------
@@ -150,8 +152,15 @@ Other options
 ``--skip-bids-validation``
    Do not run ``bids-validator``. Otherwise it is run on ``BIDS_DIR`` when it is on the ``PATH`` (a
    warning is printed when it is not); a rejection stops the command with exit code 3.
-``--reports-only``, ``--boilerplate-only``
-   Reserved for dirconn 0.3.0 (exit code 2).
+``--reports-only``
+   Rebuild the reports (``sub-XX.html``) and the methods boilerplate from the existing outputs of
+   ``OUTPUT_DIR/dirconn``; nothing is recomputed. The subjects are the ``--participant-label`` values
+   (default: every ``sub-*`` directory of the dataset). ``BIDS_DIR`` is not read, ``bids-validator`` is
+   not run, and ``--config``, ``--set`` and the input filters are ignored with a warning. Exit code 2
+   when ``OUTPUT_DIR/dirconn`` has no ``dirconn.toml`` or a requested subject has no results.
+``--boilerplate-only``
+   Rewrite only the methods boilerplate (``logs/CITATION.*``) from the existing outputs, under the
+   same conditions. It excludes ``--reports-only``.
 ``-v``, ``--verbose``
    More log output on stderr: ``-v`` information (one line per task), ``-vv`` debug messages. The
    log file ``dirconn.log`` of the run always receives debug messages.
@@ -178,12 +187,15 @@ Code   Meaning
 =====  =================================================================================================
 0      Every task succeeded or was already done.
 1      At least one task failed. The outputs of the other tasks are kept; each failure leaves a
-       ``crash-<key>.txt`` file in the run directory, and its label is logged.
+       ``crash-<key>.txt`` file in the run directory, and its label is logged. Also 1 when a report
+       could not be written (``crash-report-<subject>.txt`` in the run directory, or in
+       ``logs/reports-<time>-<pid>/`` with ``--reports-only``); the results are kept.
 2      The run did not start: invalid arguments, configuration or ``--set`` override; ``BIDS_DIR``
        missing; an output location inside ``BIDS_DIR``; no matching recordings, an ambiguous layout or
        an invalid filter file; an output dataset written with a different configuration, or whose
-       stored ``dirconn.toml`` is not a valid configuration; the ``app`` extra missing; the group level
-       or a 0.3.0 option; ``bids-validator`` failing to start. Or the run stopped on a file system
+       stored ``dirconn.toml`` is not a valid configuration; the ``app`` extra missing; the group level;
+       with ``--reports-only`` or ``--boilerplate-only``, an output dataset or subject that does not
+       exist, or both options together; ``bids-validator`` failing to start. Or the run stopped on a file system
        error in its own files (dataset files, run directory, log, provenance; the message starts with
        ``the run stopped:``), before or while the tasks ran: tasks that had finished keep their
        results and are skipped by the next run.

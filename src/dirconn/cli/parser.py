@@ -133,12 +133,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-bids-validation", action="store_true", help="Do not run bids-validator."
     )
     other.add_argument(
-        "--reports-only", action="store_true", help="Only redo the reports (dirconn 0.3.0)."
+        "--reports-only",
+        action="store_true",
+        help="Rebuild the reports (sub-XX.html) and the methods boilerplate from the existing "
+        "outputs; nothing is recomputed.",
     )
     other.add_argument(
         "--boilerplate-only",
         action="store_true",
-        help="Only write the methods boilerplate (dirconn 0.3.0).",
+        help="Rewrite only the methods boilerplate (logs/CITATION.*) from the existing outputs.",
     )
     other.add_argument(
         "-v",

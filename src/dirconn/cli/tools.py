@@ -28,7 +28,7 @@ __all__ = [
 
 _ERROR = "dirconn-bids: error: "
 #: Third-party modules of the ``app`` extra.
-APP_MODULES: tuple[str, ...] = ("pydantic", "joblib") + (
+APP_MODULES: tuple[str, ...] = ("pydantic", "joblib", "jinja2", "matplotlib") + (
     ("tomli",) if sys.version_info < (3, 11) else ()
 )
 

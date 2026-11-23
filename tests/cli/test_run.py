@@ -17,6 +17,7 @@ import dirconn
 from dirconn.cli import run as cli_run
 from dirconn.cli.tools import APP_MODULES
 from dirconn.methods.registry import REGISTRY
+from dirconn.reports import assemble
 from dirconn.workflows import participant
 from dirconn.workflows.config import config_hash, load_config
 from dirconn.workflows.log import close_logging
@@ -158,14 +159,6 @@ def test_group_level_exits_two_with_message(bids_tiny_copy: Path, tmp_path: Path
     assert not (tmp_path / "out").exists()
 
 
-def test_reports_only_exits_two(bids_tiny_copy: Path, tmp_path: Path):
-    for flag in ("--reports-only", "--boilerplate-only"):
-        proc = _cli(bids_tiny_copy, tmp_path / "out", "participant", flag)
-        assert proc.returncode == 2, flag
-        assert "available in dirconn 0.3.0" in proc.stderr, flag
-    assert not (tmp_path / "out").exists()
-
-
 def test_validate_config_subcommand(tmp_path: Path):
     good = _write_config(tmp_path)
     proc = _cli("validate-config", good)
@@ -249,6 +242,8 @@ def test_cli_without_the_app_extra(module: str, tmp_path: Path):
     )
     for args in (
         (tmp_path, tmp_path / "out", "participant"),
+        (tmp_path, tmp_path / "out", "participant", "--reports-only"),
+        (tmp_path, tmp_path / "out", "participant", "--boilerplate-only"),
         ("validate-config", _write_config(tmp_path)),
     ):
         proc = _no_app(module, *args)
@@ -448,3 +443,228 @@ def test_help_says_the_filter_file_is_intersected(capsys: pytest.CaptureFixture[
         cli_run.main(["--help"])
     assert exc.value.code == 0
     assert "intersected with the other filters" in " ".join(capsys.readouterr().out.split())
+
+
+# Reports after a run, and --reports-only / --boilerplate-only.
+
+CITATION_FILES = tuple(f"CITATION.{ext}" for ext in ("html", "md", "tex", "bib"))
+
+
+@pytest.fixture(scope="module")
+def two_step_run(bids_tiny: Path, tmp_path_factory: pytest.TempPathFactory) -> dict[str, object]:
+    """Two participant runs into one output: ``--participant-label 01``, then ``02``."""
+    tmp = tmp_path_factory.mktemp("cli_two_step")
+    bids = tmp / "bids_tiny"
+    shutil.copytree(bids_tiny, bids)
+    config = _write_config(tmp)
+    out = tmp / "out"
+    root = out / "dirconn"
+    logger = logging.getLogger("dirconn")
+    state = (list(logger.handlers), logger.level, logger.propagate)
+    codes: list[int] = []
+    mtimes: list[int] = []
+    try:
+        for label in ("01", "02"):
+            args = [bids, out, "participant", "--config", config, "--skip-bids-validation"]
+            args += ["--participant-label", label]
+            codes.append(cli_run.main([str(a) for a in args]))
+            close_logging()
+            if label == "01":
+                mtimes.append((root / "sub-01.html").stat().st_mtime_ns)
+                assert not (root / "sub-02.html").exists()
+        mtimes.append((root / "sub-01.html").stat().st_mtime_ns)
+    finally:
+        close_logging()
+        logger.handlers[:] = state[0]
+        logger.setLevel(state[1])
+        logger.propagate = state[2]
+    return {"root": root, "codes": codes, "mtimes": mtimes}
+
+
+def test_participant_run_writes_reports(two_step_run: dict[str, object]):
+    root = two_step_run["root"]
+    assert isinstance(root, Path)
+    assert two_step_run["codes"] == [0, 0]
+    for subject in ("01", "02"):
+        assert (root / f"sub-{subject}.html").is_file(), subject
+    for name in CITATION_FILES:
+        assert (root / "logs" / name).is_file(), name
+
+
+def test_participant_run_reports_only_its_subjects(two_step_run: dict[str, object]):
+    # sub-01.html was written by the first run and not rebuilt by the run for 02.
+    first, second = two_step_run["mtimes"]  # type: ignore[misc]
+    assert first == second
+
+
+@pytest.fixture(scope="module")
+def finished_run(make_pipeline_run):  # type: ignore[no-untyped-def]
+    """One finished run of sub-01 (no report yet), shared; tests copy it before use."""
+    return make_pipeline_run("cli_reports", TEST_CONFIG, max_units=1)
+
+
+@pytest.fixture
+def finished_out(finished_run, tmp_path: Path) -> Path:  # type: ignore[no-untyped-def]
+    """A private copy of the output directory of `finished_run` (the dataset, no work dir)."""
+    out = tmp_path / "finished_out"
+    shutil.copytree(finished_run.root, out / "dirconn")
+    return out
+
+
+def _only(out: Path, bids: Path, *extra: str | Path) -> int:
+    args = [bids, out, "participant", *extra]
+    return cli_run.main([str(a) for a in args])
+
+
+def _snapshot(root: Path) -> dict[str, int]:
+    return {
+        str(p.relative_to(root)): p.stat().st_mtime_ns
+        for p in root.rglob("*")
+        if p.is_file() and (p.name.endswith("_conn.json") or p.name == "progress.jsonl")
+    }
+
+
+def test_reports_only_does_not_recompute(
+    finished_out: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    root = finished_out / "dirconn"
+    before = _snapshot(root)
+    assert before
+    lines = {p: p.read_text(encoding="utf-8") for p in root.rglob("progress.jsonl")}
+    runs = _run_dirs(finished_out)
+    # BIDS_DIR is not read in this mode, and bids-validator is not run.
+    code = _only(finished_out, tmp_path / "no-such-bids", "--reports-only")
+    err = capsys.readouterr().err
+    assert code == 0, err
+    assert _snapshot(root) == before
+    assert {p: p.read_text(encoding="utf-8") for p in root.rglob("progress.jsonl")} == lines
+    assert _run_dirs(finished_out) == runs
+    assert (root / "sub-01.html").is_file()
+    for name in CITATION_FILES:
+        assert (root / "logs" / name).is_file(), name
+    assert "dirconn-bids: report " in err
+
+
+def test_reports_only_ignores_config_mismatch(
+    finished_out: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    stored = (finished_out / "dirconn" / "dirconn.toml").read_bytes()
+    code = _only(
+        finished_out,
+        tmp_path / "no-such-bids",
+        "--set",
+        "estimation.order=7",
+        "--config",
+        _write_config(tmp_path),
+        "--task-id",
+        "rest",
+        "--reports-only",
+    )
+    assert code == 0
+    assert (finished_out / "dirconn" / "dirconn.toml").read_bytes() == stored
+    err = capsys.readouterr().err
+    assert "warning: --config is ignored with --reports-only" in err
+    assert "warning: --set is ignored with --reports-only" in err
+    assert "warning: --task-id is ignored with --reports-only" in err
+
+
+def test_reports_only_restricts_to_the_labels(finished_out: Path, tmp_path: Path):
+    root = finished_out / "dirconn"
+    (root / "sub-02").mkdir()
+    assert _only(finished_out, tmp_path, "--reports-only", "--participant-label", "sub-01") == 0
+    assert (root / "sub-01.html").is_file()
+    assert not (root / "sub-02.html").exists()
+
+
+def test_reports_only_unknown_label_exits_2(
+    finished_out: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    root = finished_out / "dirconn"
+    code = _only(finished_out, tmp_path, "--reports-only", "--participant-label", "01", "99")
+    assert code == 2
+    assert "dirconn-bids: error: " in capsys.readouterr().err
+    assert not list(root.glob("sub-*.html"))  # nothing was built before the check
+
+
+def test_reports_only_without_subjects_exits_2(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    root = tmp_path / "out" / "dirconn"
+    root.mkdir(parents=True)
+    (root / "dirconn.toml").write_text(TEST_CONFIG, encoding="utf-8")
+    assert _only(tmp_path / "out", tmp_path, "--reports-only") == 2
+    assert "dirconn-bids: error: " in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("flag", ["--reports-only", "--boilerplate-only"])
+def test_reports_modes_without_outputs_exit_2(
+    flag: str, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    out = tmp_path / "out"
+    assert _only(out, tmp_path, flag) == 2
+    err = capsys.readouterr().err
+    assert "dirconn-bids: error: " in err
+    assert str(out.resolve() / "dirconn") in err
+    assert not out.exists()
+    (out / "dirconn").mkdir(parents=True)  # a directory without dirconn.toml is no dataset either
+    assert _only(out, tmp_path, flag) == 2
+    assert not list((out / "dirconn").iterdir())
+
+
+def test_boilerplate_only(finished_out: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]):
+    root = finished_out / "dirconn"
+    before = _snapshot(root)
+    assert _only(finished_out, tmp_path / "no-such-bids", "--boilerplate-only") == 0
+    for name in CITATION_FILES:
+        assert (root / "logs" / name).is_file(), name
+    assert not list(root.glob("sub-*.html"))
+    assert _snapshot(root) == before
+    assert "dirconn-bids: report " not in capsys.readouterr().err
+
+
+def test_both_modes_exclude_each_other(
+    finished_out: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
+    code = _only(finished_out, tmp_path, "--reports-only", "--boilerplate-only")
+    assert code == 2
+    assert "exclude each other" in capsys.readouterr().err
+    assert not list((finished_out / "dirconn").glob("sub-*.html"))
+
+
+def test_report_failure_exits_1_and_keeps_results(
+    bids_tiny_copy: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+):
+    def fail(root: Path, subject: str) -> Path:
+        raise RuntimeError(f"cannot render sub-{subject}")
+
+    monkeypatch.setattr(assemble, "build_participant_report", fail)
+    out = tmp_path / "out"
+    code = _main(bids_tiny_copy, out, _write_config(tmp_path), "--skip-bids-validation", *SUBSET)
+    assert code == 1
+    (run_dir,) = _run_dirs(out)
+    crash = run_dir / "crash-report-02.txt"
+    assert "cannot render sub-02" in crash.read_text(encoding="utf-8")
+    assert _tasks(run_dir) == {"done": 2, "skipped": 0, "failed": 0}
+    assert len(list((out / "dirconn").rglob("*desc-gc_conn.json"))) == 1
+    assert (out / "dirconn" / "logs" / "CITATION.md").is_file()  # the citation step still ran
+    assert "dirconn-bids: error: " in capsys.readouterr().err
+
+
+def test_report_failure_in_reports_only_writes_a_crash_file(
+    finished_out: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+):
+    def fail(root: Path, subject: str) -> Path:
+        raise RuntimeError("no report today")
+
+    monkeypatch.setattr(assemble, "build_participant_report", fail)
+    root = finished_out / "dirconn"
+    assert not list((root / "logs").glob("reports-*"))
+    assert _only(finished_out, tmp_path, "--reports-only") == 1
+    (crash_dir,) = (root / "logs").glob("reports-*")
+    assert "no report today" in (crash_dir / "crash-report-01.txt").read_text(encoding="utf-8")
+    assert (root / "logs" / "CITATION.md").is_file()
+    assert "dirconn-bids: error: " in capsys.readouterr().err
