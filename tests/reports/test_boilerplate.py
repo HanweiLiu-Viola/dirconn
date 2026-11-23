@@ -49,7 +49,7 @@ def _facts(method: str = "gc", **kw: Any) -> ResultFacts:
 
 
 def _selection(order: int) -> dict[str, Any]:
-    orders = [1, 2, 3, 4, 5]
+    orders = list(range(1, max(order, 5) + 1))
     bic = [1.0 if o != order else 0.0 for o in orders]
     return {"criterion": "bic", "orders": orders, "bic": bic}
 
@@ -107,6 +107,32 @@ def test_orders_are_summarised() -> None:
     assert "3–5" in text
     assert "median 3" in text
     assert "over 3 recordings" in text
+    assert "largest order searched" not in text
+
+    same = make_boilerplate(
+        CONFIG, [_facts()], version="1", order_selections={"a": _selection(3), "b": _selection(3)}
+    )
+    assert "selected order 3 in all 2 recordings" in _text(same)
+    assert "median" not in _text(same)
+    one = make_boilerplate(CONFIG, [_facts()], version="1", order_selections={"a": _selection(3)})
+    assert "selected order 3 in the one recording" in _text(one)
+
+    some = make_boilerplate(
+        CONFIG,
+        [_facts()],
+        version="1",
+        order_selections={"a": _selection(6), "b": _selection(2), "c": _selection(3)},
+    )
+    assert "in 1 of 3 recordings the selected order was the largest order searched" in _text(some)
+    every = make_boilerplate(
+        CONFIG,
+        [_facts()],
+        version="1",
+        order_selections={"a": _selection(6), "b": _selection(6)},
+    )
+    assert "selected order 6 in all 2 recordings; this is the largest order searched" in _text(
+        every
+    )
 
     fixed = make_boilerplate(
         CONFIG, [_facts(model_order=4)], version="1", order_selections={"a": None, "b": None}
@@ -206,3 +232,10 @@ def test_write_citation_files(pipeline_run: Any, tmp_path: Path) -> None:
 def test_write_citation_files_needs_the_configuration(tmp_path: Path) -> None:
     with pytest.raises(FileNotFoundError, match="dirconn.toml"):
         write_citation_files(tmp_path)
+
+
+def test_no_reference_is_a_comment_or_rejoinder() -> None:
+    text = (resources.files("dirconn.reports") / "_data" / "references.json").read_text("utf-8")
+    for key, ref in json.loads(text).items():
+        title = re.sub(r"[^\w\s]", "", ref["title"]).strip().lower()
+        assert not title.endswith(("rejoinder", "comment")), key

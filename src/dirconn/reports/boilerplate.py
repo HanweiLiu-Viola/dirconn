@@ -230,13 +230,25 @@ def _orders(
         criterion = criterion or str(selection.get("criterion"))
     order_max = _option(config, "estimation", "order_max")
     if chosen:
-        lo, hi = min(chosen), max(chosen)
-        span = f"{lo}" if lo == hi else f"{lo}{_EN_DASH}{hi}"
-        median = f"{statistics.median(chosen):g}"
+        lo, hi, n = min(chosen), max(chosen), len(chosen)
+        if lo == hi:
+            summary = f"selected order {lo} in " + (
+                "the one recording" if n == 1 else f"all {n} recordings"
+            )
+        else:
+            median = f"{statistics.median(chosen):g}"
+            summary = f"selected orders {lo}{_EN_DASH}{hi}, median {median} over {n} recordings"
+        at_limit = sum(1 for o in chosen if o == order_max)
+        if at_limit == n:
+            summary += "; this is the largest order searched"
+        elif at_limit:
+            summary += (
+                f"; in {at_limit} of {n} recordings the selected order was the largest order "
+                "searched"
+            )
         return (
             f"The model order of the autoregressive models was selected once per recording by "
-            f"{criterion} up to {order_max}; selected orders {span}, median {median} over "
-            f"{len(chosen)} recordings."
+            f"{criterion} up to {order_max}; {summary}."
         )
     fixed = sorted({f.model_order for f in facts if f.model_order is not None})
     if fixed:

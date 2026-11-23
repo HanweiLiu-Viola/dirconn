@@ -102,13 +102,13 @@
     "authors": [
       "Geweke, John"
     ],
-    "title": "Measurement of Linear Dependence and Feedback Between Multiple Time Series: Rejoinder",
+    "title": "Measurement of Linear Dependence and Feedback between Multiple Time Series",
     "journal": "Journal of the American Statistical Association",
     "year": 1982,
     "volume": "77",
     "issue": "378",
-    "pages": "323",
-    "doi": "10.2307/2287243"
+    "pages": "304-313",
+    "doi": "10.1080/01621459.1982.10477803"
   },
   "Geweke_1984": {
     "type": "article",
@@ -305,7 +305,7 @@
       "Eubank, Stephen",
       "Longtin, André",
       "Galdrikian, Bryan",
-      "Doyne Farmer, J."
+      "Farmer, J. Doyne"
     ],
     "title": "Testing for nonlinearity in time series: the method of surrogate data",
     "journal": "Physica D: Nonlinear Phenomena",
