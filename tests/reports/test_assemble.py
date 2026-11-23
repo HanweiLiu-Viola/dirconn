@@ -24,14 +24,8 @@ from dirconn.reports.assemble import (
 from dirconn.reports.build import SECTIONS
 from dirconn.reports.collect import collect_subject
 
-FORBIDDEN = (
-    r'src="http',
-    r'href="http',
-    r"<script",
-    r'<link\b[^>]*rel="stylesheet"',
-    r"@import",
-    r"url\(\s*['\"]?https?:",
-)
+from ._offline import assert_offline
+
 SVG_BLOCK = re.compile(r"<svg\b.*?</svg>", re.DOTALL)
 
 
@@ -105,13 +99,7 @@ def test_report_is_valid_html(report: Report) -> None:
 
 
 def test_report_is_offline(report: Report) -> None:
-    text = report.text.replace('href="https://doi.org/', 'href="DOI/')
-    for pattern in FORBIDDEN:
-        assert not re.search(pattern, text), pattern
-    hrefs = re.findall(r'\bhref="([^"]*)"', report.text)
-    assert hrefs
-    for href in hrefs:
-        assert href.startswith(("#", "https://doi.org/", "data:image/")), href
+    assert_offline(report.text)
 
 
 def test_sections_follow_the_spec_order(report: Report) -> None:
