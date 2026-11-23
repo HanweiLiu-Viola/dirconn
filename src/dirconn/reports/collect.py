@@ -12,6 +12,7 @@ import json
 import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -77,9 +78,12 @@ class MethodOutput:
         note = self.sidecar.get("StatisticsNote")
         return note if isinstance(note, str) else None
 
-    @property
+    @cached_property
     def time_resolved(self) -> bool:
-        """Whether the edge table has a ``time`` column or the NetCDF time axis has > 1 entry."""
+        """Whether the edge table has a ``time`` column or the NetCDF time axis has > 1 entry.
+
+        Read once per object.
+        """
         if self.edges is not None:
             return "time" in read_edges(self.edges).columns
         return int(self.connectivity().times.shape[0]) > 1

@@ -153,3 +153,48 @@ def test_svg_is_deterministic(unit: Any) -> None:
         assert make() == make()
     assert matplotlib.rcParams["svg.hashsalt"] == salt
     assert matplotlib.rcParams["svg.fonttype"] == fonttype
+
+
+def test_missing_glyph_warnings_are_silenced_other_warnings_pass(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import warnings
+
+    from matplotlib.figure import Figure
+
+    original = Figure.savefig
+
+    def noisy(self: Figure, *args: Any, **kwargs: Any) -> Any:
+        warnings.warn("another warning", UserWarning, stacklevel=2)
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(Figure, "savefig", noisy)
+    with figures._figure(figsize=(2, 2)) as fig:
+        fig.add_subplot().set_title("a \ue000 b")
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            figures.svg_of(fig)
+    messages = [str(w.message) for w in caught]
+    assert not [m for m in messages if "missing from font" in m]
+    assert "another warning" in messages
+
+
+def test_diverging_band_matrix_is_centred_at_zero(monkeypatch: pytest.MonkeyPatch) -> None:
+    from matplotlib.axes import Axes
+
+    drawn: list[Any] = []
+    original = Axes.imshow
+
+    def spy(self: Axes, *args: Any, **kwargs: Any) -> Any:
+        image = original(self, *args, **kwargs)
+        drawn.append(image)
+        return image
+
+    monkeypatch.setattr(Axes, "imshow", spy)
+    edges = _edges(value=[0.5, -0.2], significant=[False, False])
+    figures.band_matrix_svg(edges, "theta", ["A", "B"], title="t", diverging=True)
+    image = drawn[-1]
+    assert image.get_cmap().name == "RdBu_r"
+    assert image.get_clim() == (-0.5, 0.5)
+    figures.band_matrix_svg(edges, "theta", ["A", "B"], title="t")
+    assert drawn[-1].get_cmap().name == "viridis"

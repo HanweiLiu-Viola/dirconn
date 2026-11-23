@@ -189,3 +189,22 @@ def test_epoched_run_has_no_order_selection(pipeline_run_epoched: Any) -> None:
     assert wdtf.statistics_note is None
     table = wdtf.edge_table()
     assert table is not None and table["time"].nunique() > 1
+
+
+def test_time_resolved_reads_the_edge_table_once(
+    pipeline_run: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from dirconn.reports import collect
+
+    output = collect_subject(pipeline_run.root, "01").units[0].methods["gc"]
+    calls: list[Any] = []
+    original = collect.read_edges
+
+    def counting(path: Any) -> Any:
+        calls.append(path)
+        return original(path)
+
+    monkeypatch.setattr(collect, "read_edges", counting)
+    first = output.time_resolved
+    assert output.time_resolved is first
+    assert len(calls) == 1

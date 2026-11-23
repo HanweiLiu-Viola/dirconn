@@ -15,6 +15,7 @@ import dataclasses
 import io
 import math
 import re
+import warnings
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any
@@ -45,6 +46,7 @@ _RC: dict[Any, Any] = {"svg.hashsalt": "dirconn", "svg.fonttype": "none"}
 _MAX_COLUMNS = 3
 _RASTER_DPI = 100
 _SVG_START = re.compile(r"<svg\b")
+_MISSING_GLYPH = r"Glyph \d+ .* missing from font"
 
 
 @contextmanager
@@ -70,7 +72,10 @@ def svg_of(fig: Figure) -> str:
         equal figures (fixed hash salt, no date).
     """
     buffer = io.BytesIO()
-    with matplotlib.rc_context(_RC):
+    with matplotlib.rc_context(_RC), warnings.catch_warnings():
+        # A font cache without DejaVu lacks glyphs such as the arrow; the text stays text, so the
+        # warning says nothing about the report. Other warnings pass.
+        warnings.filterwarnings("ignore", message=_MISSING_GLYPH, category=UserWarning)
         FigureCanvasSVG(fig)
         fig.savefig(buffer, format="svg", metadata={"Date": None})
     text = buffer.getvalue().decode("utf-8")
@@ -106,7 +111,14 @@ def _band_rows(edges: pd.DataFrame, band: str) -> pd.DataFrame:
     return edges.loc[edges["band"].astype(str) == band]
 
 
-def band_matrix_svg(edges: pd.DataFrame, band: str, nodes: Sequence[str], *, title: str) -> str:
+def band_matrix_svg(
+    edges: pd.DataFrame,
+    band: str,
+    nodes: Sequence[str],
+    *,
+    title: str,
+    diverging: bool = False,
+) -> str:
     """Draw the value of one band as a source (rows) by target (columns) heat map.
 
     Cells whose ``significant`` flag is true carry a ``*``; the diagonal is left empty.
@@ -121,6 +133,9 @@ def band_matrix_svg(edges: pd.DataFrame, band: str, nodes: Sequence[str], *, tit
         Node names; the order of rows and columns.
     title : str
         Figure title.
+    diverging : bool, default False
+        Draw with the diverging map ``RdBu_r`` and symmetric limits around zero (for signed
+        values); otherwise with ``viridis``.
 
     Returns
     -------
@@ -152,7 +167,13 @@ def band_matrix_svg(edges: pd.DataFrame, band: str, nodes: Sequence[str], *, tit
     side = max(3.2, 0.6 * n + 2.0)
     with _figure(figsize=(side, side * 0.85)) as fig:
         ax = fig.add_subplot()
-        mesh = ax.imshow(np.ma.masked_invalid(values), cmap="viridis", aspect="equal")
+        masked = np.ma.masked_invalid(values)
+        if diverging:
+            limit = float(np.abs(masked).max()) if masked.count() else 1.0
+            limit = limit if limit > 0 else 1.0
+            mesh = ax.imshow(masked, cmap="RdBu_r", vmin=-limit, vmax=limit, aspect="equal")
+        else:
+            mesh = ax.imshow(masked, cmap="viridis", aspect="equal")
         ax.set_xticks(range(n), labels=names, rotation=45, ha="right")
         ax.set_yticks(range(n), labels=names)
         ax.set_xlabel("target")

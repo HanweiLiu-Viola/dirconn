@@ -207,12 +207,13 @@ def test_tested_result_has_tests_significant_and_pvalues(built: dict[str, Keyed]
     assert tests.table is not None
     assert tests.table[0]["test"] == "surrogate"
     assert tests.table[0]["generator"] == "block_shuffle"
-    assert tests.table[0]["block"] == 1250
+    assert tests.table[0]["block (samples)"] == 1250
     assert tests.table[0]["n_surrogates"] == 19
     assert "fdr_bh" in tests.caption and "0.05" in tests.caption
     significant = keyed["gc/significant"]
     assert significant.table is not None
-    assert "of" in significant.caption and "significant rows" in significant.caption
+    assert significant.caption == "No edge is significant after correction."
+    assert significant.table == []
     assert keyed["gc/pvalues"].svg
     assert "gc/sig-time" not in keyed
 
@@ -274,7 +275,8 @@ def test_builtin_test_row() -> None:
     assert len(rows) == 1
     row = rows[0]
     assert "PCMCI MCI p-values" in row["generator"]
-    assert row["n_surrogates"] == "—" and row["seed"] == "—" and row["block"] == "—"
+    assert row["n_surrogates"] == "—" and row["seed"] == "—"
+    assert row["block (samples)"] == "—"
     assert row["p_shape"] == "3×3×1×1"
     assert row["band"] == "broadband" and row["test"] == "builtin"
 
@@ -294,7 +296,7 @@ def test_statistics_table_reads_block_size() -> None:
             ]
         }
     )
-    assert rows[0]["generator"] == "block_shuffle" and rows[0]["block"] == 250
+    assert rows[0]["generator"] == "block_shuffle" and rows[0]["block (samples)"] == 250
     assert rows[0]["n_surrogates"] == 19 and rows[0]["seed"] == 7
     assert statistics_table({}) == []
 
@@ -348,7 +350,10 @@ def test_summary_overview_lists_every_unit(
     assert row["methods"] == "adtf, gc, pdc"
     assert row["bands"] == "beta_high, beta_low, theta"
     assert row["image_tag"] == "not recorded" and row["image_revision"] == "not recorded"
-    assert row["sha256"] and row["input_files"]
+    assert row["input_files"]
+    assert overview.data is not None
+    full = overview.data["sha256"][row["unit"]]
+    assert len(full) == 64 and row["sha256"] == full[:12] + "\u2026"
     assert row["started"] and row["finished"] and row["dirconn"]
     everything = [r for reports in unit_reports.values() for r in reports]
     expected = worst_status([r.status for r in everything] + [keyed["summary/errors"].status])
@@ -444,3 +449,51 @@ def test_build_reportlets_writes_files_and_rebuild_overwrites(
     assert files_first == files_second
     assert sorted(first) == sorted(second)
     assert build_reportlets(root, "99") == []
+
+
+def test_psi_has_no_spectra_reportlet(make_pipeline_run: Callable[..., Any]) -> None:
+    config = SMALL_CONFIG.replace('["gc"]', '["pdc", "psi"]')
+    run = make_pipeline_run("psi-spectra", config, max_units=1)
+    outputs = collect_subject(run.root, run.units[0].subject)
+    keyed = _keyed(unit_reportlets(outputs, outputs.units[0]))
+    assert "pdc/spectra" in keyed
+    assert "psi/spectra" not in keyed
+    assert any(k.startswith("psi/matrix-") for k in keyed)
+
+
+def test_trgc_matrix_uses_a_diverging_map(
+    pipeline_run: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[dict[str, Any]] = []
+    original = build.band_matrix_svg
+
+    def spy(*args: Any, **kwargs: Any) -> str:
+        seen.append({"title": kwargs.get("title"), "diverging": kwargs.get("diverging", False)})
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(build, "band_matrix_svg", spy)
+    outputs = collect_subject(pipeline_run.root, "02")
+    unit_reportlets(outputs, outputs.units[0])
+    trgc = [s for s in seen if s["title"] == "TRGC, broadband"]
+    assert trgc and all(s["diverging"] for s in trgc)
+    assert not [s for s in seen if s["title"] != "TRGC, broadband" and s["diverging"]]
+
+
+def test_no_significant_row_has_its_own_caption() -> None:
+    import pandas as pd
+
+    edges = pd.DataFrame(
+        {
+            "source": ["A", "B"],
+            "target": ["B", "A"],
+            "band": ["theta", "theta"],
+            "value": [0.5, 0.2],
+            "p": [0.5, 0.6],
+            "p_adj": [0.5, 0.6],
+            "significant": [False, False],
+        }
+    )
+    body = build._significant_body(None, edges)  # type: ignore[arg-type]
+    assert body is not None
+    assert body.caption == "No edge is significant after correction."
+    assert body.table == []

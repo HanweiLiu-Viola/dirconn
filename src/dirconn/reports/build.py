@@ -428,6 +428,18 @@ def _band_names(edges: pd.DataFrame, sidecar: Mapping[str, Any]) -> list[str]:
     return sorted(seen, key=lambda b: declared.index(b) if b in declared else len(declared))
 
 
+def _configured_bands(out: MethodOutput, edges: pd.DataFrame | None) -> list[str]:
+    """Names of the configured bands of a result, ``broadband`` excluded.
+
+    Read from the sidecar's ``Bands``; the band names of the edge table when the sidecar lists
+    none.
+    """
+    names = list(out.sidecar.get("Bands") or [])
+    if not names and edges is not None and "band" in edges.columns:
+        names = list(dict.fromkeys(edges["band"].astype(str)))
+    return [str(n) for n in names if str(n) != "broadband"]
+
+
 def _choose_pairs(edges: pd.DataFrame | None, nodes: Sequence[str]) -> list[tuple[str, str]]:
     """Pick at most ``MAX_PAIRS`` ordered pairs: significant first, then by largest value."""
     ranked: dict[tuple[str, str], tuple[bool, float]] = {}
@@ -483,7 +495,8 @@ def _spectra_body(
     ctx: _Context, out: MethodOutput, edges: pd.DataFrame | None, nodes: Sequence[str]
 ) -> _Body | None:
     conn = ctx.conn(out)
-    if conn.freqs.shape[0] < _MIN_SPECTRUM_FREQS:
+    n_freqs = int(conn.freqs.shape[0])
+    if n_freqs < _MIN_SPECTRUM_FREQS or n_freqs <= len(_configured_bands(out, edges)):
         return None
     pairs = _choose_pairs(edges, nodes)
     caption = (
@@ -576,8 +589,9 @@ def statistics_table(sidecar: Mapping[str, Any]) -> list[dict[str, Any]]:
     -------
     list of dict
         One row per entry with ``band``, ``test``, ``generator`` (the ``source`` sentence for a
-        built-in test), ``block`` (block size when the generator has one), ``n_surrogates``,
-        ``seed`` and ``p_shape`` (shape joined with ``×``). Missing or null values are ``"—"``.
+        built-in test), ``block (samples)`` (block size when the generator has one),
+        ``n_surrogates``, ``seed`` and ``p_shape`` (shape joined with ``×``). Missing or null
+        values are ``"—"``.
     """
 
     def show(value: Any) -> Any:
@@ -595,7 +609,7 @@ def statistics_table(sidecar: Mapping[str, Any]) -> list[dict[str, Any]]:
                 "band": show(entry.get("Band")),
                 "test": show(entry.get("Test")),
                 "generator": show(label if label is not None else name),
-                "block": show(params.get("block_size")),
+                "block (samples)": show(params.get("block_size")),
                 "n_surrogates": show(entry.get("NSurrogates")),
                 "seed": show(entry.get("Seed")),
                 "p_shape": "×".join(str(int(s)) for s in shape) if shape else _DASH,
@@ -628,6 +642,8 @@ def _significant_body(out: MethodOutput, edges: pd.DataFrame) -> _Body | None:
         return None
     rows = edges.loc[edges["significant"].map(_is_true)].copy()
     total = len(rows)
+    if not total:
+        return _Body("No edge is significant after correction.", table=[])
     rows["_p_adj"] = pd.to_numeric(rows["p_adj"], errors="coerce") if "p_adj" in rows else np.nan
     rows["_value"] = pd.to_numeric(rows["value"], errors="coerce")
     rows = rows.sort_values(["_p_adj", "_value"], ascending=[True, False], na_position="last")
@@ -705,7 +721,9 @@ def _trgc_frame(net: np.ndarray, names: Sequence[str]) -> pd.DataFrame:
 
 def _trgc_matrix_body(ctx: _Context, control: MethodOutput) -> _Body:
     net, names = _trgc_net(ctx, control)
-    svg = band_matrix_svg(_trgc_frame(net, names), "broadband", names, title="TRGC, broadband")
+    svg = band_matrix_svg(
+        _trgc_frame(net, names), "broadband", names, title="TRGC, broadband", diverging=True
+    )
     caption = (
         "Time-reversed Granger causality, the net flow averaged over frequency; a positive value "
         "means the row node drives the column node."
@@ -910,12 +928,18 @@ def _errors_body(subject: SubjectOutputs, unit_reports: Mapping[str, Sequence[Re
     return _Body(caption, status, table=rows, data={"failed": n_failed, "built": n_build})
 
 
+def _short_hash(value: Any) -> str:
+    """First 12 hex digits of a SHA-256 and an ellipsis; ``not recorded`` when absent."""
+    return f"{str(value)[:12]}…" if value else _NOT_RECORDED
+
+
 def _overview_body(
     subject: SubjectOutputs, reportlets: Iterable[Reportlet], errors_status: Status
 ) -> _Body:
     statuses = [r.status for r in reportlets]
     statuses.append(errors_status)
     rows = []
+    hashes: dict[str, str] = {}
     for unit in subject.units:
         run = subject.latest_run_for(unit.label)
         provenance = (run.provenance if run is not None else None) or {}
@@ -923,12 +947,15 @@ def _overview_body(
             (i for i in provenance.get("inputs") or [] if i.get("label") == unit.label), {}
         )
         image = provenance.get("image") or {}
+        full = entry.get("sha256")
+        if full:
+            hashes[unit.label] = str(full)
         bands = sorted({b for o in unit.methods.values() for b in (o.sidecar.get("Bands") or {})})
         rows.append(
             {
                 "unit": unit.label,
                 "input_files": [PurePosixPath(str(f)).name for f in entry.get("files") or []],
-                "sha256": entry.get("sha256") or _NOT_RECORDED,
+                "sha256": _short_hash(full),
                 "methods": ", ".join(sorted(unit.methods)),
                 "bands": ", ".join(bands),
                 "started": provenance.get("started") or _NOT_RECORDED,
@@ -944,7 +971,7 @@ def _overview_body(
         f"{len(rows)} unit(s) of subject {subject.subject}; the status is the worst of the "
         f"{len(statuses)} reportlets of the subject."
     )
-    return _Body(caption, worst, table=_plain(rows))
+    return _Body(caption, worst, table=_plain(rows), data={"sha256": hashes})
 
 
 def subject_reportlets(
