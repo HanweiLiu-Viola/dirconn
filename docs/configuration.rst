@@ -179,7 +179,12 @@ recorded in the data history that every result carries in its provenance.
    * - ``estimation.order``
      - integer >= 1, or ``"aic"``, ``"bic"``, ``"hqc"``, ``"cv"``
      - ``"bic"``
-     - Model order of the model-based methods, or the criterion that selects it.
+     - Model order of the model-based methods, or the criterion that selects it. A
+       criterion selects the order **once per recording**, on the prepared record, and
+       every method with an order (and TRGC) uses it, also on the surrogates of its test;
+       the null distribution therefore does not include the variability of the
+       selection. The selection (criterion curves) is in each result's provenance and in
+       the recording's diagnostics file. An ``order`` in a method's sub-table wins.
    * - ``estimation.order_max``
      - integer >= 1
      - ``30``
@@ -188,7 +193,9 @@ recorded in the data history that every result carries in its provenance.
      - ``[low, high]`` in Hz, ``0 <= low < high``
      - ``theta = [4.0, 8.0]``, ``beta_low = [13.0, 20.0]``, ``beta_high = [20.0, 30.0]``
      - Named frequency bands; at least one. A frequency-resolved result is reduced to one value
-       per band and tested per band. Giving ``[estimation.bands]`` replaces the default bands.
+       per band and tested per band; the tests of all bands use the same surrogates (each
+       surrogate is fitted once and reduced to every band). Giving ``[estimation.bands]``
+       replaces the default bands.
    * - ``estimation.reduce``
      - ``"mean"``, ``"median"``, ``"max"`` or ``"peak_freq"``
      - ``"mean"``
@@ -226,7 +233,14 @@ Every test is corrected over the pairs of its band; the choice of test and surro
        fails for estimators without one); ``"none"`` runs no test (the p-value columns of the
        edge table are ``n/a``). The pipeline runs the analytic test only for methods without
        frequency resolution (one test, no band): a configuration that combines it with a
-       frequency-resolved method is refused.
+       frequency-resolved method is refused. ``pcmci`` and ``te`` (in its default multivariate
+       mode) are not resampled: with ``"surrogate"`` or ``"analytic"`` their own p-values are
+       used (PCMCI's MCI test, TE's permutation tests), recorded as test ``"builtin"``. A
+       time-resolved method (``adtf``, ``tpdc``, ``wdtf``) is not tested with block shuffling,
+       whose observed value is fitted on blocks of the record and has no time points of the
+       result: on a continuous record with ``surrogate = "auto"`` it stays descriptive
+       (``StatisticsNote`` in the sidecar); on epoched records trial shuffling tests every time
+       point.
    * - ``statistics.surrogate``
      - ``"auto"`` or a generator name
      - ``"auto"``
@@ -358,6 +372,13 @@ every key:
    # Per-method options go in sub-tables named after the method, for example:
    # [estimation.gc]
    # method = "state_space"
+   #
+   # Options the library leaves without a default get one from the pipeline (override them here):
+   #   mtgc, imcoh, psi: segment_length = 2.0 on continuous records (frequency resolution 0.5 Hz);
+   #                     whole epochs on epoched records
+   #   wdtf:             window = 2.0 on continuous records, 0.5 on epoched records (step: half a window)
+   #   psi:              bands = the bands below (one value per band; a band must not contain
+   #                     another band's centre); [estimation.psi] must not set bands
 
    [estimation.bands]                     # named bands in Hz, lo < hi
    theta = [4.0, 8.0]

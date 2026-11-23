@@ -82,13 +82,13 @@ def test_time_reversal_control_returns_trgc(ts):
     assert out.provenance.method == "trgc"
 
 
-def test_surrogate_test_per_band_with_distinct_seeds(ts):
+def test_surrogate_test_of_every_band_shares_the_surrogates(ts):
     cfg = _cfg()
     est = estimate(ts, "rpdc", cfg)
     stats = StatisticsConfig(test="surrogate", n_surrogates=10)
     tests = run_significance(ts, build_estimator("rpdc", cfg), est, stats, seed=7)
     assert [t.band for t in tests] == ["theta", "beta"]
-    assert [t.seed for t in tests] == [7, 8]
+    assert [t.seed for t in tests] == [7, 7]
     for t in tests:
         assert t.test == "surrogate" and t.n_surrogates == 10
         assert t.pvalues.shape == t.adjusted.shape == t.significant.shape == (4, 4)
@@ -141,3 +141,143 @@ def test_masked_data_with_unsupported_method_gets_a_clear_error(ts):
     out = time_reversal_control(masked, _cfg(), ControlsConfig(time_reversal=True))
     assert out is not None
     assert out.provenance.details["masks"]["n_valid"] < masked.n_times * masked.n_trials
+
+
+@pytest.mark.parametrize("method", ["mtgc", "imcoh", "psi", "wdtf"])
+def test_methods_without_library_defaults_run_on_continuous_data(ts, method):
+    est = estimate(ts, method, _cfg())
+    assert set(est.bands) == set(BANDS)
+
+
+def test_pipeline_defaults_depend_on_the_segmentation(ts):
+    from dirconn.workflows.steps.estimate import method_kwargs
+
+    assert method_kwargs("imcoh", _cfg(), ts)["segment_length"] == 2.0
+    assert method_kwargs("wdtf", _cfg(), ts)["window"] == 2.0
+    epoched = TimeSeries.from_array(
+        np.zeros((3, 4, 200)), sfreq=250.0, names=list(ts.names), segmentation="epoched"
+    )
+    assert epoched.segmentation == "epoched"
+    assert "segment_length" not in method_kwargs("imcoh", _cfg(), epoched)
+    assert method_kwargs("wdtf", _cfg(), epoched)["window"] == 0.5
+    assert "segment_length" not in method_kwargs("imcoh", _cfg())  # no record: no defaults
+
+
+def test_params_override_pipeline_defaults(ts):
+    from dirconn.workflows.steps.estimate import method_kwargs
+
+    cfg = _cfg(methods=("imcoh",), params={"imcoh": {"segment_length": 4.0}})
+    assert method_kwargs("imcoh", cfg, ts)["segment_length"] == 4.0
+
+
+def test_psi_gets_the_configured_bands(ts):
+    from dirconn import PSI
+
+    est = estimate(ts, "psi", _cfg())
+    direct = PSI(segment_length=2.0, bands=[BANDS["theta"], BANDS["beta"]]).fit(ts)
+    np.testing.assert_allclose(est.bands["theta"].values[:, :, 0, 0], direct.values[:, :, 0, 0])
+    np.testing.assert_allclose(est.bands["beta"].values[:, :, 0, 0], direct.values[:, :, 1, 0])
+
+
+def test_psi_refuses_a_band_holding_two_centres(ts):
+    with pytest.raises(ValueError, match="band centres"):
+        estimate(ts, "psi", _cfg(bands={"wide": (4.0, 30.0), "beta": (13.0, 30.0)}))
+
+
+def test_psi_bands_in_params_are_refused():
+    with pytest.raises(ValueError, match="estimation.bands"):
+        EstimationConfig(methods=("psi",), params={"psi": {"bands": [[8.0, 12.0]]}})
+
+
+def test_one_order_selection_serves_every_var_method(ts):
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    cfg = _cfg(order="bic", order_max=8)
+    selection = select_shared_order(ts, cfg)
+    assert selection is not None and 1 <= selection.order <= 8
+    for method in ("gc", "dtf", "pdc", "adtf"):
+        est = estimate(ts, method, cfg, selection)
+        prov = est.full.provenance
+        assert prov.model_order == selection.order
+        assert prov.details["order_selection"]["criterion"] == "bic"
+        assert prov.history[-1]["step"] == "shared_order_selection"
+        assert prov.assumptions.get("order_selection") is not None
+
+
+def test_shared_order_gives_the_same_result_as_the_estimator_own_selection(ts):
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    cfg = _cfg(order="bic", order_max=8)
+    shared = estimate(ts, "pdc", cfg, select_shared_order(ts, cfg))
+    own = estimate(ts, "pdc", cfg)
+    assert shared.full.provenance.model_order == own.full.provenance.model_order
+    np.testing.assert_allclose(shared.full.values, own.full.values)
+
+
+def test_the_estimator_for_the_surrogates_has_a_fixed_order(ts):
+    cfg = _cfg(order="bic")
+    assert build_estimator("gc", cfg, ts, order=7).order == 7
+    fixed = _cfg(order="bic", methods=("gc",), params={"gc": {"order": 3}})
+    assert build_estimator("gc", fixed, ts, order=7).order == 3
+    assert "order" not in build_estimator("imcoh", cfg, ts, order=7).__dataclass_fields__
+
+
+def test_a_fixed_order_needs_no_selection():
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    assert select_shared_order(None, _cfg(order=4)) is None  # type: ignore[arg-type]
+
+
+def test_methods_without_an_order_keep_their_provenance(ts):
+    from dirconn.workflows.steps.estimate import select_shared_order
+
+    cfg = _cfg(order="bic", order_max=8)
+    est = estimate(ts, "imcoh", cfg, select_shared_order(ts, cfg))
+    assert "order_selection" not in est.full.provenance.details
+
+
+def test_time_resolved_result_is_not_block_shuffled(ts):
+    from dirconn.workflows.steps.test import untested_reason
+
+    cfg = _cfg(order=2, methods=("adtf",), params={"adtf": {"n_freqs": 8, "fmax": 40.0}})
+    est = estimate(ts, "adtf", cfg)
+    assert est.full.values.shape[3] > 1
+    stats = StatisticsConfig(test="surrogate", n_surrogates=5)
+    assert "block shuffling" in untested_reason(ts, est, stats)
+    assert run_significance(ts, build_estimator("adtf", cfg, ts), est, stats, seed=0) == ()
+    # another surrogate keeps the time axis, so the test runs
+    other = StatisticsConfig(test="surrogate", surrogate="circular_shift", n_surrogates=5)
+    assert untested_reason(ts, est, other) is None
+
+
+def test_pcmci_uses_its_own_p_values(ts):
+    pytest.importorskip("tigramite")
+    cfg = _cfg(methods=("pcmci",), params={"pcmci": {"tau_max": 2}})
+    est = estimate(ts, "pcmci", cfg)
+    stats = StatisticsConfig(test="surrogate", n_surrogates=5)
+    (test,) = run_significance(ts, build_estimator("pcmci", cfg, ts), est, stats, seed=0)
+    assert test.test == "builtin" and test.band is None
+    assert test.n_surrogates is None and test.seed is None
+    assert test.generator["name"] == "builtin"
+    expected = np.array(est.full.provenance.details["pvalues"], dtype=float)
+    np.testing.assert_array_equal(test.pvalues, expected)
+
+
+def test_multivariate_te_uses_its_own_p_values(ts):
+    import dataclasses
+
+    from dirconn.workflows.steps.estimate import Estimate
+
+    # A stand-in for a multivariate TE result (a real fit takes minutes): the test step only
+    # reads the p-values from the provenance and fits nothing.
+    gc = estimate(ts, "gc", _cfg()).full
+    n = len(gc.source)
+    p_values = [[None if i == j else 0.01 * (i + j) for j in range(n)] for i in range(n)]
+    details = {"mode": "multivariate", "p_values": p_values}
+    prov = dataclasses.replace(gc.provenance, details=details)
+    est = Estimate("te", gc.with_provenance(prov), {})
+    stats = StatisticsConfig(test="surrogate", n_surrogates=2)
+    (test,) = run_significance(ts, None, est, stats, seed=0)
+    assert test.test == "builtin"
+    np.testing.assert_array_equal(test.pvalues, np.array(p_values, dtype=float))
+    assert np.isnan(np.diag(test.pvalues)).all()

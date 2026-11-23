@@ -225,6 +225,10 @@ class EstimationConfig(_Section):
         stray = [m for m in self.params if m not in self.methods]
         if stray:
             raise ValueError(f"params given for method(s) {stray} that are not in methods.")
+        if "bands" in self.params.get("psi", {}):
+            raise ValueError(
+                "psi takes its bands from estimation.bands; remove bands from [estimation.psi]."
+            )
         return self
 
 

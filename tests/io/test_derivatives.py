@@ -188,13 +188,22 @@ def _time_resolved(seed):
     )
 
 
-def test_time_resolved_bands_give_a_header_only_edges_table(tmp_path):
+def test_time_resolved_bands_give_one_row_per_time_point(tmp_path):
     p = np.full((3, 3, 1, 4), 0.01)
-    test = SimpleNamespace(**{**vars(_test("alpha")), "pvalues": p, "adjusted": p})
-    res = _write(tmp_path, [test], {"alpha": _time_resolved(1)})
+    p[0, 1, 0, 2] = 0.5
+    significant = p < 0.05
+    test = SimpleNamespace(
+        **{**vars(_test("alpha")), "pvalues": p, "adjusted": p, "significant": significant}
+    )
+    band = _time_resolved(1)
+    res = _write(tmp_path, [test], {"alpha": band})
     df = read_edges(res.edges)
-    assert list(df.columns) == ["source", "target", "band", "value", "p", "p_adj", "significant"]
-    assert len(df) == 0
+    assert list(df.columns) == list(derivatives.TIME_EDGE_COLUMNS)
+    assert len(df) == 6 * 4  # ordered pairs x time points
+    cell = df[(df.source == NODES[0]) & (df.target == NODES[1]) & (df.time == 2.0)].iloc[0]
+    assert cell.value == pytest.approx(band.values[0, 1, 0, 2])
+    assert (cell.p, cell.p_adj, bool(cell.significant)) == (0.5, 0.5, False)
+    assert df["significant"].sum() == 23
 
 
 def test_failed_edges_write_leaves_no_sidecar(tmp_path, monkeypatch):

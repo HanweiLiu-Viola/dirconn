@@ -10,6 +10,7 @@ any coupling between the channels (see ``docs/surrogates.md``).
 from __future__ import annotations
 
 import warnings
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -151,25 +152,103 @@ def surrogate_test(
         If a surrogate fit leaves a cell undefined that is defined on the data (a p-value there
         would be meaningless), or for invalid arguments.
     """
+    return surrogate_tests(
+        estimator,
+        data,
+        generator,
+        n_surrogates=n_surrogates,
+        seed=seed,
+        reduces={"": reduce},
+        alpha=alpha,
+    )[""]
+
+
+class _Accumulator:
+    """Running counts of one reduction: exceedances, mean and variance of the null magnitudes."""
+
+    def __init__(self, observed: Connectivity) -> None:
+        self.observed = observed
+        self.magnitude = np.abs(observed.values)
+        self.defined = ~np.isnan(self.magnitude)
+        self.exceed = np.zeros(self.magnitude.shape)
+        self.mean = np.zeros(self.magnitude.shape)
+        self.m2 = np.zeros(self.magnitude.shape)
+
+    def add(self, i: int, result: Connectivity) -> None:
+        if result.values.shape != self.magnitude.shape:
+            raise ValueError(
+                f"surrogate {i} gave a result of shape {result.values.shape}, "
+                f"expected {self.magnitude.shape}."
+            )
+        null = np.abs(result.values)
+        lost = self.defined & np.isnan(null)
+        if lost.any():
+            raise ValueError(
+                f"surrogate {i} left {int(lost.sum())} cell(s) undefined that are defined on "
+                "the data; refusing to compute p-values from a degraded null distribution."
+            )
+        with np.errstate(invalid="ignore"):
+            self.exceed += np.where(self.defined, null >= self.magnitude, 0)
+        delta = np.where(self.defined, null - self.mean, 0.0)
+        self.mean += delta / (i + 1)
+        self.m2 += delta * (np.where(self.defined, null, 0.0) - self.mean)
+
+
+def surrogate_tests(
+    estimator: Estimator,
+    data: TimeSeries,
+    generator: SurrogateGenerator,
+    *,
+    n_surrogates: int,
+    seed: int,
+    reduces: Mapping[str, Reduction],
+    alpha: float = 0.05,
+) -> dict[str, SurrogateTestResult]:
+    """Run several surrogate tests that share their surrogates and their fits.
+
+    Each surrogate is generated and fitted once; every reduction of ``reduces`` (for example one
+    per frequency band) is applied to that one fit. ``surrogate_tests(..., reduces={"": r})[""]``
+    is :func:`surrogate_test` with ``reduce=r``, value for value.
+
+    Parameters
+    ----------
+    estimator, data, generator, n_surrogates, seed, alpha
+        As for :func:`surrogate_test`.
+    reduces : mapping of str to reduction
+        Named reductions (see ``reduce`` of :func:`surrogate_test`); at least one.
+
+    Returns
+    -------
+    dict of str to SurrogateTestResult
+        One result per name of ``reduces``. The results use the same surrogates, so they are not
+        independent of each other, and they share their ``seed``.
+
+    Raises
+    ------
+    ValueError
+        As for :func:`surrogate_test`, or if ``reduces`` is empty.
+    """
     if not isinstance(estimator, Estimator):
         raise TypeError(f"estimator must be an Estimator, got {type(estimator).__name__}.")
     if not isinstance(generator, SurrogateGenerator):
         raise TypeError(f"generator must be a SurrogateGenerator, got {type(generator).__name__}.")
     if not isinstance(data, TimeSeries):
         raise TypeError(f"data must be a TimeSeries, got {type(data).__name__}.")
+    if not reduces:
+        raise ValueError("reduces must hold at least one reduction.")
     n_surrogates = _as_count(n_surrogates, "n_surrogates", minimum=1)
     controller = RNGController(seed)
     alpha = check_alpha(alpha)
-    reducer = make_reducer(reduce)
+    reducers = {name: make_reducer(reduce) for name, reduce in reduces.items()}
 
     # A generator that re-segments the record also defines what the observed value is fitted on.
     original = data
     data = generator.prepare(original)
-    observed = reducer(estimator.fit(data))
+    fitted = estimator.fit(data)
     if data is not original:
         # the fit saw the prepared data, so keep a way back to the user's own input
-        observed = observed.with_provenance(
-            observed.provenance.with_step(
+        fitted = fitted.with_provenance(
+            fitted.provenance.with_step(
                 {
                     "step": "prepare",
                     "generator": generator.name,
@@ -178,13 +257,8 @@ def surrogate_test(
                 }
             )
         )
-    magnitude = np.abs(observed.values)
-    defined = ~np.isnan(magnitude)
-    n_defined = int(defined.sum())
+    acc = {name: _Accumulator(reducer(fitted)) for name, reducer in reducers.items()}
 
-    exceed = np.zeros(magnitude.shape)
-    mean = np.zeros(magnitude.shape)
-    m2 = np.zeros(magnitude.shape)
     # One entry per surrogate that raised at least one diagnostic (the first message).
     generation_notes: list[str] = []
     fit_notes: list[str] = []
@@ -198,67 +272,58 @@ def surrogate_test(
         generation_notes.extend(sort_warnings(caught, other)[:1])
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            result = reducer(light.fit(surrogate))
+            fit = light.fit(surrogate)
+            results = {name: reducer(fit) for name, reducer in reducers.items()}
         fit_notes.extend(sort_warnings(caught, other)[:1])
-
-        if result.values.shape != magnitude.shape:
-            raise ValueError(
-                f"surrogate {i} gave a result of shape {result.values.shape}, "
-                f"expected {magnitude.shape}."
-            )
-        null = np.abs(result.values)
-        lost = defined & np.isnan(null)
-        if lost.any():
-            raise ValueError(
-                f"surrogate {i} left {int(lost.sum())} cell(s) undefined that are defined on "
-                "the data; refusing to compute p-values from a degraded null distribution."
-            )
-        with np.errstate(invalid="ignore"):
-            exceed += np.where(defined, null >= magnitude, 0)
-        delta = np.where(defined, null - mean, 0.0)
-        mean += delta / (i + 1)
-        m2 += delta * (np.where(defined, null, 0.0) - mean)
+        for name, result in results.items():
+            acc[name].add(i, result)
 
     reissue(other)
 
-    pvalues = np.where(defined, (exceed + 1.0) / (n_surrogates + 1.0), np.nan)
-    effect = np.where(defined, magnitude - mean, np.nan)
-    if n_surrogates > 1:
-        std = np.sqrt(m2 / (n_surrogates - 1))
-    else:
-        std = np.zeros(magnitude.shape)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        zscore = np.where(defined & (std > 0), effect / std, np.nan)
-
-    checks = AssumptionChecklist(
-        (
-            power_check(
-                n_defined, n_surrogates, alpha, check="surrogate_power", argument="n_surrogates"
-            ),
-            summary_check(
-                "surrogate_generation",
-                generation_notes,
-                n_surrogates,
-                f"the {generator.name} generator",
-            ),
-            summary_check(
-                "surrogate_fits",
-                fit_notes,
-                n_surrogates,
-                f"the {estimator.info.name} fits on surrogates",
-            ),
+    out: dict[str, SurrogateTestResult] = {}
+    for name, a in acc.items():
+        pvalues = np.where(a.defined, (a.exceed + 1.0) / (n_surrogates + 1.0), np.nan)
+        effect = np.where(a.defined, a.magnitude - a.mean, np.nan)
+        if n_surrogates > 1:
+            std = np.sqrt(a.m2 / (n_surrogates - 1))
+        else:
+            std = np.zeros(a.magnitude.shape)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            zscore = np.where(a.defined & (std > 0), effect / std, np.nan)
+        checks = AssumptionChecklist(
+            (
+                power_check(
+                    int(a.defined.sum()),
+                    n_surrogates,
+                    alpha,
+                    check="surrogate_power",
+                    argument="n_surrogates",
+                ),
+                summary_check(
+                    "surrogate_generation",
+                    generation_notes,
+                    n_surrogates,
+                    f"the {generator.name} generator",
+                ),
+                summary_check(
+                    "surrogate_fits",
+                    fit_notes,
+                    n_surrogates,
+                    f"the {estimator.info.name} fits on surrogates",
+                ),
+            )
         )
-    )
-    return SurrogateTestResult(
-        observed=observed,
-        pvalues=pvalues,
-        effect=effect,
-        zscore=zscore,
-        null=generator.null,
-        limitations=generator.limitations,
-        generator=generator.describe(),
-        n_surrogates=n_surrogates,
-        seed=controller.seed,
-        alpha=alpha,
-        checks=checks,
-    )
+        out[name] = SurrogateTestResult(
+            observed=a.observed,
+            pvalues=pvalues,
+            effect=effect,
+            zscore=zscore,
+            null=generator.null,
+            limitations=generator.limitations,
+            generator=generator.describe(),
+            n_surrogates=n_surrogates,
+            seed=controller.seed,
+            alpha=alpha,
+            checks=checks,
+        )
+    return out

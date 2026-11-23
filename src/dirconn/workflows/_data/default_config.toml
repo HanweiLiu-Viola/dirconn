@@ -32,6 +32,13 @@ exclude_freqs = []                     # [[lo, hi], ...] ranges left out of band
 # Per-method options go in sub-tables named after the method, for example:
 # [estimation.gc]
 # method = "state_space"
+#
+# Options the library leaves without a default get one from the pipeline (override them here):
+#   mtgc, imcoh, psi: segment_length = 2.0 on continuous records (frequency resolution 0.5 Hz);
+#                     whole epochs on epoched records
+#   wdtf:             window = 2.0 on continuous records, 0.5 on epoched records (step: half a window)
+#   psi:              bands = the bands below (one value per band; a band must not contain
+#                     another band's centre); [estimation.psi] must not set bands
 
 [estimation.bands]                     # named bands in Hz, lo < hi
 theta = [4.0, 8.0]

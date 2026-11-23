@@ -55,9 +55,9 @@ from dirconn.workflows.provenance import (
 )
 from dirconn.workflows.steps.control import time_reversal_control
 from dirconn.workflows.steps.diagnose import diagnose
-from dirconn.workflows.steps.estimate import build_estimator, estimate
+from dirconn.workflows.steps.estimate import build_estimator, estimate, select_shared_order
 from dirconn.workflows.steps.prepare import prepare
-from dirconn.workflows.steps.test import test_significance
+from dirconn.workflows.steps.test import test_significance, untested_reason
 
 __all__ = [
     "CONTROLS",
@@ -325,6 +325,7 @@ def _write(
     conn: Connectivity,
     bands: Mapping[str, Connectivity],
     tests: Sequence[Any],
+    statistics_note: str | None = None,
 ) -> ResultFiles:
     """Write one result; node kinds and sampling rate come from the prepared series ``ts``."""
     kinds = {ch.name: ch.node_kind for ch in ts.channels}
@@ -343,6 +344,7 @@ def _write(
         long_table=cfg.output.long_table,
         node_kinds=node_kinds,
         sfreq=ts.sfreq,
+        statistics_note=statistics_note,
     )
 
 
@@ -384,11 +386,13 @@ def run_controls_task(
     unit = payload.unit
     root = derivative_root(out_dir)
     ts = _prepared(unit, cfg, work_dir)
+    selection = select_shared_order(ts, cfg.estimation)
     record = diagnose(ts, cfg).to_dict()
+    record["order_selection"] = None if selection is None else selection.to_dict()
     record["task_key"] = task.key
     path = diagnostics_path(root, unit)
     _write_atomic(path, json.dumps(record, indent=2) + "\n")
-    control = time_reversal_control(ts, cfg.estimation, cfg.controls)
+    control = time_reversal_control(ts, cfg.estimation, cfg.controls, selection)
     if control is not None:
         _write(
             root, unit, task, cfg, bids_dir, ts=ts, desc="trgc", conn=control, bands={}, tests=()
@@ -430,8 +434,11 @@ def run_unit_task(
     payload: UnitTask = task.payload
     unit, method = payload.unit, payload.method
     ts = _prepared(unit, cfg, work_dir)
-    est = estimate(ts, method, cfg.estimation)
-    estimator = build_estimator(method, cfg.estimation)
+    # one order for every method of the record, and for the surrogates of its test
+    selection = select_shared_order(ts, cfg.estimation)
+    order = None if selection is None else selection.order
+    est = estimate(ts, method, cfg.estimation, selection)
+    estimator = build_estimator(method, cfg.estimation, ts, order)
     tests = test_significance(
         ts, estimator, est, cfg.statistics, seed=seed + int(task.key[:8], 16) % 10**6
     )
@@ -446,6 +453,7 @@ def run_unit_task(
         conn=est.full,
         bands=est.bands,
         tests=tests,
+        statistics_note=untested_reason(ts, est, cfg.statistics),
     )
 
 

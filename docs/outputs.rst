@@ -100,12 +100,19 @@ Each method gives three files per recording.
         - Input files, relative to ``BIDS_DIR`` (absolute when outside it).
       * - ``Statistics``
         - One entry per test: ``Band`` (``"broadband"`` for a method without bands), ``Test``
-          (``"surrogate"`` or ``"analytic"``), ``Generator`` (``name``, the null hypothesis
+          (``"surrogate"``, ``"analytic"`` or ``"builtin"``), ``Generator`` (``name``, the null hypothesis
           ``null`` and ``params``, for example the block size), ``NSurrogates``, ``Seed`` and
           ``ObservedHistory``, the data history of the observed value (with the block counts for
           block shuffling). The analytic test gives a single ``"broadband"`` entry with
           ``Generator`` ``{"name": "analytic"}`` and ``NSurrogates`` and ``Seed`` ``null``.
-          Empty when ``statistics.test = "none"``. No arrays are stored here.
+          The built-in test of ``pcmci`` and ``te`` gives a single ``"broadband"`` entry with
+          ``Generator`` ``{"name": "builtin", "source": ...}``. Empty when
+          ``statistics.test = "none"`` or when the result was not tested (``StatisticsNote``).
+          No arrays are stored here.
+      * - ``StatisticsNote``
+        - Present when a test was configured but the result was not tested, with the reason:
+          a time-resolved result on a continuous record, where block shuffling has no time
+          points of the result.
       * - ``ValueIsMagnitude``
         - Present for complex-valued measures: the edge table holds magnitudes.
       * - ``TaskKey``
@@ -129,8 +136,14 @@ Each method gives three files per recording.
 
    The test columns are ``n/a`` without a test (``statistics.test = "none"``, and always for
    ``desc-trgc``). :func:`dirconn.io.derivatives.read_edges` reads the table with ``n/a`` as NaN. A
-   frequency-resolved result without bands, or a time-resolved one (``adtf``, ``tpdc``, ``wdtf``),
-   gives a table with the header only; the NetCDF file has the values.
+   time-resolved result (``adtf``, ``tpdc``, ``wdtf``) has one row per pair, band and time point,
+   with a ``time`` column (seconds) after ``band``; its correction runs over pairs and time points
+   together. On a continuous record with block shuffling (the default) it is not tested and its
+   test columns are ``n/a`` (``StatisticsNote`` in the sidecar): block shuffling fits the observed
+   value on 5 s blocks, whose time points are not those of the result. Should a test with another
+   shape reach the writer, its columns stay ``n/a`` too; ``PValueShape`` in the sidecar's
+   ``Statistics`` shows the shape the test had. A frequency-resolved result without bands gives a table with the header only; the
+   NetCDF file has the values.
 
    The three files are written in the order ``_conn.nc``, ``_edges.tsv``, ``_conn.json``. The
    sidecar is written last and atomically: its ``TaskKey`` marks the result as complete, so a task

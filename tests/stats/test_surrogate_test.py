@@ -437,3 +437,57 @@ class TestPreparedData:
                 n_surrogates=5,
                 seed=0,
             )
+
+
+def test_surrogate_tests_equal_one_surrogate_test_per_reduction():
+    from dirconn.stats.surrogate_test import surrogate_tests
+
+    data = coupled(n_trials=4, n_times=300, seed=3)
+    estimator = DTF(order=2, n_freqs=16)
+    bands = {"low": (5.0, 15.0), "high": (20.0, 40.0)}
+    shared = surrogate_tests(estimator, data, TrialShuffle(), n_surrogates=9, seed=4, reduces=bands)
+    assert set(shared) == set(bands)
+    for name, band in bands.items():
+        alone = surrogate_test(estimator, data, TrialShuffle(), n_surrogates=9, seed=4, reduce=band)
+        np.testing.assert_array_equal(shared[name].pvalues, alone.pvalues)
+        np.testing.assert_array_equal(shared[name].zscore, alone.zscore)
+        np.testing.assert_array_equal(shared[name].observed.values, alone.observed.values)
+        assert shared[name].seed == alone.seed
+
+
+def test_surrogate_tests_fit_each_surrogate_once():
+    from dirconn.stats.surrogate_test import surrogate_tests
+
+    calls: list[int] = []
+
+    @dataclass(frozen=True)
+    class Counting(Estimator):
+        info = MethodInfo(name="counting", backend="test stub", directed=False)
+
+        def _fit(self, data: TimeSeries) -> Connectivity:
+            calls.append(1)
+            values = np.ones((data.n_channels, data.n_channels, 4))
+            values[np.arange(data.n_channels), np.arange(data.n_channels)] = np.nan
+            return Connectivity.from_array(
+                values,
+                source=data.names,
+                freqs=[1.0, 2.0, 3.0, 4.0],
+                provenance=self._provenance(data),
+            )
+
+    surrogate_tests(
+        Counting(),
+        coupled(),
+        TrialShuffle(),
+        n_surrogates=5,
+        seed=0,
+        reduces={"a": (1.0, 2.0), "b": (3.0, 4.0), "c": (1.0, 4.0)},
+    )
+    assert len(calls) == 1 + 5
+
+
+def test_surrogate_tests_need_a_reduction():
+    from dirconn.stats.surrogate_test import surrogate_tests
+
+    with pytest.raises(ValueError, match="at least one"):
+        surrogate_tests(GC(order=1), coupled(), TrialShuffle(), n_surrogates=2, seed=0, reduces={})

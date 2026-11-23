@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 
 import dirconn
-from dirconn.io.derivatives import read_edges, result_task_key, unit_dir
+from dirconn.io.derivatives import TIME_EDGE_COLUMNS, read_edges, result_task_key, unit_dir
 from dirconn.workflows import participant
 from dirconn.workflows.config import PipelineConfig, analysis_hash, config_hash, load_config
 from dirconn.workflows.executor import task_key
@@ -438,7 +438,7 @@ time_reversal = false
 """
 
 
-def test_time_varying_method_writes_a_header_only_edges_table(
+def test_time_varying_method_on_a_continuous_record_is_not_tested(
     bids_tiny_copy: Path, tmp_path: Path
 ) -> None:
     cfg = _config(tmp_path, base=TIME_VARYING_CONFIG)
@@ -447,11 +447,16 @@ def test_time_varying_method_writes_a_header_only_edges_table(
     assert (run.summary.done, run.summary.failed) == (2, 0)
     (table,) = run.root.rglob("*_desc-adtf_edges.tsv")
     edges = read_edges(table)
-    assert list(edges.columns) == ["source", "target", "band", "value", "p", "p_adj", "significant"]
-    assert len(edges) == 0
+    assert list(edges.columns) == list(TIME_EDGE_COLUMNS)
+    n_times = edges["time"].nunique()
+    assert n_times > 1
+    assert len(edges) == 12 * len(edges["band"].unique()) * n_times
+    # block shuffling would fit the test on 2 s blocks, another time axis: not tested
+    assert edges["p"].isna().all()
     (sidecar,) = run.root.rglob("*_desc-adtf_conn.json")
     meta = json.loads(sidecar.read_text(encoding="utf-8"))
-    assert meta["Statistics"]
+    assert meta["Statistics"] == []
+    assert "block shuffling" in meta["StatisticsNote"]
 
 
 EPOCHED_SENSOR_CONFIG = """\
@@ -485,3 +490,19 @@ def test_short_epochs_run_the_controls_task(bids_tiny_copy: Path, tmp_path: Path
     diag = json.loads(diagnostics_path(run.root, units[0]).read_text(encoding="utf-8"))
     assert diag["task_key"] == _controls_key(units[0], cfg)
     assert len(list(run.root.rglob("*_desc-trgc_conn.json"))) == 1
+
+
+def test_time_varying_method_on_epochs_keeps_p_values_per_time_point(
+    bids_tiny_copy: Path, tmp_path: Path
+) -> None:
+    base = EPOCHED_SENSOR_CONFIG.replace('methods = ["gc"]', 'methods = ["wdtf"]').replace(
+        "order = 3", "order = 2\n\n[estimation.wdtf]\nwindow = 0.5\nstep = 0.25"
+    )
+    cfg = _config(tmp_path, base=base)
+    units = [u for u in _units(bids_tiny_copy, cfg) if u.task == "rest"]
+    run = _run_units(bids_tiny_copy, tmp_path / "out", cfg, units)
+    assert run.summary.failed == 0
+    (table,) = run.root.rglob("*_desc-wdtf_edges.tsv")
+    edges = read_edges(table)
+    assert edges["time"].nunique() > 1
+    assert edges["p"].notna().all() and edges["p_adj"].notna().all()
