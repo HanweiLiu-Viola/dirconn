@@ -268,6 +268,7 @@ class ADTF(_TimeVaryingVAR):
 
     info = MethodInfo(
         name="adtf",
+        citations=("Wilke_2008", "Milde_2010"),
         report_kind="time_frequency",
         backend=_BACKEND,
         directed=True,
@@ -305,6 +306,7 @@ class TPDC(_TimeVaryingVAR):
 
     info = MethodInfo(
         name="tpdc",
+        citations=("Astolfi_2008", "Milde_2010"),
         report_kind="time_frequency",
         backend=_BACKEND,
         directed=True,

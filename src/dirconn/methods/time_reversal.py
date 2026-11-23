@@ -80,6 +80,7 @@ class TRGC(Estimator):
 
     info = MethodInfo(
         name="trgc",
+        citations=("Haufe_2013", "Winkler_2016"),
         report_kind="control",
         backend="own numpy pooled OLS VAR (GC) on the data and on its time reversal",
         directed=True,

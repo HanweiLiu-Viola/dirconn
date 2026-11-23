@@ -67,3 +67,15 @@ def test_invalid_report_kind_is_rejected():
 def test_citations_are_normalised_to_a_tuple():
     info = MethodInfo(name="x", backend="y", directed=True, citations=["a", "b"])  # type: ignore[arg-type]
     assert info.citations == ("a", "b")
+
+
+def test_every_method_cites_known_references():
+    import json
+    from importlib import resources
+
+    text = (resources.files("dirconn.reports") / "_data" / "references.json").read_text("utf-8")
+    refs = json.loads(text)
+    for name, cls in REGISTRY.items():
+        assert cls.info.citations, name
+        for key in cls.info.citations:
+            assert key in refs, (name, key)
