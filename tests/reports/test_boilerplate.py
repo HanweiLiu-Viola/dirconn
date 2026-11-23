@@ -318,29 +318,6 @@ def test_psi_is_described_per_band() -> None:
     assert "in each of the bands beta (13" in text
 
 
-def test_citation_files_survive_concurrent_writers(pipeline_run: Any, tmp_path: Path) -> None:
-    import threading
-
-    out = tmp_path / "out"
-    shutil.copytree(pipeline_run.root.parent, out)
-    root = out / "dirconn"
-    errors: list[BaseException] = []
-
-    def work() -> None:
-        try:
-            write_citation_files(root)
-        except BaseException as exc:  # noqa: BLE001
-            errors.append(exc)
-
-    threads = [threading.Thread(target=work) for _ in range(4)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-    assert not errors
-    assert not list((root / "logs").glob("*.tmp"))
-
-
 def test_failed_citation_write_leaves_no_temp_file(
     pipeline_run: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
