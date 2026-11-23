@@ -142,10 +142,12 @@ def test_significant_over_time_is_empty_without_time_or_p(unit: Any) -> None:
 def test_svg_is_deterministic(unit: Any) -> None:
     salt = matplotlib.rcParams["svg.hashsalt"]
     fonttype = matplotlib.rcParams["svg.fonttype"]
+    adtf = unit.methods["adtf"].connectivity()
     makers: list[Callable[[], str]] = [
         lambda: figures.band_matrix_svg(_edges(), "theta", ["A", "B"], title="t"),
         lambda: figures.order_curve_svg(unit.diagnostics["order_selection"]),
         lambda: figures.psd_svg(unit.diagnostics["spectral"], unit.methods["pdc"].sidecar["Bands"]),
+        lambda: figures.time_frequency_svg(adtf, [(adtf.source[0], adtf.target[1])]),
     ]
     for make in makers:
         assert make() == make()

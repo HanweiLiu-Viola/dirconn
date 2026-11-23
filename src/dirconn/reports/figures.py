@@ -43,6 +43,7 @@ __all__ = [
 
 _RC: dict[Any, Any] = {"svg.hashsalt": "dirconn", "svg.fonttype": "none"}
 _MAX_COLUMNS = 3
+_RASTER_DPI = 100
 _SVG_START = re.compile(r"<svg\b")
 
 
@@ -362,7 +363,8 @@ def time_frequency_svg(conn: Connectivity, pairs: Sequence[tuple[str, str]]) -> 
     Returns
     -------
     str
-        SVG text, or ``""`` when ``pairs`` is empty.
+        SVG text, or ``""`` when ``pairs`` is empty. The colour mesh is embedded as a PNG (a vector
+        mesh grows with the number of time points); everything else is vector.
     """
     from dirconn.viz.matrices import time_frequency
 
@@ -370,10 +372,13 @@ def time_frequency_svg(conn: Connectivity, pairs: Sequence[tuple[str, str]]) -> 
         return ""
     conn = _magnitude(conn)
     rows, columns, size = _grid(len(pairs), (4.6, 3.4))
-    with _figure(figsize=size) as fig:
+    with _figure(figsize=size, dpi=_RASTER_DPI) as fig:
         axes = fig.subplots(rows, columns, squeeze=False)
         for ax, (source, target) in zip(axes.flat, pairs, strict=False):
             time_frequency(conn, source=source, target=target, ax=ax)
+            # only the mesh is a bitmap; axes, ticks, labels and the colorbar stay vector text
+            for collection in ax.collections:
+                collection.set_rasterized(True)
         for ax in list(axes.flat)[len(pairs) :]:
             ax.set_visible(False)
         return svg_of(fig)
