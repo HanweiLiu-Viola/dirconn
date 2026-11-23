@@ -102,7 +102,10 @@ Each ends on what its result does and does not show.
 `dirconn-bids` runs the pipeline on a BIDS dataset (BIDS App convention, participant level): it reads
 the region-level series of every recording, estimates, tests and controls directed connectivity as a
 TOML file configures it, and writes a derivatives dataset to `OUTPUT_DIR/dirconn`. Runs can be
-repeated and resumed; every run records its provenance.
+repeated and resumed; every run records its provenance. For each subject it also writes a
+self-contained report page, `sub-XX.html`, with the diagnostics, figures, tests and failures, and a
+methods text with references in `logs/CITATION.*`; `--reports-only` rebuilds them without computing
+anything.
 
 ```bash
 pip install "dirconn[app]"
@@ -111,7 +114,7 @@ dirconn-bids /data/bids /data/out participant --participant-label 01 --config my
 
 Options, configuration fields and output files are described in the
 [documentation](https://hanweiliu-viola.github.io/dirconn/usage.html) (`docs/usage.rst`,
-`docs/configuration.rst`, `docs/outputs.rst`).
+`docs/configuration.rst`, `docs/outputs.rst`, and `docs/report.rst` for the report).
 
 ## Reproducible Docker environment
 

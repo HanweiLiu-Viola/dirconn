@@ -13,8 +13,8 @@ file (see :doc:`configuration`); the command line selects the inputs and the res
 Only the participant level exists in dirconn 0.2.0; the group level arrives in dirconn 0.3.0 (until
 then it stops with exit code 2 and the message "available in dirconn 0.3.0"). After every participant
 run the command writes a report page ``sub-XX.html`` for each subject of the run and the methods
-boilerplate ``logs/CITATION.*`` into the output dataset. ``--reports-only`` and ``--boilerplate-only``
-write them again from existing outputs without computing anything.
+boilerplate ``logs/CITATION.*`` into the output dataset (see :doc:`report`). ``--reports-only`` and
+``--boilerplate-only`` write them again from existing outputs without computing anything.
 
 Install
 -------
@@ -153,7 +153,7 @@ Other options
    Do not run ``bids-validator``. Otherwise it is run on ``BIDS_DIR`` when it is on the ``PATH`` (a
    warning is printed when it is not); a rejection stops the command with exit code 3.
 ``--reports-only``
-   Rebuild the reports (``sub-XX.html``) and the methods boilerplate from the existing outputs of
+   Rebuild the reports (``sub-XX.html``, :doc:`report`) and the methods boilerplate from the existing outputs of
    ``OUTPUT_DIR/dirconn``; nothing is recomputed. The subjects are the ``--participant-label`` values
    (default: every ``sub-*`` directory of the dataset). ``BIDS_DIR`` is not read, ``bids-validator`` is
    not run, and ``--config``, ``--set`` and the input filters are ignored with a warning. Exit code 2
@@ -178,6 +178,42 @@ Subcommands
 ``dirconn-bids list-methods``
    List the methods that ``estimation.methods`` accepts, one per line after a header, with the columns
    ``name``, ``report_kind``, ``frequency_resolved``, ``supports_mask`` and ``backend``.
+
+Reports and the methods text
+----------------------------
+
+After the tasks of a participant run have finished (exit code 0 or 1, not when the run stopped with
+exit code 2), the command writes, for every subject that had a recording in the run,
+``OUTPUT_DIR/dirconn/sub-XX.html`` (:doc:`report` explains what it shows), and then the methods text
+of the whole output dataset, ``OUTPUT_DIR/dirconn/logs/CITATION.html``, ``.md``, ``.tex`` and ``.bib``.
+Each file is written to a temporary name and moved into place, so a reader never sees half a file. The
+report of a subject covers all recordings of that subject in the output dataset, also those of earlier
+runs. The command prints one line per report (``dirconn-bids: report <path>``) and one for the methods
+text to stderr.
+
+The reports are built from the files that are already in the dataset. They compute no connectivity,
+and nothing a report does can change a result. When a report or the methods text cannot be written,
+the command prints the reason and the name of the crash file, goes on with the other subjects and ends
+with exit code 1; the traceback is in ``crash-report-<subject>.txt`` (or
+``crash-report-citation.txt``) in the run directory.
+
+``--reports-only`` and ``--boilerplate-only`` do the same without a run:
+
+* They read ``OUTPUT_DIR/dirconn`` only. ``BIDS_DIR`` must be given but is not read,
+  ``bids-validator`` is not run, and ``--config``, ``--set``, ``--session-id``, ``--task-id``,
+  ``--run-id`` and ``--bids-filter-file`` are ignored with a warning (also ``--participant-label``
+  with ``--boilerplate-only``). The ``app`` extra is needed for both.
+* ``--reports-only`` writes the report of each subject in ``--participant-label`` (default: every
+  ``sub-*`` directory of the dataset) and then the methods text; ``--boilerplate-only`` writes the
+  methods text only. The methods text always covers every subject of the dataset.
+* They exit with 2 when ``OUTPUT_DIR/dirconn`` has no ``dirconn.toml`` (it is not an output dataset
+  of ``dirconn-bids``), when a requested subject has no results, when the dataset has no subject
+  with ``--reports-only``, and when both options are given. Failures leave crash files in
+  ``logs/reports-<UTC time>-<pid>/`` and give exit code 1.
+* Nothing is computed and the result files are not touched; the figures are drawn again.
+
+Use ``--reports-only`` after updating dirconn (a newer version may draw the report differently) or to
+rebuild a report that failed.
 
 Exit codes
 ----------
@@ -228,8 +264,30 @@ dataset files and cache entries are moved into place atomically. Start the first
 until ``OUTPUT_DIR/dirconn/dirconn.toml`` exists, before starting the others: two runs that start at
 the same moment on an empty directory can both pass the configuration check.
 
+Each job also rewrites ``logs/CITATION.*`` from the subjects that exist when it finishes, so the text
+written by an early job does not cover the subjects of the later ones. Run
+``dirconn-bids BIDS_DIR OUTPUT_DIR participant --boilerplate-only`` once after the last job to get the
+text for the whole dataset (``--reports-only`` for the pages is not needed: each job writes the pages
+of its own subjects).
+
+Running in Docker
+-----------------
+
+The Docker image (see the README) has ``dirconn-bids`` as its entrypoint, so the arguments are those
+above. Mount the BIDS dataset read-only at ``/data`` and an output directory at ``/out``::
+
+   docker run --rm -v /path/to/bids:/data:ro -v /path/to/out:/out        ghcr.io/hanweiliu-viola/dirconn:<tag> /data /out participant --participant-label 01
+
+The report is then ``/path/to/out/dirconn/sub-01.html``, and ``provenance.json`` of the run names the
+image tag and revision (``image``). To rebuild the report from an existing output, give the same
+mounts and add ``--reports-only``. The image does not contain ``bids-validator``: the command warns
+that the dataset is not validated and goes on, so ``--skip-bids-validation`` is not needed. The
+container runs as an unprivileged user (UID 1000); on Linux add ``--user $(id -u):$(id -g)`` when the
+output directory belongs to someone else. Without arguments the image prints the help.
+
 Where to look after a run
 -------------------------
 
 ``OUTPUT_DIR/dirconn/logs/run-<UTC start time>-<pid>/`` holds the log, the progress lines, the crash
-files and the provenance of that run; :doc:`outputs` describes every file.
+files and the provenance of that run; :doc:`outputs` describes every file. ``OUTPUT_DIR/dirconn/sub-XX.html`` is the report of
+a subject (:doc:`report`).
