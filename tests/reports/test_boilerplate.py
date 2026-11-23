@@ -14,7 +14,9 @@ import pytest
 from dirconn.reports.boilerplate import (
     Boilerplate,
     ResultFacts,
+    collect_facts,
     make_boilerplate,
+    reference_entries,
     render,
     write_citation_files,
 )
@@ -239,3 +241,26 @@ def test_no_reference_is_a_comment_or_rejoinder() -> None:
     for key, ref in json.loads(text).items():
         title = re.sub(r"[^\w\s]", "", ref["title"]).strip().lower()
         assert not title.endswith(("rejoinder", "comment")), key
+
+
+def test_collect_facts_by_subject(pipeline_run: Any) -> None:
+    facts_all, selections_all = collect_facts(pipeline_run.root)
+    facts_one, selections_one = collect_facts(pipeline_run.root, ["01"])
+    assert facts_one and len(facts_one) < len(facts_all)
+    assert {f.label.split("_")[0] for f in facts_one} == {"sub-01"}
+    assert set(selections_one) < set(selections_all)
+    assert all(label.startswith("sub-01_") for label in selections_one)
+    assert collect_facts(pipeline_run.root, []) == ([], {})
+
+
+def test_reference_entries() -> None:
+    bp = make_boilerplate(CONFIG, [_facts()], version="1.2.3")
+    entries = reference_entries(bp)
+    assert len(entries) == len(bp.references)
+    for text, url in entries:
+        assert text and "<" not in text
+        assert url is None or url.startswith("https://doi.org/")
+    assert "Software, version 1.2.3" in entries[-1][0]
+    md = render(bp, "md")
+    for n, (text, url) in enumerate(entries, start=1):
+        assert f"{n}. {text}" in md and f"<{url}>" in md

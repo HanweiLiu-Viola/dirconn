@@ -34,7 +34,9 @@ else:  # pragma: no cover
 __all__ = [
     "Boilerplate",
     "ResultFacts",
+    "collect_facts",
     "make_boilerplate",
+    "reference_entries",
     "render",
     "write_citation_files",
 ]
@@ -468,6 +470,28 @@ def _doi_url(doi: str) -> str:
     return "https://doi.org/" + urllib.parse.quote(doi, safe="/()-._~:;")
 
 
+def reference_entries(bp: Boilerplate) -> list[tuple[str, str | None]]:
+    """Return the formatted references of ``bp`` in citation order.
+
+    Parameters
+    ----------
+    bp : Boilerplate
+        The text and reference keys.
+
+    Returns
+    -------
+    list of tuple of (str, str or None)
+        For each reference, its text without markup (authors, year, title and source, ending in
+        a full stop) and the DOI link (``https://doi.org/...``), ``None`` when it has no DOI.
+        Entry ``i`` is the reference numbered ``i + 1``.
+    """
+    entries: list[tuple[str, str | None]] = []
+    for key in bp.references:
+        head, source, doi, _ = _entry_parts(bp, key)
+        entries.append((f"{head} {source}.", _doi_url(doi) if doi else None))
+    return entries
+
+
 _TEX = {
     "\\": "\\textbackslash{}",
     "&": "\\&",
@@ -616,6 +640,56 @@ def render(bp: Boilerplate, fmt: Literal["html", "md", "tex", "bib"]) -> str:
 # --------------------------------------------------------------------------------------------
 
 
+def collect_facts(
+    root: Path, subjects: Sequence[str] | None = None
+) -> tuple[list[ResultFacts], dict[str, Mapping[str, Any] | None]]:
+    """Read the result facts and order selections of a dataset.
+
+    Parameters
+    ----------
+    root : Path
+        Dataset root (``<out_dir>/dirconn``).
+    subjects : sequence of str, optional
+        Subject labels without ``sub-``; all subjects below ``root`` when omitted.
+
+    Returns
+    -------
+    facts : list of ResultFacts
+        One entry per method result (the ``trgc`` control is not included).
+    order_selections : dict
+        Unit label to the ``order_selection`` of its diagnostics (``None`` for a fixed order);
+        units without a diagnostics file are absent.
+    """
+    root = Path(root)
+    facts: list[ResultFacts] = []
+    selections: dict[str, Mapping[str, Any] | None] = {}
+    for subject in list_subjects(root) if subjects is None else subjects:
+        for unit in collect_subject(root, subject).units:
+            if unit.diagnostics is not None:
+                selections[unit.label] = unit.diagnostics.get("order_selection")
+            for desc, output in unit.methods.items():
+                provenance = output.connectivity().provenance
+                statistics_entries = output.sidecar.get("Statistics") or []
+                tests = sorted(
+                    {
+                        str(s["Test"])
+                        for s in statistics_entries
+                        if isinstance(s, dict) and "Test" in s
+                    }
+                )
+                facts.append(
+                    ResultFacts(
+                        method=desc,
+                        label=unit.label,
+                        model_order=provenance.model_order,
+                        parameters=dict(provenance.parameters),
+                        tests=tuple(tests),
+                        untested=output.statistics_note is not None,
+                    )
+                )
+    return facts, selections
+
+
 def write_citation_files(root: Path) -> list[Path]:
     """Write ``logs/CITATION.{html,md,tex,bib}`` for the dataset at ``root``.
 
@@ -641,32 +715,7 @@ def write_citation_files(root: Path) -> list[Path]:
             f"no dirconn.toml in {root}; run the participant stage first to create the dataset"
         )
     config = tomllib.loads(config_path.read_text(encoding="utf-8"))
-    facts: list[ResultFacts] = []
-    selections: dict[str, Mapping[str, Any] | None] = {}
-    for subject in list_subjects(root):
-        for unit in collect_subject(root, subject).units:
-            if unit.diagnostics is not None:
-                selections[unit.label] = unit.diagnostics.get("order_selection")
-            for desc, output in unit.methods.items():
-                provenance = output.connectivity().provenance
-                statistics_entries = output.sidecar.get("Statistics") or []
-                tests = sorted(
-                    {
-                        str(s["Test"])
-                        for s in statistics_entries
-                        if isinstance(s, dict) and "Test" in s
-                    }
-                )
-                facts.append(
-                    ResultFacts(
-                        method=desc,
-                        label=unit.label,
-                        model_order=provenance.model_order,
-                        parameters=dict(provenance.parameters),
-                        tests=tuple(tests),
-                        untested=output.statistics_note is not None,
-                    )
-                )
+    facts, selections = collect_facts(root)
     bp = make_boilerplate(
         config, facts, version=metadata.version("dirconn"), order_selections=selections
     )
