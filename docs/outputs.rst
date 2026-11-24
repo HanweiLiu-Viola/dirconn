@@ -14,15 +14,21 @@ The tree
      dirconn/
        dataset_description.json
        dirconn.toml                                  configuration of the first run
+       sub-01.html                                   report of subject 01
        logs/
+         CITATION.html, .md, .tex, .bib              methods text of the dataset
          run-20261117T094834-12184/                  one directory per run
            dirconn.log
            progress.jsonl
            crash-<task key>.txt                      one per failed task
+           crash-report-<subject>.txt                one per report that failed
            provenance.json
            environment-lock.txt
            dirconn.toml                              effective configuration of this run
        sub-01/
+         figures/
+           sub-01_desc-summary_overview.json         subject-level reportlets
+           sub-01_desc-summary_errors.json
          eeg/
            sub-01_task-rest_run-1_desc-gc_conn.nc
            sub-01_task-rest_run-1_desc-gc_conn.json
@@ -32,6 +38,8 @@ The tree
            sub-01_task-rest_run-1_desc-trgc_edges.tsv
            figures/
              sub-01_task-rest_run-1_diagnostics.json
+             sub-01_task-rest_run-1_desc-gc_matrix-alpha.json   reportlets of the report
+             sub-01_task-rest_run-1_desc-gc_matrix-alpha.svg    (a figure, when it has one)
        sub-02/
          ses-01/                                     only when the input has a session
            eeg/
@@ -162,6 +170,33 @@ The ``controls`` task of every recording writes
   ``value``) and ``task_key``;
 * with ``controls.time_reversal``, the ``desc-trgc`` result (time-reversed Granger causality, no
   tests), written after the diagnostics.
+
+The report and the methods text
+-------------------------------
+
+``sub-XX.html``
+   The report of subject ``XX`` (:doc:`report`), written after every participant run and by
+   ``--reports-only``. One self-contained file; it is built from the other files of the dataset and
+   can be deleted and rebuilt.
+
+``<recording>_desc-<desc>_<name>.json`` and ``.svg``
+   One *reportlet*, a figure or a table of the report, in the recording's ``figures`` directory
+   (``desc`` is a method name or ``prep``, ``diag`` or ``trgc``). The subject-level reportlets
+   (``desc-summary``: ``overview`` and ``errors``) are in ``sub-XX/figures`` with the label
+   ``sub-XX``. The JSON has ``name``, ``section``, ``desc``, ``title``, ``caption``, ``status``
+   (``pass``, ``warn``, ``fail`` or ``info``), ``table`` (rows, or ``null``) and ``data``; the SVG
+   is the figure. They are replaced whenever the report is built.
+
+``logs/CITATION.html``, ``.md``, ``.tex``, ``.bib``
+   The methods paragraphs for a manuscript and their references, in four formats: what the pipeline
+   did (the configuration, the selected model orders, the parameters dirconn filled in, the tests and
+   controls). They cover every subject of the dataset and are replaced by every run and by
+   ``--reports-only`` and ``--boilerplate-only``.
+
+``crash-report-<subject>.txt``, ``crash-report-citation.txt``
+   The traceback of a report or of the methods text that could not be written, in the run directory
+   (``logs/run-<time>-<pid>/``), or in ``logs/reports-<time>-<pid>/`` for ``--reports-only`` and
+   ``--boilerplate-only``. They exist only when something failed.
 
 The run directory
 -----------------

@@ -47,7 +47,11 @@ pytest
 subpackages described in [Package layout](#package-layout).
 
 `pytest` turns `RuntimeWarning` into an error, so numerical warnings cannot slip through. Tests marked
-`sample_data` need the MNE sample dataset and never run by default.
+`sample_data` need the MNE sample dataset, `gpu` a CUDA device, `docker` a local Docker daemon and
+the built image (`DIRCONN_TEST_IMAGE=<tag>`), and `wheel` the network (it installs the built wheel
+into a clean virtual environment); none of them runs by default, and `pytest -m docker` or
+`pytest -m wheel` runs one. The default test of the wheel (`tests/tools/test_wheel_report.py`) builds
+it offline with `hatchling` and checks that the package data of the report are in it.
 
 ## Conventions
 
@@ -257,10 +261,13 @@ runner live in `dirconn.validation.method_validation`; the metrics are in `dirco
    it available to the pipeline (`estimation.methods`) and to `dirconn-bids list-methods`. Set
    `MethodInfo.report_kind` to how a report should draw the result (`"matrix"`, `"spectrum"`,
    `"time_frequency"` or `"control"`; a `"control"` method is refused in `estimation.methods`
-   and runs only through `[controls]`). Leave `citations` empty: it will hold the bibliography keys
-   of the method's references once the reports that cite them arrive (0.3.0), and no shipped
-   method fills it yet. `tests/methods/test_registry.py` fails until every concrete estimator is registered under its
-   name, so add the name to `EXPECTED_NAMES` there.
+   and runs only through `[controls]`). Fill `citations` with the bibliography keys of the method's
+   references (the methods text of the report cites them), and add an entry for each new key to
+   `src/dirconn/reports/_data/references.json`. Take its fields (authors, title, venue, year, pages,
+   DOI) from Crossref by DOI, never from memory; the keys follow `Author_Year`.
+   `tests/methods/test_registry.py` fails until every concrete estimator is registered under its
+   name, so add the name to `EXPECTED_NAMES` there, and until every key in `citations` exists in
+   `references.json`.
 7. Add it to `dirconn.validation.method_validation.METHODS` and regenerate the validation report, so that it is
    evaluated against known truth from the day it exists (the simulation benchmark builds on the
    same scenarios).

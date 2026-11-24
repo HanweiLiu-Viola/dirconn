@@ -17,8 +17,28 @@ All notable changes to dirconn are listed here. The format follows
   `--omp-nthreads`, `--mem-mb`; optional `bids-validator`; the subcommands `validate-config` and
   `list-methods`. Exit codes 0 (done), 1 (a task failed, the other outputs kept), 2 (the run did
   not start: invalid arguments, configuration, inputs or output location, missing extra; or it
-  stopped on a file system error in its own files) and 3 (BIDS validation failed). The group level, `--reports-only` and `--boilerplate-only` arrive in 0.3.0.
+  stopped on a file system error in its own files) and 3 (BIDS validation failed). The group level arrives in 0.3.0.
   Documentation pages "Command line", "Pipeline configuration" and "Outputs".
+- The participant report. After every participant run `dirconn-bids` writes `sub-XX.html` for each
+  subject of the run: one self-contained page (inline CSS and SVG, no script, no external resource
+  except DOI links) with eight sections (summary, input, diagnostics, connectivity, controls,
+  statistics, methods, errors). It is built from the derivatives on disk (`dirconn.reports`), computes
+  nothing, and every figure and table is also a reportlet file (`figures/<label>_desc-<desc>_<name>.json`
+  and `.svg`). Each reportlet has a status (`pass`, `warn`, `fail`, `info`) from rules of thumb that are
+  not calibrated; time-resolved results on continuous recordings are shown as not tested. A report that
+  cannot be written leaves `crash-report-<subject>.txt` and gives exit code 1; the results are never
+  touched. Documentation page "The participant report" and decision record 0004.
+- The methods boilerplate and the references: `logs/CITATION.{html,md,tex,bib}`, written after every
+  participant run from the configuration, the selected model orders, the parameters of the results and
+  the tests and controls that ran. Every method now lists its references in `MethodInfo.citations`
+  (keys of `dirconn/reports/_data/references.json`, taken from Crossref).
+- `dirconn-bids --reports-only` rebuilds the reports and the boilerplate, and `--boilerplate-only` the
+  boilerplate, from an existing output dataset without the BIDS input or the configuration and
+  without computing anything.
+- The Docker image has `dirconn-bids` as its entrypoint; inside it `provenance.json` and the dataset
+  description record the image tag and revision (`DIRCONN_IMAGE_TAG`, `DIRCONN_BUILD_REVISION`).
+- Tutorial 18: the participant report read through the files it is made from, the statuses, a failed
+  method, and `--reports-only` and `--boilerplate-only`.
 - Tutorial 17: a simulated network with a known truth written as a BIDS dataset, eight directed
   methods run on it with one `dirconn-bids` command and a TOML configuration, and the outputs read
   back (edge tables against the truth, diagnostics, run provenance).
@@ -147,6 +167,11 @@ All notable changes to dirconn are listed here. The format follows
   `list-methods` still work. `lint-imports` gains two contracts: the library does not import
   `dirconn.workflows` or `dirconn.cli`, and `dirconn.workflows` does not import `simulation`,
   `validation`, `viz` or `cli`.
+- The `app` extra also installs `jinja2` and `matplotlib`, which the report needs; the `dev` extra
+  gains `jinja2`, `html5lib`, `matplotlib` and `hatchling` (the build backend, so that a test can
+  build the wheel offline). `lint-imports` gains a contract: `dirconn.reports` does not import
+  `cli`, `simulation` or `validation`. New pytest markers `docker` and `wheel` (both off by
+  default) select the tests that need a Docker image or install the wheel into a clean environment.
 - The package is organised in eight subpackages: `dirconn.data`, `dirconn.io`, `dirconn.methods`,
   `dirconn.stats`, `dirconn.diagnostics`, `dirconn.simulation`, `dirconn.validation` and
   `dirconn.viz`. `dirconn.__all__` is unchanged; everything importable from `dirconn` stays there.

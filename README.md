@@ -102,7 +102,10 @@ Each ends on what its result does and does not show.
 `dirconn-bids` runs the pipeline on a BIDS dataset (BIDS App convention, participant level): it reads
 the region-level series of every recording, estimates, tests and controls directed connectivity as a
 TOML file configures it, and writes a derivatives dataset to `OUTPUT_DIR/dirconn`. Runs can be
-repeated and resumed; every run records its provenance.
+repeated and resumed; every run records its provenance. For each subject it also writes a
+self-contained report page, `sub-XX.html`, with the diagnostics, figures, tests and failures, and a
+methods text with references in `logs/CITATION.*`; `--reports-only` rebuilds them without computing
+anything.
 
 ```bash
 pip install "dirconn[app]"
@@ -111,22 +114,39 @@ dirconn-bids /data/bids /data/out participant --participant-label 01 --config my
 
 Options, configuration fields and output files are described in the
 [documentation](https://hanweiliu-viola.github.io/dirconn/usage.html) (`docs/usage.rst`,
-`docs/configuration.rst`, `docs/outputs.rst`).
+`docs/configuration.rst`, `docs/outputs.rst`, and `docs/report.rst` for the report).
 
 ## Reproducible Docker environment
 
-The [Dockerfile](Dockerfile) freezes the whole scientific stack (exact versions in
-[constraints/docker.txt](constraints/docker.txt); the image also carries the full `pip freeze` in
-`/opt/environment-lock.txt`) for analyses whose numbers must be computable again later. It is an
-environment, not a pipeline: there is no entrypoint; mount your scripts or notebooks into `/work`
-and the data read-only into `/data`. It holds no data. The tutorials are in `/opt/dirconn/tutorials`
-as notebooks; 7, 8, 13 and 14 need the MNE `sample` dataset mounted at `/mne_data`.
+The [Dockerfile](Dockerfile) builds one image with two uses. It freezes the whole scientific stack
+(exact versions in [constraints/docker.txt](constraints/docker.txt); the image also carries the full
+`pip freeze` in `/opt/environment-lock.txt`) for analyses whose numbers must be computable again
+later, and its entrypoint is the BIDS App `dirconn-bids`. It holds no data. The tutorials are in
+`/opt/dirconn/tutorials` as notebooks; 7, 8, 13 and 14 need the MNE `sample` dataset mounted at
+`/mne_data`.
+
+**BIDS App.** Mount the BIDS dataset read-only at `/data` and an output directory at `/out`; the
+arguments are those of `dirconn-bids` (`BIDS_DIR OUTPUT_DIR participant`, see `--help`):
 
 ```bash
 docker pull ghcr.io/hanweiliu-viola/dirconn:<tag>
-docker run --rm -it -v /path/to/analysis:/work -v /path/to/data:/data:ro ghcr.io/hanweiliu-viola/dirconn:<tag>
-docker run --rm -p 127.0.0.1:8888:8888 -v /path/to/analysis:/work -v /path/to/data:/data:ro \
-    ghcr.io/hanweiliu-viola/dirconn:<tag> jupyter lab --ip=0.0.0.0 --no-browser
+docker run --rm -v /path/to/bids:/data:ro -v /path/to/out:/out \
+    ghcr.io/hanweiliu-viola/dirconn:<tag> /data /out participant
+```
+
+The reports and the derivatives are written to `/out/dirconn`; each run's `provenance.json` names
+the image tag, and the run directory keeps a copy of `environment-lock.txt`. The image does not
+contain bids-validator: the CLI warns and skips the validation, so `--skip-bids-validation` is not
+needed. Without arguments, `docker run --rm IMAGE` prints the help.
+
+**Environment.** Replace the entrypoint to get a shell or Jupyter; mount your scripts or notebooks
+into `/work` and the data read-only into `/data`:
+
+```bash
+docker run --rm -it --entrypoint bash -v /path/to/analysis:/work -v /path/to/data:/data:ro \
+    ghcr.io/hanweiliu-viola/dirconn:<tag>
+docker run --rm -p 127.0.0.1:8888:8888 --entrypoint jupyter -v /path/to/analysis:/work \
+    -v /path/to/data:/data:ro ghcr.io/hanweiliu-viola/dirconn:<tag> lab --ip=0.0.0.0 --no-browser
 ```
 
 Jupyter listens only on the local machine (`127.0.0.1`); open the URL with the token it prints.

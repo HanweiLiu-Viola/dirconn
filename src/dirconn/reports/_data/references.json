@@ -1,0 +1,372 @@
+{
+  "Astolfi_2008": {
+    "type": "inbook",
+    "authors": [
+      "Astolfi, Laura",
+      "Babiloni, Fabio"
+    ],
+    "title": "The Instantaneous Estimation of the Time-Varying Cortical Connectivity by Adaptive Multivariate Estimators",
+    "booktitle": "Estimation of Cortical Connectivity in Humans",
+    "year": 2008,
+    "pages": "69-81",
+    "doi": "10.1007/978-3-031-01622-6_7"
+  },
+  "Baccala_2001": {
+    "type": "article",
+    "authors": [
+      "Baccalá, Luiz A.",
+      "Sameshima, Koichi"
+    ],
+    "title": "Partial directed coherence: a new concept in neural structure determination",
+    "journal": "Biological Cybernetics",
+    "year": 2001,
+    "volume": "84",
+    "issue": "6",
+    "pages": "463-474",
+    "doi": "10.1007/pl00007990"
+  },
+  "Baccala_2007": {
+    "type": "inproceedings",
+    "authors": [
+      "Baccala, Luiz A.",
+      "Sameshima, K.",
+      "Takahashi, D.Y."
+    ],
+    "title": "Generalized Partial Directed Coherence",
+    "booktitle": "2007 15th International Conference on Digital Signal Processing",
+    "year": 2007,
+    "pages": "163-166",
+    "doi": "10.1109/icdsp.2007.4288544"
+  },
+  "Barnett_2015": {
+    "type": "article",
+    "authors": [
+      "Barnett, Lionel",
+      "Seth, Anil K."
+    ],
+    "title": "Granger causality for state-space models",
+    "journal": "Physical Review E",
+    "year": 2015,
+    "volume": "91",
+    "issue": "4",
+    "pages": "040101",
+    "doi": "10.1103/physreve.91.040101"
+  },
+  "Benjamini_1995": {
+    "type": "article",
+    "authors": [
+      "Benjamini, Yoav",
+      "Hochberg, Yosef"
+    ],
+    "title": "Controlling the False Discovery Rate: A Practical and Powerful Approach to Multiple Testing",
+    "journal": "Journal of the Royal Statistical Society Series B: Statistical Methodology",
+    "year": 1995,
+    "volume": "57",
+    "issue": "1",
+    "pages": "289-300",
+    "doi": "10.1111/j.2517-6161.1995.tb02031.x"
+  },
+  "Dhamala_2008": {
+    "type": "article",
+    "authors": [
+      "Dhamala, Mukeshwar",
+      "Rangarajan, Govindan",
+      "Ding, Mingzhou"
+    ],
+    "title": "Analyzing information flow in brain networks with nonparametric Granger causality",
+    "journal": "NeuroImage",
+    "year": 2008,
+    "volume": "41",
+    "issue": "2",
+    "pages": "354-362",
+    "doi": "10.1016/j.neuroimage.2008.02.020"
+  },
+  "Ding_2000": {
+    "type": "article",
+    "authors": [
+      "Ding, Mingzhou",
+      "Bressler, Steven L.",
+      "Yang, Weiming",
+      "Liang, Hualou"
+    ],
+    "title": "Short-window spectral analysis of cortical event-related potentials by adaptive multivariate autoregressive modeling: data preprocessing, model validation, and variability assessment",
+    "journal": "Biological Cybernetics",
+    "year": 2000,
+    "volume": "83",
+    "issue": "1",
+    "pages": "35-45",
+    "doi": "10.1007/s004229900137"
+  },
+  "Geweke_1982": {
+    "type": "article",
+    "authors": [
+      "Geweke, John"
+    ],
+    "title": "Measurement of Linear Dependence and Feedback between Multiple Time Series",
+    "journal": "Journal of the American Statistical Association",
+    "year": 1982,
+    "volume": "77",
+    "issue": "378",
+    "pages": "304-313",
+    "doi": "10.1080/01621459.1982.10477803"
+  },
+  "Geweke_1984": {
+    "type": "article",
+    "authors": [
+      "Geweke, John F."
+    ],
+    "title": "Measures of Conditional Linear Dependence and Feedback between Time Series",
+    "journal": "Journal of the American Statistical Association",
+    "year": 1984,
+    "volume": "79",
+    "issue": "388",
+    "pages": "907-915",
+    "doi": "10.1080/01621459.1984.10477110"
+  },
+  "Granger_1969": {
+    "type": "article",
+    "authors": [
+      "Granger, C. W. J."
+    ],
+    "title": "Investigating Causal Relations by Econometric Models and Cross-spectral Methods",
+    "journal": "Econometrica",
+    "year": 1969,
+    "volume": "37",
+    "issue": "3",
+    "pages": "424",
+    "doi": "10.2307/1912791"
+  },
+  "Haufe_2013": {
+    "type": "article",
+    "authors": [
+      "Haufe, Stefan",
+      "Nikulin, Vadim V.",
+      "Müller, Klaus-Robert",
+      "Nolte, Guido"
+    ],
+    "title": "A critical assessment of connectivity measures for EEG data: A simulation study",
+    "journal": "NeuroImage",
+    "year": 2013,
+    "volume": "64",
+    "pages": "120-133",
+    "doi": "10.1016/j.neuroimage.2012.09.036"
+  },
+  "Kaminski_1991": {
+    "type": "article",
+    "authors": [
+      "Kaminski, M. J.",
+      "Blinowska, K. J."
+    ],
+    "title": "A new method of the description of the information flow in the brain structures",
+    "journal": "Biological Cybernetics",
+    "year": 1991,
+    "volume": "65",
+    "issue": "3",
+    "pages": "203-210",
+    "doi": "10.1007/bf00198091"
+  },
+  "Kraskov_2004": {
+    "type": "article",
+    "authors": [
+      "Kraskov, Alexander",
+      "Stögbauer, Harald",
+      "Grassberger, Peter"
+    ],
+    "title": "Estimating mutual information",
+    "journal": "Physical Review E",
+    "year": 2004,
+    "volume": "69",
+    "issue": "6",
+    "pages": "066138",
+    "doi": "10.1103/physreve.69.066138"
+  },
+  "Milde_2010": {
+    "type": "article",
+    "authors": [
+      "Milde, Thomas",
+      "Leistritz, Lutz",
+      "Astolfi, Laura",
+      "Miltner, Wolfgang H.R.",
+      "Weiss, Thomas",
+      "Babiloni, Fabio",
+      "Witte, Herbert"
+    ],
+    "title": "A new Kalman filter approach for the estimation of high-dimensional time-variant multivariate AR models and its application in analysis of laser-evoked brain potentials",
+    "journal": "NeuroImage",
+    "year": 2010,
+    "volume": "50",
+    "issue": "3",
+    "pages": "960-969",
+    "doi": "10.1016/j.neuroimage.2009.12.110"
+  },
+  "Nolte_2004": {
+    "type": "article",
+    "authors": [
+      "Nolte, Guido",
+      "Bai, Ou",
+      "Wheaton, Lewis",
+      "Mari, Zoltan",
+      "Vorbach, Sherry",
+      "Hallett, Mark"
+    ],
+    "title": "Identifying true brain interaction from EEG data using the imaginary part of coherency",
+    "journal": "Clinical Neurophysiology",
+    "year": 2004,
+    "volume": "115",
+    "issue": "10",
+    "pages": "2292-2307",
+    "doi": "10.1016/j.clinph.2004.04.029"
+  },
+  "Nolte_2008": {
+    "type": "article",
+    "authors": [
+      "Nolte, Guido",
+      "Ziehe, Andreas",
+      "Nikulin, Vadim V.",
+      "Schlögl, Alois",
+      "Krämer, Nicole",
+      "Brismar, Tom",
+      "Müller, Klaus-Robert"
+    ],
+    "title": "Robustly Estimating the Flow Direction of Information in Complex Physical Systems",
+    "journal": "Physical Review Letters",
+    "year": 2008,
+    "volume": "100",
+    "issue": "23",
+    "pages": "234101",
+    "doi": "10.1103/physrevlett.100.234101"
+  },
+  "Novelli_2019": {
+    "type": "article",
+    "authors": [
+      "Novelli, Leonardo",
+      "Wollstadt, Patricia",
+      "Mediano, Pedro",
+      "Wibral, Michael",
+      "Lizier, Joseph T."
+    ],
+    "title": "Large-scale directed network inference with multivariate transfer entropy and hierarchical statistical testing",
+    "journal": "Network Neuroscience",
+    "year": 2019,
+    "volume": "3",
+    "issue": "3",
+    "pages": "827-847",
+    "doi": "10.1162/netn_a_00092"
+  },
+  "Runge_2019": {
+    "type": "article",
+    "authors": [
+      "Runge, Jakob",
+      "Nowack, Peer",
+      "Kretschmer, Marlene",
+      "Flaxman, Seth",
+      "Sejdinovic, Dino"
+    ],
+    "title": "Detecting and quantifying causal associations in large nonlinear time series datasets",
+    "journal": "Science Advances",
+    "year": 2019,
+    "volume": "5",
+    "issue": "11",
+    "pages": "eaau4996",
+    "doi": "10.1126/sciadv.aau4996"
+  },
+  "Schelter_2009": {
+    "type": "article",
+    "authors": [
+      "Schelter, Björn",
+      "Timmer, Jens",
+      "Eichler, Michael"
+    ],
+    "title": "Assessing the strength of directed influences among neural signals using renormalized partial directed coherence",
+    "journal": "Journal of Neuroscience Methods",
+    "year": 2009,
+    "volume": "179",
+    "issue": "1",
+    "pages": "121-130",
+    "doi": "10.1016/j.jneumeth.2009.01.006"
+  },
+  "Schreiber_2000": {
+    "type": "article",
+    "authors": [
+      "Schreiber, Thomas"
+    ],
+    "title": "Measuring Information Transfer",
+    "journal": "Physical Review Letters",
+    "year": 2000,
+    "volume": "85",
+    "issue": "2",
+    "pages": "461-464",
+    "doi": "10.1103/physrevlett.85.461"
+  },
+  "Theiler_1992": {
+    "type": "article",
+    "authors": [
+      "Theiler, James",
+      "Eubank, Stephen",
+      "Longtin, André",
+      "Galdrikian, Bryan",
+      "Farmer, J. Doyne"
+    ],
+    "title": "Testing for nonlinearity in time series: the method of surrogate data",
+    "journal": "Physica D: Nonlinear Phenomena",
+    "year": 1992,
+    "volume": "58",
+    "issue": "1-4",
+    "pages": "77-94",
+    "doi": "10.1016/0167-2789(92)90102-s"
+  },
+  "Wilke_2008": {
+    "type": "article",
+    "authors": [
+      "Wilke, Christopher",
+      "Ding, Lei",
+      "He, Bin"
+    ],
+    "title": "Estimation of Time-Varying Connectivity Patterns Through the Use of an Adaptive Directed Transfer Function",
+    "journal": "IEEE Transactions on Biomedical Engineering",
+    "year": 2008,
+    "volume": "55",
+    "issue": "11",
+    "pages": "2557-2564",
+    "doi": "10.1109/tbme.2008.919885"
+  },
+  "Wilson_1972": {
+    "type": "article",
+    "authors": [
+      "Wilson, G. Tunnicliffe"
+    ],
+    "title": "The Factorization of Matricial Spectral Densities",
+    "journal": "SIAM Journal on Applied Mathematics",
+    "year": 1972,
+    "volume": "23",
+    "issue": "4",
+    "pages": "420-426",
+    "doi": "10.1137/0123044"
+  },
+  "Winkler_2016": {
+    "type": "article",
+    "authors": [
+      "Winkler, Irene",
+      "Panknin, Danny",
+      "Bartz, Daniel",
+      "Muller, Klaus-Robert",
+      "Haufe, Stefan"
+    ],
+    "title": "Validity of Time Reversal for Testing Granger Causality",
+    "journal": "IEEE Transactions on Signal Processing",
+    "year": 2016,
+    "volume": "64",
+    "issue": "11",
+    "pages": "2746-2760",
+    "doi": "10.1109/tsp.2016.2531628"
+  },
+  "dirconn": {
+    "type": "software",
+    "authors": [
+      "Liu, Hanwei"
+    ],
+    "title": "dirconn: directed functional connectivity for neurophysiology signals",
+    "year": 2026,
+    "doi": "10.5281/zenodo.24036991"
+  }
+}

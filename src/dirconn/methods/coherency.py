@@ -75,6 +75,7 @@ class ImCoh(_CrossSpectral):
 
     info = MethodInfo(
         name="imcoh",
+        citations=("Nolte_2004",),
         report_kind="spectrum",
         backend=_BACKEND,
         directed=False,
@@ -138,6 +139,7 @@ class PSI(_CrossSpectral):
 
     info = MethodInfo(
         name="psi",
+        citations=("Nolte_2008",),
         report_kind="spectrum",
         backend=_BACKEND,
         directed=True,

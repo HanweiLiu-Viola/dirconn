@@ -117,6 +117,7 @@ class GC(Estimator):
 
     info = MethodInfo(
         name="gc",
+        citations=("Granger_1969", "Geweke_1982", "Geweke_1984"),
         report_kind="matrix",
         backend="own numpy pooled OLS VAR, nested equation fits",
         directed=True,

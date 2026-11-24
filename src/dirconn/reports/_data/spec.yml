@@ -1,0 +1,51 @@
+# Order and content of the participant report.
+#
+# A section lists the reportlets (figures and tables written by dirconn.reports.build) it shows.
+# `desc` and `name` are fnmatch patterns on the `desc-` entity and the suffix of the reportlet
+# file; `desc: "*"` stands for "each method" and never matches prep, diag, summary or trgc.
+# Within a section reportlets appear in entry order, then by method, then by name.
+# An entry without `optional: true` is required once per unit (once per method for `desc: "*"`,
+# once per subject for `scope: subject`); a missing one is listed in the Errors section.
+sections:
+  - id: summary
+    title: Summary
+    reportlets:
+      - {desc: summary, name: overview, scope: subject}
+  - id: input
+    title: Input
+    reportlets:
+      - {desc: prep, name: nodes}
+      - {desc: prep, name: record}
+  - id: diagnostics
+    title: Diagnostics
+    reportlets:
+      - {desc: diag, name: assumptions}
+      - {desc: diag, name: order}
+      - {desc: diag, name: psd, optional: true}
+  - id: connectivity
+    title: Connectivity
+    reportlets:
+      - {desc: "*", name: "matrix-*", optional: true}
+      - {desc: "*", name: spectra, optional: true}
+      - {desc: "*", name: tf, optional: true}
+      - {desc: "*", name: "net-*", optional: true}
+  - id: controls
+    title: Controls
+    reportlets:
+      - {desc: trgc, name: matrix, optional: true}
+      - {desc: trgc, name: agreement, optional: true}
+  - id: statistics
+    title: Statistics
+    reportlets:
+      - {desc: "*", name: tests}
+      - {desc: "*", name: significant, optional: true}
+      - {desc: "*", name: pvalues, optional: true}
+      - {desc: "*", name: sig-time, optional: true}
+  - id: methods
+    title: Methods
+    boilerplate: true
+    reportlets: []
+  - id: errors
+    title: Errors
+    reportlets:
+      - {desc: summary, name: errors, scope: subject}

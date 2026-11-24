@@ -19,3 +19,5 @@ slides/
 paper_notes/
 _notes/
 *.ipynb
+.superpowers/
+.claude/

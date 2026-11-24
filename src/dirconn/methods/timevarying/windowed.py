@@ -90,6 +90,7 @@ class WDTF(Estimator):
 
     info = MethodInfo(
         name="wdtf",
+        citations=("Kaminski_1991", "Ding_2000"),
         report_kind="time_frequency",
         backend=_BACKEND,
         directed=True,

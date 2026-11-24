@@ -13,13 +13,13 @@ region level.
 Where to start
 --------------
 
-* :doc:`auto_tutorials/index`: seventeen tutorials, from a first directed connectivity to the reading of
+* :doc:`auto_tutorials/index`: eighteen tutorials, from a first directed connectivity to the reading of
   sources and sinks, the controls for zero-delay mixing, model-free spectral Granger causality, PCMCI,
   transfer entropy (including one hypothesis on the EEG sources of a recording and the multivariate
   mode on an indirect path and a shared driver), three methods compared on the same simulated
   regions, the renormalised PDC with its asymptotic threshold, and the whole pipeline run on a BIDS
-  dataset with one ``dirconn-bids`` command. Each ends on what its result does
-  and does not show.
+  dataset with one ``dirconn-bids`` command, and the reading of the participant report it writes. Each
+  ends on what its result does and does not show.
 * :doc:`statistics` and :doc:`surrogates`: which test answers which question, and what each
   surrogate keeps.
 * :doc:`masks`: records with gaps, models fitted on selected samples (such as bursts), and event
@@ -44,7 +44,7 @@ pyCirclize); the map of the cortical surface needs ``plot-extra`` and MNE's 3D p
 Tutorials that need the MNE sample dataset
 ------------------------------------------
 
-Tutorials 1 to 6, 9 to 12, 15 and 16 use simulated data only. Tutorials 7, 8, 13 and 14 need the MNE
+Tutorials 1 to 6, 9 to 12 and 15 to 18 use simulated data only. Tutorials 7, 8, 13 and 14 need the MNE
 ``sample`` dataset (about 1.5 GB). dirconn **never downloads it without being asked**: the tutorials
 call :func:`dirconn.datasets.require_sample`, which looks for the data locally and, if it is missing,
 stops with the size, the ``MNE_DATA`` setting and the download command.
@@ -74,6 +74,7 @@ followed by tables generated from the saved results. :doc:`timevarying` and
    usage
    configuration
    outputs
+   report
 
 .. toctree::
    :hidden:
@@ -91,3 +92,4 @@ followed by tables generated from the saved results. :doc:`timevarying` and
    decisions/0001-bids-roi-layout
    decisions/0002-package-layout
    decisions/0003-derivatives-layout
+   decisions/0004-report-spec

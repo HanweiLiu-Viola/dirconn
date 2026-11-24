@@ -166,6 +166,7 @@ class TE(Estimator):
 
     info = MethodInfo(
         name="te",
+        citations=("Schreiber_2000", "Kraskov_2004", "Novelli_2019"),
         report_kind="matrix",
         backend=(
             "own KSG conditional mutual information (Frenzel-Pompe) with scipy cKDTree or brute "
